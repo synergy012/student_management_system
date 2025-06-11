@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Manage User Permissions - {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Manage Permissions: {{ user.full_name }}</h4>
+                    <a href="{{ url_for('auth.users_list') }}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-arrow-left"></i> Back to Users
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <div class="user-info mb-4">
+                        <p><strong>Username:</strong> {{ user.username }}</p>
+                        <p><strong>Email:</strong> {{ user.email }}</p>
+                        <p><strong>Status:</strong> 
+                            <span class="badge {% if user.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ 'Active' if user.is_active else 'Inactive' }}
+                            </span>
+                        </p>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('auth.manage_permissions', user_id=user.id) }}">
+                        <h5 class="mb-3">Permissions</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Student Management</h6>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="view_students" 
+                                               name="view_students" value="true"
+                                               {% if 'view_students' in user.permissions %}checked{% endif %}>
+                                        <label class="form-check-label" for="view_students">View Students</label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="edit_students" 
+                                               name="edit_students" value="true"
+                                               {% if 'edit_students' in user.permissions %}checked{% endif %}>
+                                        <label class="form-check-label" for="edit_students">Edit Students</label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="delete_students" 
+                                               name="delete_students" value="true"
+                                               {% if 'delete_students' in user.permissions %}checked{% endif %}>
+                                        <label class="form-check-label" for="delete_students">Delete Students</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Application Management</h6>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="view_applications" 
+                                               name="view_applications" value="true"
+                                               {% if 'view_applications' in user.permissions %}checked{% endif %}>
+                                        <label class="form-check-label" for="view_applications">View Applications</label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="process_applications" 
+                                               name="process_applications" value="true"
+                                               {% if 'process_applications' in user.permissions %}checked{% endif %}>
+                                        <label class="form-check-label" for="process_applications">Process Applications</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Course Management</h6>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="view_courses" 
+                                               name="view_courses" value="true"
+                                               {% if 'view_courses' in user.permissions %}checked{% endif %}>
+                                        <label class="form-check-label" for="view_courses">View Courses</label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="edit_courses" 
+                                               name="edit_courses" value="true"
+                                               {% if 'edit_courses' in user.permissions %}checked{% endif %}>
+                                        <label class="form-check-label" for="edit_courses">Edit Courses</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('auth.users_list') }}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Save Permissions</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+
+{% block title %}{{ student.full_name }} - Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Student Details</h1>
+        <div>
+            <a href="{{ url_for('main.edit_student', student_id=student.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <button class="btn btn-danger" onclick="deleteStudent('{{ student.id }}')">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        </div>
+    </div>
+
+    <!-- Personal Information -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">Personal Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Full Name:</strong> {{ student.full_name }}</p>
+                    {% if student.hebrew_name %}<p><strong>Hebrew Name:</strong> {{ student.hebrew_name }}</p>{% endif %}
+                    {% if student.informal_name %}<p><strong>Informal Name:</strong> {{ student.informal_name }}</p>{% endif %}
+                    <p><strong>Phone:</strong> {{ student.phone_number }}</p>
+                    <p><strong>Email:</strong> {{ student.email }}</p>
+                    {% if student.ssn %}<p><strong>SSN:</strong> {{ student.ssn }}</p>{% endif %}
+                    <p><strong>Date of Birth:</strong> {{ student.date_of_birth }}</p>
+                    <p><strong>Citizenship:</strong> {{ student.citizenship }}</p>
+                    <p><strong>High School Graduate:</strong> {{ student.high_school_graduate }}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="badge bg-{{ student.status_color }}">{{ student.status }}</span>
+                    </p>
+                    <p><strong>Marital Status:</strong> {{ student.marital_status }}</p>
+                    {% if student.division %}<p><strong>Division:</strong> {{ student.division }}</p>{% endif %}
+                    {% if student.accepted_date %}<p><strong>Accepted Date:</strong> {{ student.accepted_date }}</p>{% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h6>Primary Address</h6>
+                    <p>{{ student.address.line1 }}{% if student.address.line2 %}<br>{{ student.address.line2 }}{% endif %}<br>
+                    {{ student.address.city }}, {{ student.address.state }} {{ student.address.zip }}<br>
+                    {{ student.address.country }}</p>
+                    
+                    {% if student.alt_address.line1 %}
+                    <h6>Alternative Address</h6>
+                    <p>{{ student.alt_address.line1 }}{% if student.alt_address.line2 %}<br>{{ student.alt_address.line2 }}{% endif %}<br>
+                    {{ student.alt_address.city }}, {{ student.alt_address.state }} {{ student.alt_address.zip }}<br>
+                    {{ student.alt_address.country }}</p>
+                    {% endif %}
+                    
+                    <h6>Financial Aid</h6>
+                    <p><strong>Status:</strong> {{ student.financial_aid.status }}</p>
+                    <p><strong>Amount Can Pay:</strong> ${{ student.financial_aid.amount_can_pay }}</p>
+                    <p><strong>Scholarship Amount:</strong> ${{ student.financial_aid.scholarship_amount }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spouse Information (if married) -->
+    {% if student.marital_status == 'Married' and student.spouse %}
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="card-title mb-0">Spouse Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Name:</strong> {{ student.spouse.first_name }} {{ student.spouse.last_name }}</p>
+                    {% if student.spouse.phone %}<p><strong>Phone:</strong> {{ student.spouse.phone }}</p>{% endif %}
+                    {% if student.spouse.email %}<p><strong>Email:</strong> {{ student.spouse.email }}</p>{% endif %}
+                    {% if student.spouse.occupation %}<p><strong>Occupation:</strong> {{ student.spouse.occupation }}</p>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Parents Information -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="card-title mb-0">Parents Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Father</h6>
+                    {% if student.parents.father.first_name or student.parents.father.last_name %}
+                    <p><strong>Name:</strong> {{ student.parents.father.title }} {{ student.parents.father.first_name }} {{ student.parents.father.last_name }}</p>
+                    {% if student.parents.father.phone %}<p><strong>Phone:</strong> {{ student.parents.father.phone }}</p>{% endif %}
+                    {% if student.parents.father.email %}<p><strong>Email:</strong> {{ student.parents.father.email }}</p>{% endif %}
+                    {% if student.parents.father.occupation %}<p><strong>Occupation:</strong> {{ student.parents.father.occupation }}</p>{% endif %}
+                    {% else %}
+                    <p class="text-muted">No father information provided</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h6>Mother</h6>
+                    {% if student.parents.mother.first_name or student.parents.mother.last_name %}
+                    <p><strong>Name:</strong> {{ student.parents.mother.title }} {{ student.parents.mother.first_name }} {{ student.parents.mother.last_name }}</p>
+                    {% if student.parents.mother.phone %}<p><strong>Phone:</strong> {{ student.parents.mother.phone }}</p>{% endif %}
+                    {% if student.parents.mother.email %}<p><strong>Email:</strong> {{ student.parents.mother.email }}</p>{% endif %}
+                    {% if student.parents.mother.occupation %}<p><strong>Occupation:</strong> {{ student.parents.mother.occupation }}</p>{% endif %}
+                    {% else %}
+                    <p class="text-muted">No mother information provided</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- In-Laws Information (if married) -->
+    {% if student.marital_status == 'Married' and (student.in_laws.first_name or student.in_laws.last_name) %}
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="card-title mb-0">In-Laws Information</h5>
+        </div>
+        <div class="card-body">
+            {% if student.in_laws.first_name or student.in_laws.last_name %}
+            <p><strong>Name:</strong> {{ student.in_laws.first_name }} {{ student.in_laws.last_name }}</p>
+            {% if student.in_laws.phone %}<p><strong>Phone:</strong> {{ student.in_laws.phone }}</p>{% endif %}
+            {% if student.in_laws.email %}<p><strong>Email:</strong> {{ student.in_laws.email }}</p>{% endif %}
+            {% if student.in_laws.address.line1 %}
+            <p><strong>Address:</strong> {{ student.in_laws.address.line1 }}, {{ student.in_laws.address.city }}, {{ student.in_laws.address.state }} {{ student.in_laws.address.zip }}</p>
+            {% endif %}
+            {% else %}
+            <p class="text-muted">No in-laws information provided</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Grandparents Information -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="card-title mb-0">Grandparents Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Paternal Grandparents</h6>
+                    {% if student.grandparents.paternal.name %}
+                    <p><strong>Name:</strong> {{ student.grandparents.paternal.name }}</p>
+                    {% if student.grandparents.paternal.phone %}<p><strong>Phone:</strong> {{ student.grandparents.paternal.phone }}</p>{% endif %}
+                    {% if student.grandparents.paternal.email %}<p><strong>Email:</strong> {{ student.grandparents.paternal.email }}</p>{% endif %}
+                    {% if student.grandparents.paternal.address.line1 %}
+                    <p><strong>Address:</strong> {{ student.grandparents.paternal.address.line1 }}, {{ student.grandparents.paternal.address.city }}, {{ student.grandparents.paternal.address.state }} {{ student.grandparents.paternal.address.zip }}</p>
+                    {% endif %}
+                    {% else %}
+                    <p class="text-muted">No paternal grandparents information provided</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h6>Maternal Grandparents</h6>
+                    {% if student.grandparents.maternal.name %}
+                    <p><strong>Name:</strong> {{ student.grandparents.maternal.name }}</p>
+                    {% if student.grandparents.maternal.phone %}<p><strong>Phone:</strong> {{ student.grandparents.maternal.phone }}</p>{% endif %}
+                    {% if student.grandparents.maternal.email %}<p><strong>Email:</strong> {{ student.grandparents.maternal.email }}</p>{% endif %}
+                    {% if student.grandparents.maternal.address.line1 %}
+                    <p><strong>Address:</strong> {{ student.grandparents.maternal.address.line1 }}, {{ student.grandparents.maternal.address.city }}, {{ student.grandparents.maternal.address.state }} {{ student.grandparents.maternal.address.zip }}</p>
+                    {% endif %}
+                    {% else %}
+                    <p class="text-muted">No maternal grandparents information provided</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Education Information -->
+    <div class="card mb-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="card-title mb-0">Education Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>High School</h6>
+                    {% if student.education.high_school_info %}
+                    <p><strong>Information:</strong> {{ student.education.high_school_info }}</p>
+                    {% else %}
+                    <p class="text-muted">No high school information provided</p>
+                    {% endif %}
+                    
+                    <h6>Seminary</h6>
+                    {% if student.education.seminary_info %}
+                    <p><strong>Information:</strong> {{ student.education.seminary_info }}</p>
+                    {% else %}
+                    <p class="text-muted">No seminary information provided</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h6>College</h6>
+                    {% if student.education.college_attending %}
+                    <p><strong>Attending College:</strong> {{ student.education.college_attending }}</p>
+                    {% if student.education.college_name %}<p><strong>College Name:</strong> {{ student.education.college_name }}</p>{% endif %}
+                    {% if student.education.college_major %}<p><strong>Major:</strong> {{ student.education.college_major }}</p>{% endif %}
+                    {% if student.education.college_expected_graduation %}<p><strong>Expected Graduation:</strong> {{ student.education.college_expected_graduation }}</p>{% endif %}
+                    {% else %}
+                    <p class="text-muted">No college information provided</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Learning Information -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="card-title mb-0">Learning Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    {% if student.learning.last_rebbe_name %}
+                    <p><strong>Last Rebbe:</strong> {{ student.learning.last_rebbe_name }}</p>
+                    {% if student.learning.last_rebbe_phone %}<p><strong>Rebbe Phone:</strong> {{ student.learning.last_rebbe_phone }}</p>{% endif %}
+                    {% else %}
+                    <p class="text-muted">No rebbe information provided</p>
+                    {% endif %}
+                    
+                    {% if student.learning.gemora_sedorim_daily_count %}
+                    <p><strong>Daily Gemora Sedorim:</strong> {{ student.learning.gemora_sedorim_daily_count }}</p>
+                    {% endif %}
+                    {% if student.learning.gemora_sedorim_length %}
+                    <p><strong>Sedorim Length:</strong> {{ student.learning.gemora_sedorim_length }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    {% if student.learning.learning_evaluation %}
+                    <h6>Learning Evaluation</h6>
+                    <p>{{ student.learning.learning_evaluation }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Medical Information -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="card-title mb-0">Medical Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    {% if student.medical.conditions %}
+                    <p><strong>Medical Conditions:</strong> {{ student.medical.conditions }}</p>
+                    {% else %}
+                    <p class="text-muted">No medical conditions reported</p>
+                    {% endif %}
+                    
+                    {% if student.medical.insurance_company %}
+                    <p><strong>Insurance Company:</strong> {{ student.medical.insurance_company }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    {% if student.medical.blood_type %}
+                    <p><strong>Blood Type:</strong> {{ student.medical.blood_type }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activities and Work Experience -->
+    {% if student.activities.past_jobs or student.activities.summer_activities %}
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="card-title mb-0">Activities & Work Experience</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    {% if student.activities.past_jobs %}
+                    <h6>Past Jobs</h6>
+                    <p>{{ student.activities.past_jobs }}</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    {% if student.activities.summer_activities %}
+                    <h6>Summer Activities</h6>
+                    <p>{{ student.activities.summer_activities }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Dormitory & Meals Information -->
+    {% if student.dormitory_meals_option %}
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="card-title mb-0">Dormitory & Meals</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Option Selected:</strong> {{ student.dormitory_meals_option }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Additional Information -->
+    {% if student.additional_info %}
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="card-title mb-0">Additional Information</h5>
+        </div>
+        <div class="card-body">
+            <p>{{ student.additional_info }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- File Attachments -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-paperclip me-2"></i>File Attachments
+                {% if attachments %}
+                <span class="badge bg-light text-dark ms-2">{{ attachments|length }} files</span>
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if attachments %}
+            <div class="row">
+                {% for attachment in attachments %}
+                <div class="col-md-6 mb-3">
+                    <div class="border rounded p-3">
+                        <h6 class="mb-2">
+                            <i class="{{ attachment.file_type_icon }} text-primary me-2"></i>{{ attachment.display_name }}
+                        </h6>
+                        <div class="small text-muted mb-2">
+                            <strong>Original File:</strong> {{ attachment.original_filename }}<br>
+                            <strong>Size:</strong> {{ attachment.file_size_formatted }}<br>
+                            {% if attachment.mime_type %}
+                            <strong>Type:</strong> {{ attachment.mime_type }}<br>
+                            {% endif %}
+                            <strong>Status:</strong> 
+                            {% if attachment.download_status == 'downloaded' %}
+                            <span class="badge bg-success">Available</span>
+                            {% elif attachment.download_status == 'failed' %}
+                            <span class="badge bg-danger">Download Failed</span>
+                            {% else %}
+                            <span class="badge bg-warning">Pending Download</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="btn-group btn-group-sm" role="group">
+                            {% if attachment.download_status == 'downloaded' and attachment.local_filename %}
+                                {% if attachment.is_viewable %}
+                                <a href="{{ url_for('main.view_attachment', filename=attachment.local_filename) }}"
+                                   class="btn btn-outline-primary btn-sm"
+                                   target="_blank"
+                                   title="View {{ attachment.original_filename }} in browser">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                {% endif %}
+                                <a href="{{ url_for('main.serve_attachment', filename=attachment.local_filename) }}"
+                                   class="btn btn-outline-secondary btn-sm"
+                                   download="{{ attachment.original_filename }}"
+                                   title="Download {{ attachment.original_filename }}">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            {% elif attachment.original_url %}
+                                <!-- Show original URL as fallback when local file not available -->
+                                <a href="{{ attachment.original_url }}" 
+                                   class="btn btn-outline-primary btn-sm" 
+                                   target="_blank"
+                                   title="View {{ attachment.original_filename }} at original location">
+                                    <i class="fas fa-external-link-alt"></i> View Original
+                                </a>
+                                <a href="{{ attachment.original_url }}" 
+                                   class="btn btn-outline-secondary btn-sm" 
+                                   download="{{ attachment.original_filename }}"
+                                   title="Download {{ attachment.original_filename }} from original location">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            {% else %}
+                                <!-- No local file and no original URL -->
+                                <span class="btn btn-outline-secondary btn-sm disabled">
+                                    <i class="fas fa-exclamation-triangle"></i> File not available
+                                </span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if attachment.downloaded_at %}
+                        <div class="small text-muted mt-2">
+                            Downloaded: {{ attachment.downloaded_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No file attachments found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Application Reference -->
+    {% if student.application_id %}
+    <div class="card mb-4">
+        <div class="card-header bg-light text-dark">
+            <h5 class="card-title mb-0">Application Reference</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Original Application ID:</strong> {{ student.application_id }}</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function deleteStudent(studentId) {
+    if (confirm('Are you sure you want to delete this student?')) {
+        fetch(`/api/students/${studentId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.href = '/students';
+            } else {
+                alert('Error deleting student');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting student');
+        });
+    }
+}
+</script>
+{% endblock %} 

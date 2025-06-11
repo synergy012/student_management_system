@@ -1,0 +1,1010 @@
+{% extends "base.html" %}
+
+{% block title %}Applications{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Applications</h1>
+        
+        <!-- View toggle -->
+        <div class="btn-group">
+            <button class="btn btn-outline-primary" onclick="setView('list')" id="listViewBtn">
+                <i class="fas fa-list"></i> List
+            </button>
+            <button class="btn btn-outline-primary" onclick="setView('tile')" id="tileViewBtn">
+                <i class="fas fa-th-large"></i> Tiles
+            </button>
+        </div>
+    </div>
+    
+    <!-- Search Box -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <form method="GET" action="{{ url_for('main.applications') }}" class="search-container">
+                <!-- Preserve existing filters -->
+                {% if request.args.get('status') %}
+                <input type="hidden" name="status" value="{{ request.args.get('status') }}">
+                {% endif %}
+                {% if request.args.get('division') %}
+                <input type="hidden" name="division" value="{{ request.args.get('division') }}">
+                {% endif %}
+                
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" 
+                           class="form-control" 
+                           name="search" 
+                           value="{{ search_query or '' }}" 
+                           placeholder="Search by name, email, phone, Hebrew name, or application ID..." 
+                           autocomplete="off"
+                           maxlength="100">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search"></i> <span>Search</span>
+                    </button>
+                    {% if search_query %}
+                    <a href="{{ url_for('main.applications', status=request.args.get('status'), division=request.args.get('division')) }}" 
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> <span>Clear</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+        <div class="col-md-4">
+            {% if search_query %}
+            <div class="alert alert-info mb-0 search-results-info">
+                <i class="fas fa-info-circle"></i> 
+                Showing {{ applications|length }} result(s) for "<strong>{{ search_query }}</strong>"
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Division filter badges -->
+    <div class="mb-3">
+        <div class="d-flex align-items-center">
+            <span class="text-muted me-3"><i class="fas fa-filter"></i> <strong>Division:</strong></span>
+            <a href="{{ url_for('main.applications', status=request.args.get('status'), search=search_query if search_query else None) }}" 
+               class="badge bg-{{ 'primary' if not request.args.get('division') else 'secondary' }} text-decoration-none me-2">
+                All Divisions ({{ division_stats.all }})
+            </a>
+            <a href="{{ url_for('main.applications', division='YZA', status=request.args.get('status'), search=search_query if search_query else None) }}" 
+               class="badge bg-{{ 'primary' if request.args.get('division') == 'YZA' else 'secondary' }} text-decoration-none me-2">
+                YZA ({{ division_stats.yza }})
+            </a>
+            <a href="{{ url_for('main.applications', division='YOH', status=request.args.get('status'), search=search_query if search_query else None) }}" 
+               class="badge bg-{{ 'info' if request.args.get('division') == 'YOH' else 'secondary' }} text-decoration-none me-2">
+                YOH ({{ division_stats.yoh }})
+            </a>
+        </div>
+    </div>
+    
+    <!-- Status filter badges -->
+    <div class="mb-4">
+        <div class="d-flex align-items-center">
+            <span class="text-muted me-3"><i class="fas fa-filter"></i> <strong>Status:</strong></span>
+            <a href="{{ url_for('main.applications', division=request.args.get('division'), search=search_query if search_query else None) }}" 
+               class="badge bg-{{ 'primary' if not request.args.get('status') else 'secondary' }} text-decoration-none me-2">
+                All ({{ stats.all }})
+            </a>
+            <a href="{{ url_for('main.applications', status='pending', division=request.args.get('division'), search=search_query if search_query else None) }}" 
+               class="badge bg-{{ 'warning' if request.args.get('status') == 'pending' else 'secondary' }} text-decoration-none me-2">
+                Pending ({{ stats.pending }})
+            </a>
+            <a href="{{ url_for('main.applications', status='accepted', division=request.args.get('division'), search=search_query if search_query else None) }}" 
+               class="badge bg-{{ 'success' if request.args.get('status') == 'accepted' else 'secondary' }} text-decoration-none me-2">
+                Accepted ({{ stats.accepted }})
+            </a>
+            <a href="{{ url_for('main.applications', status='rejected', division=request.args.get('division'), search=search_query if search_query else None) }}" 
+               class="badge bg-{{ 'danger' if request.args.get('status') == 'rejected' else 'secondary' }} text-decoration-none me-2">
+                Rejected ({{ stats.rejected }})
+            </a>
+        </div>
+    </div>
+    
+    <!-- List view -->
+    <div id="listView" class="view-container">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Hebrew Name</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Submitted Date</th>
+                        <th>Division</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for application in applications %}
+                    <tr>
+                        <td>{{ application.student_name }}</td>
+                        <td>{{ application.hebrew_name or application.custom_fields.hebrew_name or 'N/A' }}</td>
+                        <td>{{ application.phone_number }}</td>
+                        <td>{{ application.email or 'N/A' }}</td>
+                        <td>{{ application.submitted_date }}</td>
+                        <td>
+                            <span class="badge bg-{{ application.division_color }}">
+                                {{ application.division or 'YZA' }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ application.status_color }}">
+                                {{ application.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#applicationModal{{ application.id }}">
+                                View
+                            </button>
+                            {% if application.status == 'Pending' or application.status == 'pending' %}
+                            <button class="btn btn-success btn-sm" onclick="updateStatus('{{ application.id }}', 'accepted')">
+                                Accept
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="updateStatus('{{ application.id }}', 'rejected')">
+                                Reject
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <!-- Application Details Modal -->
+                    <div class="modal fade" id="applicationModal{{ application.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-xl">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        Application Details - {{ application.student_name }}
+                                        <span class="badge bg-{{ application.division_color }} ms-2">{{ application.division or 'YZA' }}</span>
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="accordion" id="applicationDetails{{ application.id }}">
+                                        <!-- Personal Information -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#personalInfo{{ application.id }}" aria-expanded="true">
+                                                    <i class="fas fa-user me-2"></i> Personal Information
+                                                </button>
+                                            </h2>
+                                            <div id="personalInfo{{ application.id }}" class="accordion-collapse collapse show" 
+                                                 data-bs-parent="#applicationDetails{{ application.id }}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <p><strong>Full Name:</strong> {{ application.student_name }}</p>
+                                                            <p><strong>First Name:</strong> {{ application.student_first_name or 'N/A' }}</p>
+                                                            <p><strong>Middle Name:</strong> {{ application.student_middle_name or 'N/A' }}</p>
+                                                            <p><strong>Last Name:</strong> {{ application.student_last_name or 'N/A' }}</p>
+                                                            <p><strong>Hebrew Name:</strong> {{ application.hebrew_name or 'N/A' }}</p>
+                                                            <p><strong>Informal Name:</strong> {{ application.informal_name or 'N/A' }}</p>
+                                                            <p><strong>Division:</strong> 
+                                                                <span class="badge bg-{{ application.division_color }}">{{ application.division or 'YZA' }}</span>
+                                                            </p>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <p><strong>Date of Birth:</strong> {{ application.date_of_birth_str }}</p>
+                                                            <p><strong>Phone:</strong> {{ application.phone_number or 'N/A' }}</p>
+                                                            <p><strong>Email:</strong> {{ application.email or 'N/A' }}</p>
+                                                            <p><strong>Social Security Number:</strong> {{ application.social_security_number or 'N/A' }}</p>
+                                                            <p><strong>Marital Status:</strong> {{ application.marital_status or 'N/A' }}</p>
+                                                            <p><strong>Spouse Name:</strong> {{ application.spouse_name or 'N/A' }}</p>
+                                                            <p><strong>Citizenship:</strong> {{ application.citizenship or 'N/A' }}</p>
+                                                            <p><strong>High School Graduate:</strong> {{ application.high_school_graduate or 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Contact Information -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#contactInfo{{ application.id }}">
+                                                    <i class="fas fa-home me-2"></i> Address Information
+                                                </button>
+                                            </h2>
+                                            <div id="contactInfo{{ application.id }}" class="accordion-collapse collapse" 
+                                                 data-bs-parent="#applicationDetails{{ application.id }}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <h6>Primary Address</h6>
+                                                            <p><strong>Address:</strong><br>
+                                                            {{ application.address_line1 or 'N/A' }}<br>
+                                                            {% if application.address_line2 %}{{ application.address_line2 }}<br>{% endif %}
+                                                            {{ application.address_city or 'N/A' }}, {{ application.address_state or 'N/A' }} {{ application.address_zip or 'N/A' }}<br>
+                                                            {{ application.address_country or 'N/A' }}</p>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <h6>Alternate Address</h6>
+                                                            <p><strong>Address:</strong><br>
+                                                            {{ application.alt_address_line1 or 'N/A' }}<br>
+                                                            {% if application.alt_address_line2 %}{{ application.alt_address_line2 }}<br>{% endif %}
+                                                            {{ application.alt_address_city or 'N/A' }}, {{ application.alt_address_state or 'N/A' }} {{ application.alt_address_zip or 'N/A' }}<br>
+                                                            {{ application.alt_address_country or 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Parents Information -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#parentsInfo{{ application.id }}">
+                                                    <i class="fas fa-users me-2"></i> Parents Information
+                                                </button>
+                                            </h2>
+                                            <div id="parentsInfo{{ application.id }}" class="accordion-collapse collapse" 
+                                                 data-bs-parent="#applicationDetails{{ application.id }}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <h6>Father</h6>
+                                                            <p><strong>Title:</strong> {{ application.father_title or 'N/A' }}</p>
+                                                            <p><strong>Name:</strong> {{ application.father_first_name or 'N/A' }} {{ application.father_last_name or 'N/A' }}</p>
+                                                            <p><strong>Phone:</strong> {{ application.father_phone or 'N/A' }}</p>
+                                                            <p><strong>Email:</strong> {{ application.father_email or 'N/A' }}</p>
+                                                            <p><strong>Occupation:</strong> {{ application.father_occupation or 'N/A' }}</p>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <h6>Mother</h6>
+                                                            <p><strong>Title:</strong> {{ application.mother_title or 'N/A' }}</p>
+                                                            <p><strong>Name:</strong> {{ application.mother_first_name or 'N/A' }} {{ application.mother_last_name or 'N/A' }}</p>
+                                                            <p><strong>Phone:</strong> {{ application.mother_phone or 'N/A' }}</p>
+                                                            <p><strong>Email:</strong> {{ application.mother_email or 'N/A' }}</p>
+                                                            <p><strong>Occupation:</strong> {{ application.mother_occupation or 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- In-laws Information -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#inLawsInfo{{ application.id }}">
+                                                    <i class="fas fa-heart me-2"></i> In-laws Information
+                                                </button>
+                                            </h2>
+                                            <div id="inLawsInfo{{ application.id }}" class="accordion-collapse collapse" 
+                                                 data-bs-parent="#applicationDetails{{ application.id }}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <div class="col-12">
+                                                            <h6 class="fw-bold text-primary mb-2">In-laws</h6>
+                                                            <p><strong>Name:</strong> {{ application.father_in_law_first_name or 'N/A' }} {{ application.father_in_law_last_name or 'N/A' }}</p>
+                                                            <p><strong>Phone:</strong> {{ application.father_in_law_phone or 'N/A' }}</p>
+                                                            <p><strong>Email:</strong> {{ application.father_in_law_email or 'N/A' }}</p>
+                                                            <p><strong>Address:</strong><br>
+                                                            {{ application.father_in_law_address_line1 or 'N/A' }}<br>
+                                                            {{ application.father_in_law_address_city or 'N/A' }}, {{ application.father_in_law_address_state or 'N/A' }} {{ application.father_in_law_address_zip or 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Grandparents Information -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#grandparentsInfo{{ application.id }}">
+                                                    <i class="fas fa-user-friends me-2"></i> Grandparents Information
+                                                </button>
+                                            </h2>
+                                            <div id="grandparentsInfo{{ application.id }}" class="accordion-collapse collapse" 
+                                                 data-bs-parent="#applicationDetails{{ application.id }}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <h6>Paternal Grandfather</h6>
+                                                            <p><strong>Name:</strong> {{ application.paternal_grandfather_first_name or 'N/A' }} {{ application.paternal_grandfather_last_name or 'N/A' }}</p>
+                                                            <p><strong>Phone:</strong> {{ application.paternal_grandfather_phone or 'N/A' }}</p>
+                                                            <p><strong>Email:</strong> {{ application.paternal_grandfather_email or 'N/A' }}</p>
+                                                            <p><strong>Address:</strong><br>
+                                                            {{ application.paternal_grandfather_address_line1 or 'N/A' }}<br>
+                                                            {{ application.paternal_grandfather_address_city or 'N/A' }}, {{ application.paternal_grandfather_address_state or 'N/A' }} {{ application.paternal_grandfather_address_zip or 'N/A' }}</p>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <h6>Maternal Grandfather</h6>
+                                                            <p><strong>Name:</strong> {{ application.maternal_grandfather_first_name or 'N/A' }} {{ application.maternal_grandfather_last_name or 'N/A' }}</p>
+                                                            <p><strong>Phone:</strong> {{ application.maternal_grandfather_phone or 'N/A' }}</p>
+                                                            <p><strong>Email:</strong> {{ application.maternal_grandfather_email or 'N/A' }}</p>
+                                                            <p><strong>Address:</strong><br>
+                                                            {{ application.maternal_grandfather_address_line1 or 'N/A' }}<br>
+                                                            {{ application.maternal_grandfather_address_city or 'N/A' }}, {{ application.maternal_grandfather_address_state or 'N/A' }} {{ application.maternal_grandfather_address_zip or 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Education Information -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#educationInfo{{ application.id }}">
+                                                    <i class="fas fa-graduation-cap me-2"></i> Education Information
+                                                </button>
+                                            </h2>
+                                            <div id="educationInfo{{ application.id }}" class="accordion-collapse collapse" 
+                                                 data-bs-parent="#applicationDetails{{ application.id }}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <h6>College Information</h6>
+                                                            <p><strong>Currently Attending College:</strong> {{ application.college_attending or 'N/A' }}</p>
+                                                            <p><strong>College Name:</strong> {{ application.college_name or 'N/A' }}</p>
+                                                            <p><strong>Major:</strong> {{ application.college_major or 'N/A' }}</p>
+                                                            <p><strong>Expected Graduation:</strong> {{ application.college_expected_graduation or 'N/A' }}</p>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <h6>High School Information</h6>
+                                                            {% if application.high_school_info %}
+                                                                {% for school in application.high_school_info %}
+                                                                <div class="mb-3 p-2 border rounded">
+                                                                    {% if school is string %}
+                                                                    <p><strong>School:</strong> {{ school }}</p>
+                                                                    {% else %}
+                                                                    <p><strong>School:</strong> {{ school.name or 'N/A' }}</p>
+                                                                    {% if school.location %}
+                                                                    <p><strong>Location:</strong> {{ school.location }}</p>
+                                                                    {% endif %}
+                                                                    <p><strong>Dates of Attendance:</strong> {{ school.years or 'N/A' }}</p>
+                                                                    {% if school.graduation_date %}
+                                                                    <p><strong>Graduation Date:</strong> {{ school.graduation_date }}</p>
+                                                                    {% endif %}
+                                                                    {% endif %}
+                                                                </div>
+                                                                {% endfor %}
+                                                            {% else %}
+                                                                <p>No high school information available</p>
+                                                            {% endif %}
+                                                            
+                                                            <h6 class="mt-3">Seminary Information</h6>
+                                                            {% if application.seminary_info %}
+                                                                {% for school in application.seminary_info %}
+                                                                <div class="mb-3 p-2 border rounded">
+                                                                    {% if school is string %}
+                                                                    <p><strong>School:</strong> {{ school }}</p>
+                                                                    {% else %}
+                                                                    <p><strong>School:</strong> {{ school.name or 'N/A' }}</p>
+                                                                    {% if school.location %}
+                                                                    <p><strong>Location:</strong> {{ school.location }}</p>
+                                                                    {% endif %}
+                                                                    <p><strong>Dates of Attendance:</strong> {{ school.years or 'N/A' }}</p>
+                                                                    {% if school.degree %}
+                                                                    <p><strong>Degree Awarded:</strong> {{ school.degree }}</p>
+                                                                    {% endif %}
+                                                                    {% endif %}
+                                                                </div>
+                                                                {% endfor %}
+                                                            {% else %}
+                                                                <p>No seminary information available</p>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Learning Information -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#learningInfo{{ application.id }}">
+                                                    <i class="fas fa-book me-2"></i> Learning Information
+                                                </button>
+                                            </h2>
+                                            <div id="learningInfo{{ application.id }}" class="accordion-collapse collapse" 
+                                                 data-bs-parent="#applicationDetails{{ application.id }}">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <p><strong>Last Rebbe:</strong> {{ application.last_rebbe_name or 'N/A' }}</p>
+                                                            <p><strong>Rebbe Phone:</strong> {{ application.last_rebbe_phone or 'N/A' }}</p>
+                                                            <p><strong>Gemora Sedorim Daily:</strong> {{ application.gemora_sedorim_daily_count or 'N/A' }}</p>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <p><strong>Sedorim Length:</strong> {{ application.gemora_sedorim_length or 'N/A' }}</p>
+                                                            <p><strong>Learning Evaluation:</strong> {{ application.learning_evaluation or 'N/A' }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Medical Information -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#medicalInfo{{ application.id }}">
+                                                    <i class="fas fa-medkit me-2"></i> Medical Information
+                                                </button>
+                                            </h2>
+                                            <div id="medicalInfo{{ application.id }}" class="accordion-collapse collapse" 
+                                                 data-bs-parent="#applicationDetails{{ application.id }}">
+                                                <div class="accordion-body">
+                                                    <p><strong>Medical Conditions:</strong> {{ application.medical_conditions or 'N/A' }}</p>
+                                                    <p><strong>Insurance Company:</strong> {{ application.insurance_company or 'N/A' }}</p>
+                                                    <p><strong>Blood Type:</strong> {{ application.blood_type or 'N/A' }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Financial Information -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#financialInfo{{ application.id }}">
+                                                    <i class="fas fa-dollar-sign me-2"></i> Financial Information
+                                                </button>
+                                            </h2>
+                                            <div id="financialInfo{{ application.id }}" class="accordion-collapse collapse" 
+                                                 data-bs-parent="#applicationDetails{{ application.id }}">
+                                                <div class="accordion-body">
+                                                    <p><strong>Tuition Payment Status:</strong> {{ application.tuition_payment_status or 'N/A' }}</p>
+                                                    <p><strong>Amount Can Pay:</strong> ${{ application.amount_can_pay or '0' }}</p>
+                                                    <p><strong>Scholarship Amount Requested:</strong> ${{ application.scholarship_amount_requested or '0' }}</p>
+                                                    {% if application.financial_aid_explanation %}
+                                                    <p><strong>Financial Aid Explanation:</strong><br>
+                                                    {{ application.financial_aid_explanation }}</p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Dormitory & Meals Option -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#dormitoryInfo{{ application.id }}">
+                                                    <i class="fas fa-bed me-2"></i> Dormitory & Meals
+                                                </button>
+                                            </h2>
+                                            <div id="dormitoryInfo{{ application.id }}" class="accordion-collapse collapse" 
+                                                 data-bs-parent="#applicationDetails{{ application.id }}">
+                                                <div class="accordion-body">
+                                                    {% if application.dormitory_meals_option %}
+                                                    <div class="alert alert-info">
+                                                        <strong>Student's Request:</strong><br>
+                                                        {{ application.dormitory_meals_option }}
+                                                    </div>
+                                                    {% else %}
+                                                    <p class="text-muted">No dormitory or meals preference specified.</p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- History & Background -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#historyInfo{{ application.id }}">
+                                                    <i class="fas fa-history me-2"></i> History & Background
+                                                </button>
+                                            </h2>
+                                            <div id="historyInfo{{ application.id }}" class="accordion-collapse collapse" 
+                                                 data-bs-parent="#applicationDetails{{ application.id }}">
+                                                <div class="accordion-body">
+                                                    {% if application.past_jobs %}
+                                                    <p><strong>Past Jobs:</strong><br>
+                                                    {{ application.past_jobs }}</p>
+                                                    {% endif %}
+                                                    
+                                                    {% if application.summer_activities %}
+                                                    <p><strong>Summer Activities:</strong><br>
+                                                    {% if ' | ' in application.summer_activities %}
+                                                        {% for activity in application.summer_activities.split(' | ') %}
+                                                            {{ activity }}<br>
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        {{ application.summer_activities }}
+                                                    {% endif %}
+                                                    </p>
+                                                    {% endif %}
+                                                    
+                                                    {% if application.additional_info %}
+                                                    <p><strong>Additional Information:</strong><br>
+                                                    {{ application.additional_info }}</p>
+                                                    {% endif %}
+                                                    
+                                                    {% if not application.past_jobs and not application.summer_activities and not application.additional_info %}
+                                                    <p>No additional history or background information provided.</p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- File Attachments -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#attachmentsInfo{{ application.id }}">
+                                                    <i class="fas fa-paperclip me-2"></i> File Attachments
+                                                    {% if application.attachments.count() > 0 %}
+                                                    <span class="badge bg-info ms-2">{{ application.attachments.count() }} files</span>
+                                                    {% endif %}
+                                                </button>
+                                            </h2>
+                                            <div id="attachmentsInfo{{ application.id }}" class="accordion-collapse collapse">
+                                                <div class="accordion-body">
+                                                    {% if application.attachments.count() > 0 %}
+                                                        <div class="row">
+                                                            {% for attachment in application.attachments %}
+                                                            <div class="col-md-6 mb-3">
+                                                                <div class="card">
+                                                                    <div class="card-body">
+                                                                        <h6 class="card-title">
+                                                                            <i class="{{ attachment.file_type_icon }} text-primary"></i> {{ attachment.display_name }}
+                                                                            {% if attachment.is_viewable %}
+                                                                            <span class="badge bg-success ms-2">Viewable</span>
+                                                                            {% endif %}
+                                                                        </h6>
+                                                                        <p class="card-text">
+                                                                            <strong>Original File:</strong> {{ attachment.original_filename }}<br>
+                                                                            <strong>Size:</strong> {{ attachment.file_size_formatted }}<br>
+                                                                            {% if attachment.mime_type %}
+                                                                            <strong>Type:</strong> {{ attachment.mime_type }}<br>
+                                                                            {% endif %}
+                                                                            <strong>Download Status:</strong> 
+                                                                            {% if attachment.download_status == 'downloaded' %}
+                                                                                <span class="badge bg-success">Downloaded</span>
+                                                                            {% elif attachment.download_status == 'failed' %}
+                                                                                <span class="badge bg-danger">Failed</span>
+                                                                            {% else %}
+                                                                                <span class="badge bg-warning">Pending</span>
+                                                                            {% endif %}
+                                                                        </p>
+                                                                        {% if attachment.download_status == 'downloaded' and attachment.local_filename %}
+                                                                        <div class="btn-group" role="group">
+                                                                            {% if attachment.is_viewable %}
+                                                                            <a href="{{ url_for('main.view_attachment', filename=attachment.local_filename) }}" 
+                                                                               class="btn btn-sm btn-success" target="_blank"
+                                                                               title="View {{ attachment.original_filename }} in browser">
+                                                                                <i class="fas fa-eye"></i> View
+                                                                            </a>
+                                                                            {% endif %}
+                                                                            <a href="{{ url_for('main.serve_attachment', filename=attachment.local_filename) }}" 
+                                                                               class="btn btn-sm btn-primary" target="_blank"
+                                                                               title="Download {{ attachment.original_filename }}">
+                                                                                <i class="fas fa-download"></i> Download
+                                                                            </a>
+                                                                        </div>
+                                                                        {% endif %}
+                                                                        {% if attachment.original_url %}
+                                                                        <a href="{{ attachment.original_url }}" 
+                                                                           class="btn btn-sm btn-outline-secondary" target="_blank">
+                                                                            <i class="fas fa-external-link-alt"></i> Original URL
+                                                                        </a>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                    <div class="card-footer text-muted small">
+                                                                        {% if attachment.downloaded_at %}
+                                                                        Downloaded: {{ attachment.downloaded_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                                                                        {% endif %}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% else %}
+                                                        <p class="text-muted">No file attachments found.</p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Raw Data -->
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#rawData{{ application.id }}">
+                                                    <i class="fas fa-code me-2"></i> Raw Data
+                                                </button>
+                                            </h2>
+                                            <div id="rawData{{ application.id }}" class="accordion-collapse collapse" 
+                                                 data-bs-parent="#applicationDetails{{ application.id }}">
+                                                <div class="accordion-body">
+                                                    {% if application.custom_fields.raw_data %}
+                                                    <div class="row">
+                                                        {% for key, value in application.custom_fields.raw_data.items() %}
+                                                        <div class="col-md-6 mb-2">
+                                                            <small class="text-muted">Field {{ key }}:</small><br>
+                                                            <strong>{{ value }}</strong>
+                                                        </div>
+                                                        {% if loop.index % 4 == 0 %}</div><div class="row">{% endif %}
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% else %}
+                                                    <p>No raw form data available.</p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    
+                                </div>
+                                </div>
+                                <div class="modal-footer">
+                                    {% if application.status == 'Pending' or application.status == 'pending' %}
+                                    <button class="btn btn-success" onclick="updateStatus('{{ application.id }}', 'accepted')">
+                                        Accept
+                                    </button>
+                                    <button class="btn btn-danger" onclick="updateStatus('{{ application.id }}', 'rejected')">
+                                        Reject
+                                    </button>
+                                    {% endif %}
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Tile view -->
+    <div id="tileView" class="view-container" style="display: none;">
+        <div class="row">
+            {% for application in applications %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {{ application.student_name }}
+                            <span class="badge bg-{{ application.division_color }} ms-2">{{ application.division or 'YZA' }}</span>
+                        </h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ application.hebrew_name or application.custom_fields.hebrew_name or 'Hebrew name not provided' }}</h6>
+                        <p class="card-text">
+                            <strong>Phone:</strong> {{ application.phone_number or 'N/A' }}<br>
+                            <strong>Email:</strong> {{ application.email or 'N/A' }}<br>
+                            <strong>Submitted:</strong> {{ application.submitted_date }}<br>
+                            {% if application.dormitory_meals_option %}
+                            <strong>Dormitory/Meals:</strong> <small class="text-muted">{{ application.dormitory_meals_option[:50] }}{% if application.dormitory_meals_option|length > 50 %}...{% endif %}</small><br>
+                            {% endif %}
+                            <strong>Status:</strong> 
+                            <span class="badge bg-{{ application.status_color }}">
+                                {{ application.status }}
+                            </span>
+                        </p>
+                        <div class="btn-group">
+                            <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#applicationModal{{ application.id }}">
+                                View
+                            </button>
+                            {% if application.status == 'Pending' or application.status == 'pending' %}
+                            <button class="btn btn-success btn-sm" onclick="updateStatus('{{ application.id }}', 'accepted')">
+                                Accept
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="updateStatus('{{ application.id }}', 'rejected')">
+                                Reject
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+.view-container {
+    transition: opacity 0.3s ease-in-out;
+}
+.badge {
+    font-size: 0.9em;
+    padding: 0.5em 1em;
+}
+.badge.bg-warning {
+    color: #000;
+}
+.modal-dialog.modal-xl {
+    max-width: 1200px;
+}
+.accordion-button:not(.collapsed) {
+    background-color: #e7f1ff;
+    color: #0c63e4;
+}
+.accordion-button i {
+    width: 20px;
+}
+.modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Search enhancements */
+.search-highlight {
+    background-color: #fff3cd !important;
+    border-color: #ffc107 !important;
+    transition: all 0.3s ease;
+}
+
+.search-container {
+    position: relative;
+}
+
+.search-counter {
+    font-size: 0.75em;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 2px 6px;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.input-group input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    border-color: #007bff;
+}
+
+.search-results-info {
+    font-size: 0.9em;
+}
+
+/* Responsive search */
+@media (max-width: 768px) {
+    .search-container .btn {
+        padding: 0.375rem 0.5rem;
+    }
+    
+    .search-container .btn .fas {
+        margin-right: 0;
+    }
+    
+    .search-container .btn span {
+        display: none;
+    }
+    
+    .search-results-info {
+        margin-top: 0.5rem;
+    }
+}
+</style>
+
+<script>
+// Enhanced logging function for accept button clicks
+function logAcceptAction(message, data = null) {
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] ${message}`;
+    
+    // Log to browser console
+    console.log(logEntry, data || '');
+    
+    // Try to send to server for logging (optional)
+    try {
+        fetch('/api/log-accept-action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                timestamp: timestamp, 
+                message: message, 
+                data: data,
+                userAgent: navigator.userAgent,
+                url: window.location.href
+            })
+        }).catch(() => {}); // Silently fail if logging endpoint doesn't exist
+    } catch (e) {
+        // Ignore logging errors
+    }
+}
+
+function updateStatus(applicationId, status) {
+    // === COMPREHENSIVE ACCEPT BUTTON LOGGING ===
+    const startTime = performance.now();
+    
+    logAcceptAction(`🎯 ACCEPT BUTTON CLICKED!`, {
+        applicationId: applicationId,
+        requestedStatus: status,
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        url: window.location.href
+    });
+    
+    logAcceptAction(`📤 Step 1: Preparing to send POST request`, {
+        endpoint: `/api/applications/${applicationId}/status`,
+        method: 'POST',
+        contentType: 'application/json',
+        payload: { status: status }
+    });
+    
+    // Disable the button to prevent double-clicks
+    const buttons = document.querySelectorAll(`[onclick*="${applicationId}"]`);
+    buttons.forEach(btn => {
+        btn.disabled = true;
+        btn.innerHTML = btn.innerHTML.includes('Accept') ? 'Processing...' : btn.innerHTML;
+    });
+    
+    logAcceptAction(`🔒 Step 2: Disabled accept buttons to prevent double-click`);
+    
+    fetch(`/api/applications/${applicationId}/status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: status })
+    })
+    .then(response => {
+        const responseTime = performance.now() - startTime;
+        
+        logAcceptAction(`📨 Step 3: Received server response`, {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok,
+            responseTimeMs: Math.round(responseTime),
+            headers: Object.fromEntries(response.headers.entries())
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return response.json();
+    })
+    .then(data => {
+        const totalTime = performance.now() - startTime;
+        
+        logAcceptAction(`✅ Step 4: Successfully parsed JSON response`, {
+            responseData: data,
+            totalTimeMs: Math.round(totalTime)
+        });
+        
+        if (data.success) {
+            logAcceptAction(`🎉 Step 5: Accept operation successful!`, {
+                studentId: data.student_id || 'N/A',
+                redirectUrl: data.redirect_url || 'No redirect',
+                message: data.message || 'No message'
+            });
+            
+            if (data.redirect_url) {
+                logAcceptAction(`🔄 Step 6: Redirecting to student page`, {
+                    redirectUrl: data.redirect_url
+                });
+                window.location.href = data.redirect_url;
+            } else {
+                logAcceptAction(`🔄 Step 6: Reloading current page`);
+                window.location.reload();
+            }
+        } else {
+            logAcceptAction(`❌ Step 5: Accept operation failed`, {
+                error: data.message || 'Unknown error',
+                errorCode: data.error_code || 'N/A'
+            });
+            alert(`Error updating application status: ${data.message || 'Unknown error'}`);
+            
+            // Re-enable buttons on error
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.innerHTML = btn.innerHTML.replace('Processing...', 'Accept');
+            });
+        }
+    })
+    .catch(error => {
+        const totalTime = performance.now() - startTime;
+        
+        logAcceptAction(`💥 ACCEPT OPERATION FAILED`, {
+            error: error.message,
+            errorStack: error.stack,
+            totalTimeMs: Math.round(totalTime),
+            networkError: error.name === 'TypeError'
+        });
+        
+        console.error('Accept Error Details:', error);
+        alert(`Error updating application status: ${error.message}`);
+        
+        // Re-enable buttons on error
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.innerHTML = btn.innerHTML.replace('Processing...', 'Accept');
+        });
+    });
+}
+
+// View toggle functionality
+function setView(viewType) {
+    const listView = document.getElementById('listView');
+    const tileView = document.getElementById('tileView');
+    const listViewBtn = document.getElementById('listViewBtn');
+    const tileViewBtn = document.getElementById('tileViewBtn');
+    
+    if (viewType === 'list') {
+        listView.style.display = 'block';
+        tileView.style.display = 'none';
+        listViewBtn.classList.add('active');
+        tileViewBtn.classList.remove('active');
+        localStorage.setItem('applicationsViewType', 'list');
+    } else {
+        listView.style.display = 'none';
+        tileView.style.display = 'block';
+        listViewBtn.classList.remove('active');
+        tileViewBtn.classList.add('active');
+        localStorage.setItem('applicationsViewType', 'tile');
+    }
+}
+
+// Load saved view preference
+document.addEventListener('DOMContentLoaded', function() {
+    const savedView = localStorage.getItem('applicationsViewType') || 'list';
+    setView(savedView);
+    
+    // Log page load for debugging
+    logAcceptAction(`📄 Applications page loaded`, {
+        savedView: savedView,
+        totalApplications: document.querySelectorAll('[onclick*="updateStatus"]').length,
+        url: window.location.href
+    });
+    
+    // Search enhancements
+    const searchInput = document.querySelector('input[name="search"]');
+    const searchForm = searchInput.closest('form');
+    
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl+F or Cmd+F to focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
+        
+        // Escape to clear search when focused
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+            if (searchInput.value) {
+                searchInput.value = '';
+                searchForm.submit();
+            } else {
+                searchInput.blur();
+            }
+        }
+        
+        // Enter to search when focused
+        if (e.key === 'Enter' && document.activeElement === searchInput) {
+            searchForm.submit();
+        }
+    });
+    
+    // Auto-focus search if there's a search query
+    if (searchInput.value.trim()) {
+        // Highlight the search input to indicate active search
+        searchInput.classList.add('search-highlight');
+    }
+    
+    // Add search input validation and trimming
+    searchForm.addEventListener('submit', function(e) {
+        const searchValue = searchInput.value.trim();
+        if (searchValue !== searchInput.value) {
+            searchInput.value = searchValue;
+        }
+        // Don't prevent submission, just clean up the input
+    });
+    
+    // Remove highlight when input changes
+    searchInput.addEventListener('input', function() {
+        if (this.value.trim() === '') {
+            this.classList.remove('search-highlight');
+        } else {
+            this.classList.add('search-highlight');
+        }
+    });
+    
+    // Add tooltip to search input
+    searchInput.setAttribute('title', 'Tip: Press Ctrl+F to quickly focus this search box, Escape to clear');
+});
+</script>
+{% endblock %} 

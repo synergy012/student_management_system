@@ -1,43 +1,96 @@
-# Python virtual environment
-venv/
-env/
-ENV/
+# Environment variables
+.env
+.env.*
 
-# Python cache files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# SQLite database files
+# Virtual Environment
+venv/
+ENV/
+env/
+
+# Database
 *.db
 *.sqlite3
 
-# Environment variables
-.env
-.env.local
-
-# IDE specific files
-.vscode/
+# IDE
 .idea/
+.vscode/
 *.swp
 *.swo
+.DS_Store
 
 # Logs
 *.log
+logs/
 
-# Upload directory
-uploads/
+# Migration files
+migrations/
 
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
-
-# Unit test / coverage reports
+# Test coverage
 htmlcov/
 .tox/
 .coverage
 .coverage.*
 .cache
+nosetests.xml
 coverage.xml
-*.cover 
+*.cover
+.hypothesis/
+
+# Upload directory
+uploads/
+
+# Distribution / packaging
+*.egg-info/
+
+# Unit test / coverage reports
+*.cover
+
+# Test and debug files
+test_*.py
+check_*.py
+debug_*.py
+fix_*.py
+create_*.py
+migrate_*.py
+analyze_*.py
+add_*.py
+clear_*.py
+force_*.py
+restart_*.py
+quick_*.py
+setup.py
+
+# Temporary scripts and logs
+*.md
+*.bat
+run_*.py
+ngrok.exe
+ngrok.zip
+
+# Instance directory with development database
+instance/
+
+# Downloaded attachments (should be backed up separately)
+attachments/ 

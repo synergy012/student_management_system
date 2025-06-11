@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Students{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Students</h1>
+        
+        <div class="d-flex gap-2">
+            <!-- Create Student button - only show if user has edit_students permission -->
+            {% if current_user.is_authenticated and current_user.has_permission('edit_students') %}
+            <a href="{{ url_for('main.create_student') }}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Create Student
+            </a>
+            {% endif %}
+            
+            <!-- View toggle -->
+            <div class="btn-group">
+                <button class="btn btn-outline-primary" onclick="setView('list')" id="listViewBtn">
+                    <i class="fas fa-list"></i> List
+                </button>
+                <button class="btn btn-outline-primary" onclick="setView('tile')" id="tileViewBtn">
+                    <i class="fas fa-th-large"></i> Tiles
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- List view -->
+    <div id="listView" class="view-container">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Hebrew Name</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Financial Aid</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('main.student_details', student_id=student.id) }}">
+                                {{ student.full_name }}
+                            </a>
+                        </td>
+                        <td>{{ student.hebrew_name }}</td>
+                        <td>{{ student.phone_number }}</td>
+                        <td>
+                            <span class="badge badge-{{ student.status_color }}">
+                                {{ student.status }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if student.financial_aid %}
+                            <span class="badge badge-info">
+                                {{ student.financial_aid.status }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('main.student_details', student_id=student.id) }}" class="btn btn-info btn-sm">
+                                View
+                            </a>
+                            <a href="{{ url_for('main.edit_student', student_id=student.id) }}" class="btn btn-primary btn-sm">
+                                Edit
+                            </a>
+                            {% if current_user.is_authenticated and current_user.has_permission('process_applications') %}
+                            <button class="btn btn-warning btn-sm" onclick="unacceptStudent('{{ student.id }}', '{{ student.full_name }}')">
+                                Unaccept
+                            </button>
+                            {% endif %}
+                            <button class="btn btn-danger btn-sm" onclick="deleteStudent('{{ student.id }}')">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Tile view -->
+    <div id="tileView" class="view-container" style="display: none;">
+        <div class="row">
+            {% for student in students %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{{ url_for('main.student_details', student_id=student.id) }}" class="text-decoration-none">
+                                {{ student.full_name }}
+                            </a>
+                        </h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ student.hebrew_name }}</h6>
+                        <p class="card-text">
+                            <strong>Phone:</strong> {{ student.phone_number }}<br>
+                            <strong>Status:</strong> 
+                            <span class="badge badge-{{ student.status_color }}">
+                                {{ student.status }}
+                            </span><br>
+                            {% if student.financial_aid %}
+                            <strong>Financial Aid:</strong>
+                            <span class="badge badge-info">
+                                {{ student.financial_aid.status }}
+                            </span>
+                            {% endif %}
+                        </p>
+                        <div class="btn-group">
+                            <a href="{{ url_for('main.student_details', student_id=student.id) }}" class="btn btn-info btn-sm">
+                                View
+                            </a>
+                            <a href="{{ url_for('main.edit_student', student_id=student.id) }}" class="btn btn-primary btn-sm">
+                                Edit
+                            </a>
+                            {% if current_user.is_authenticated and current_user.has_permission('process_applications') %}
+                            <button class="btn btn-warning btn-sm" onclick="unacceptStudent('{{ student.id }}', '{{ student.full_name }}')">
+                                Unaccept
+                            </button>
+                            {% endif %}
+                            <button class="btn btn-danger btn-sm" onclick="deleteStudent('{{ student.id }}')">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+.view-container {
+    transition: opacity 0.3s ease-in-out;
+}
+</style>
+
+<script>
+function deleteStudent(studentId) {
+    if (confirm('Are you sure you want to delete this student?')) {
+        fetch(`/api/students/${studentId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Error deleting student');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting student');
+        });
+    }
+}
+
+function unacceptStudent(studentId, studentName) {
+    if (confirm(`Are you sure you want to unaccept ${studentName}? This will:\n\n• Remove them from the students list\n• Change their application status back to "Pending"\n• Allow them to be processed again`)) {
+        
+        // Disable the button to prevent double-clicks
+        const unacceptButtons = document.querySelectorAll(`button[onclick*="${studentId}"]`);
+        unacceptButtons.forEach(btn => {
+            if (btn.textContent.trim() === 'Unaccept') {
+                btn.disabled = true;
+                btn.innerHTML = 'Processing...';
+            }
+        });
+        
+        fetch(`/api/students/${studentId}/unaccept`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`${studentName} has been unaccepted successfully. Their application is now pending again.`);
+                window.location.reload();
+            } else {
+                alert(`Error unaccepting student: ${data.message}`);
+                // Re-enable buttons on error
+                unacceptButtons.forEach(btn => {
+                    if (btn.textContent.trim() === 'Processing...') {
+                        btn.disabled = false;
+                        btn.innerHTML = 'Unaccept';
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error unaccepting student');
+            // Re-enable buttons on error
+            unacceptButtons.forEach(btn => {
+                if (btn.textContent.trim() === 'Processing...') {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Unaccept';
+                }
+            });
+        });
+    }
+}
+
+// View toggle functionality
+function setView(viewType) {
+    const listView = document.getElementById('listView');
+    const tileView = document.getElementById('tileView');
+    const listViewBtn = document.getElementById('listViewBtn');
+    const tileViewBtn = document.getElementById('tileViewBtn');
+    
+    if (viewType === 'list') {
+        listView.style.display = 'block';
+        tileView.style.display = 'none';
+        listViewBtn.classList.add('active');
+        tileViewBtn.classList.remove('active');
+        localStorage.setItem('studentsViewType', 'list');
+    } else {
+        listView.style.display = 'none';
+        tileView.style.display = 'block';
+        listViewBtn.classList.remove('active');
+        tileViewBtn.classList.add('active');
+        localStorage.setItem('studentsViewType', 'tile');
+    }
+}
+
+// Load saved view preference
+document.addEventListener('DOMContentLoaded', function() {
+    const savedView = localStorage.getItem('studentsViewType') || 'list';
+    setView(savedView);
+});
+</script>
+{% endblock %} 
