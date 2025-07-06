@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+
+{% block title %}Tuition Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">Tuition Settings</h1>
+                    <p class="text-muted">Configure tuition components by division</p>
+                </div>
+                <div>
+                    <select class="form-select" id="academicYearSelector" onchange="changeAcademicYear()" style="width: auto;">
+                        {% for year in academic_years %}
+                        <option value="{{ year.id }}" {% if year.id == active_year.id %}selected{% endif %}>
+                            {{ year.year_label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Division Tabs -->
+            <ul class="nav nav-tabs mb-4" id="divisionTabs">
+                <li class="nav-item">
+                    <button class="nav-link active" id="yza-tab" data-bs-toggle="tab" data-bs-target="#yza-content" type="button" style="color: #0d6efd !important; background-color: white !important; border: 1px solid #dee2e6 !important;">
+                        YZA
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="yoh-tab" data-bs-toggle="tab" data-bs-target="#yoh-content" type="button" style="color: #0d6efd !important; background-color: transparent !important; border: 1px solid transparent !important;">
+                        YOH
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="kollel-tab" data-bs-toggle="tab" data-bs-target="#kollel-content" type="button" style="color: #0d6efd !important; background-color: transparent !important; border: 1px solid transparent !important;">
+                        KOLLEL
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="divisionTabContent">
+                <!-- YZA Tab -->
+                <div class="tab-pane fade show active" id="yza-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">YZA Tuition Components</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Component</th>
+                                            <th>Type</th>
+                                            <th>Default Amount</th>
+                                            <th>Min/Max</th>
+                                            <th>Required</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="yza-components">
+                                        <!-- Components loaded via JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- YOH Tab -->
+                <div class="tab-pane fade" id="yoh-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">YOH Tuition Components</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Component</th>
+                                            <th>Type</th>
+                                            <th>Default Amount</th>
+                                            <th>Min/Max</th>
+                                            <th>Required</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="yoh-components">
+                                        <!-- Components loaded via JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KOLLEL Tab -->
+                <div class="tab-pane fade" id="kollel-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">KOLLEL Tuition Components</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>KOLLEL Division:</strong> This division does not require tuition payments. 
+                                KOLLEL students receive stipends instead of paying tuition. 
+                                Tuition components are not applicable for this division.
+                            </div>
+                            <div class="text-center text-muted">
+                                <i class="fas fa-graduation-cap fa-3x mb-3"></i>
+                                <p>No tuition components configured for KOLLEL division.</p>
+                                <small>KOLLEL students are managed through the <a href="/kollel" class="text-decoration-none">Kollel Dashboard</a> for stipend payments.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+
+        </div>
+    </div>
+</div>
+
+<!-- Edit Component Modal -->
+<div class="modal fade" id="editComponentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Tuition Component</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editComponentForm">
+                    <input type="hidden" id="editDivision">
+                    <input type="hidden" id="editComponentId">
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Component Name</label>
+                                <input type="text" class="form-control" id="editComponentName" readonly>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Component Type</label>
+                                <input type="text" class="form-control" id="editComponentType" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Default Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="editDefaultAmount" step="0.01" min="0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Minimum Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="editMinAmount" step="0.01" min="0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Maximum Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="editMaxAmount" step="0.01" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="editIsRequired">
+                                <label class="form-check-label" for="editIsRequired">
+                                    Required Component
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="editIsStudentEditable">
+                                <label class="form-check-label" for="editIsStudentEditable">
+                                    Student Editable
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" id="editNotes" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveComponent()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentAcademicYear = '{{ active_year.id if active_year else "" }}';
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadAllDivisionComponents();
+});
+
+function changeAcademicYear() {
+    const yearId = document.getElementById('academicYearSelector').value;
+    currentAcademicYear = yearId;
+    loadAllDivisionComponents();
+}
+
+function loadAllDivisionComponents() {
+    // Only load components for divisions that require tuition
+    ['YZA', 'YOH'].forEach(division => {
+        loadDivisionComponents(division);
+    });
+    // KOLLEL doesn't require tuition, so skip loading components
+}
+
+function loadDivisionComponents(division) {
+    const url = `/api/divisions/${division}/tuition-components?academic_year_id=${currentAcademicYear}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderDivisionComponents(division, data.components);
+            } else {
+                console.error(`Error loading ${division} components:`, data.error);
+            }
+        })
+        .catch(error => {
+            console.error(`Error loading ${division} components:`, error);
+        });
+}
+
+function renderDivisionComponents(division, components) {
+    const tbody = document.getElementById(`${division.toLowerCase()}-components`);
+    tbody.innerHTML = '';
+    
+    if (components.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No components configured</td></tr>';
+        return;
+    }
+    
+    components.forEach(comp => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <strong>${comp.name}</strong>
+                <br>
+                <small class="text-muted">${comp.description || ''}</small>
+            </td>
+            <td>
+                <span class="badge bg-${getTypeBadgeColor(comp.component_type)}">${comp.component_type}</span>
+            </td>
+            <td>
+                <strong>$${comp.default_amount.toFixed(2)}</strong>
+            </td>
+            <td>
+                <small>
+                    Min: $${comp.minimum_amount.toFixed(2)}
+                    ${comp.maximum_amount ? '<br>Max: $' + comp.maximum_amount.toFixed(2) : '<br>Max: No limit'}
+                </small>
+            </td>
+            <td>
+                ${comp.is_required ? '<i class="fas fa-check text-success"></i>' : '<i class="fas fa-times text-muted"></i>'}
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="editDivisionComponent('${division}', ${comp.id})" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function getTypeBadgeColor(type) {
+    const colors = {
+        'fee': 'warning',
+        'tuition': 'primary',
+        'room': 'info',
+        'board': 'success',
+        'other': 'secondary'
+    };
+    return colors[type] || 'secondary';
+}
+
+function editDivisionComponent(division, componentId) {
+    // Load current component data
+    const url = `/api/divisions/${division}/tuition-components?academic_year_id=${currentAcademicYear}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const component = data.components.find(c => c.id === componentId);
+                if (component) {
+                    populateEditModal(division, component);
+                    const modal = new bootstrap.Modal(document.getElementById('editComponentModal'));
+                    modal.show();
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading component:', error);
+            alert('Error loading component data');
+        });
+}
+
+function populateEditModal(division, component) {
+    document.getElementById('editDivision').value = division;
+    document.getElementById('editComponentId').value = component.id;
+    document.getElementById('editComponentName').value = component.name;
+    document.getElementById('editComponentType').value = component.component_type;
+    document.getElementById('editDefaultAmount').value = component.default_amount;
+    document.getElementById('editMinAmount').value = component.minimum_amount;
+    document.getElementById('editMaxAmount').value = component.maximum_amount || '';
+    document.getElementById('editIsRequired').checked = component.is_required;
+    document.getElementById('editIsStudentEditable').checked = component.is_student_editable;
+    document.getElementById('editNotes').value = component.notes || '';
+}
+
+function saveComponent() {
+    const division = document.getElementById('editDivision').value;
+    const componentId = document.getElementById('editComponentId').value;
+    
+    const data = {
+        academic_year_id: currentAcademicYear,
+        default_amount: parseFloat(document.getElementById('editDefaultAmount').value),
+        minimum_amount: parseFloat(document.getElementById('editMinAmount').value),
+        maximum_amount: document.getElementById('editMaxAmount').value ? parseFloat(document.getElementById('editMaxAmount').value) : null,
+        is_required: document.getElementById('editIsRequired').checked,
+        is_student_editable: document.getElementById('editIsStudentEditable').checked,
+        notes: document.getElementById('editNotes').value
+    };
+    
+    const url = `/api/divisions/${division}/tuition-components/${componentId}`;
+    
+    fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editComponentModal'));
+            modal.hide();
+            
+            // Reload components
+            loadDivisionComponents(division);
+            
+            // Show success message
+            alert('Component updated successfully');
+        } else {
+            alert('Error updating component: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving component:', error);
+        alert('Error saving component');
+    });
+}
+
+
+</script>
+{% endblock %} 

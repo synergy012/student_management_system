@@ -1,0 +1,755 @@
+{% extends "base.html" %}
+
+{% block title %}Kollel Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-scroll text-primary"></i>
+                        Kollel Dashboard
+                    </h1>
+                    <p class="text-muted mb-0">Monthly stipend management and payment tracking</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('kollel.kollel_students') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-users"></i> Manage Students
+                    </a>
+                    <a href="{{ url_for('kollel.manage_breaks') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-calendar-times"></i> Manage Breaks
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Month/Year Selection -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-calendar-alt text-info"></i>
+                                Select Payment Period
+                            </h5>
+                        </div>
+                        <div class="col-md-6">
+                            <form method="get" class="d-flex gap-2" id="monthYearForm">
+                                <select name="month" class="form-select" id="monthSelect">
+                                    {% set month_names = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+                                                         'July', 'August', 'September', 'October', 'November', 'December'] %}
+                                    {% for month_num in school_year_months %}
+                                        <option value="{{ month_num }}" {% if month_num == selected_month %}selected{% endif %}>
+                                            {{ month_names[month_num] }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <select name="school_year" class="form-select" id="schoolYearSelect">
+                                    {% for sy in available_school_years %}
+                                        <option value="{{ sy.year }}" {% if sy.year == selected_school_year %}selected{% endif %}>
+                                            {{ sy.label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-primary">Load</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="mt-2 d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle text-info"></i>
+                            Academic Year: 
+                            <select class="form-select form-select-sm d-inline-block ms-1" style="width: auto;" 
+                                    id="kollelAcademicYearSelector" onchange="changeKollelAcademicYear()">
+                                {% for year in available_academic_years %}
+                                <option value="{{ year.id }}" {% if year.is_selected %}selected{% endif %}>
+                                    {{ year.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <span class="ms-2">(September to August)</span>
+                        </small>
+                        <button class="btn btn-sm btn-outline-info ms-2" onclick="applyBreaks()">
+                            <i class="fas fa-sync-alt"></i> Apply Break Credits
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table text-success"></i>
+                        Monthly Stipend Tracking - 
+                        {% set month_names = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+                                             'July', 'August', 'September', 'October', 'November', 'December'] %}
+                        {{ month_names[selected_month] }} {{ selected_year }}
+                        <small class="text-muted">(Academic Year {{ selected_school_year }}-{{ selected_school_year + 1 }})</small>
+                    </h5>
+                    <button class="btn btn-success" onclick="saveAllChanges()">
+                        <i class="fas fa-save"></i> Save All Changes
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    {% if student_records %}
+                    <div class="table-responsive">
+                        <style>
+                            .kollel-table .form-control, .kollel-table .form-select {
+                                font-size: 0.75rem;
+                                padding: 0.25rem 0.375rem;
+                                height: auto;
+                            }
+                            .kollel-table th, .kollel-table td {
+                                padding: 0.5rem 0.375rem;
+                                vertical-align: middle;
+                            }
+                            .kollel-table .student-row-1,
+                            .kollel-table .student-row-2 {
+                                background-color: #f8f9fa;
+                            }
+                            .kollel-table .student-row-1 {
+                                border-bottom: 1px solid #dee2e6;
+                            }
+                            .kollel-table .student-row-2 {
+                                border-bottom: 2px solid #198754;
+                            }
+                            .kollel-table .form-control[readonly] {
+                                background-color: #e9ecef;
+                                color: #495057;
+                            }
+                            .kollel-table .total-credits,
+                            .kollel-table .incentive-amount,
+                            .kollel-table .base-plus-incentive {
+                                background-color: #f0f0f0 !important;
+                                font-weight: 500;
+                            }
+                            .kollel-table .form-label-sm {
+                                font-size: 0.65rem;
+                                color: #6c757d;
+                                margin-bottom: 0.125rem;
+                                font-weight: 500;
+                            }
+                            .kollel-table .form-control-sm, .kollel-table .form-select-sm {
+                                font-size: 0.75rem;
+                                padding: 0.25rem 0.375rem;
+                            }
+                            .kollel-table .input-group-sm .form-control {
+                                font-size: 0.75rem;
+                            }
+                            .kollel-table .btn-sm {
+                                padding: 0.25rem 0.5rem;
+                                font-size: 0.7rem;
+                            }
+                            .kollel-table .btn-sm i {
+                                font-size: 0.8rem;
+                            }
+                        </style>
+                        <table class="table mb-0 kollel-table" id="stipendTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 140px; font-size: 0.85rem;">Student</th>
+                                    <th style="width: 500px; font-size: 0.85rem; text-align: center;">Inputs</th>
+                                    <th style="width: 130px; font-size: 0.85rem; text-align: center;">Final Calculation</th>
+                                    <th style="width: 80px; font-size: 0.8rem; text-align: center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in student_records %}
+                                <!-- First row: Student info, Credits & Incentives, Final Calculation -->
+                                <tr class="student-row-1" data-student-id="{{ record.student.id }}" 
+                                    data-stipend-id="{{ record.stipend.id }}"
+                                    data-student-name="{{ record.student.student_name }}">
+                                    
+                                    <!-- Student Name (spans both rows) -->
+                                    <td rowspan="2" style="vertical-align: middle;">
+                                        <div class="fw-semibold" style="font-size: 1.1rem;">{{ record.student.student_name }}</div>
+                                        <small class="text-muted" style="font-size: 0.7rem;">
+                                            Base: ${{ "%.0f"|format(record.stipend.base_stipend_amount) }}
+                                            {% if record.kollel_student.is_kollel_elyon %}
+                                                <span class="badge bg-warning text-dark" style="font-size: 0.6rem; margin-left: 0.25rem;">KE</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    
+                                    <!-- Credits & Incentives Section -->
+                                    <td>
+                                        <div class="row g-1">
+                                            <div class="col-2">
+                                                <label class="form-label-sm">Actual Credits</label>
+                                                <input type="number" class="form-control form-control-sm" 
+                                                       step="0.25" min="0" max="50"
+                                                       value="{{ record.stipend.actual_credits_earned or 0 }}"
+                                                       data-field="actual_credits_earned"
+                                                       onchange="updateCalculations(this)">
+                                            </div>
+                                            <div class="col-2">
+                                                <label class="form-label-sm">Pro-rated Credits</label>
+                                                <input type="number" class="form-control form-control-sm" 
+                                                       step="0.25" min="0" max="20"
+                                                       value="{{ record.stipend.prorated_credits or 0 }}"
+                                                       data-field="prorated_credits"
+                                                       {% if not record.stipend.credits_override %}readonly{% endif %}>
+                                            </div>
+                                            <div class="col-2">
+                                                <label class="form-label-sm">Total Credits</label>
+                                                <input type="number" class="form-control form-control-sm total-credits" 
+                                                       value="{{ record.stipend.total_credits or 0 }}" readonly
+                                                       style="background-color: #f0f0f0; font-weight: 500;">
+                                            </div>
+                                            <div class="col-2">
+                                                <label class="form-label-sm">Base Pay</label>
+                                                <select class="form-select form-select-sm" data-field="base_stipend_amount" onchange="updateCalculations(this)">
+                                                    <option value="0" {% if record.stipend.base_stipend_amount == 0 %}selected{% endif %}>$0</option>
+                                                    <option value="500" {% if record.stipend.base_stipend_amount == 500 %}selected{% endif %}>$500</option>
+                                                    <option value="600" {% if record.stipend.base_stipend_amount == 600 %}selected{% endif %}>$600</option>
+                                                    <option value="700" {% if record.stipend.base_stipend_amount == 700 %}selected{% endif %}>$700</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-2">
+                                                <label class="form-label-sm">Incentive</label>
+                                                <input type="number" class="form-control form-control-sm incentive-amount" 
+                                                       value="{{ record.stipend.incentive_amount or 0 }}" readonly
+                                                       style="background-color: #f0f0f0; font-weight: 500;">
+                                            </div>
+                                            <div class="col-2">
+                                                <label class="form-label-sm">Subtotal</label>
+                                                <input type="number" class="form-control form-control-sm base-plus-incentive fw-semibold" 
+                                                       value="{{ record.stipend.base_plus_incentive or 0 }}" readonly
+                                                       style="background-color: #e3f2fd; font-weight: 600; color: #1565c0;">
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- Final Calculation Section (spans both rows) -->
+                                    <td rowspan="2" style="vertical-align: middle;">
+                                        <div class="row g-1">
+                                            <div class="col-12 mb-2">
+                                                <label class="form-label-sm">Special Pay</label>
+                                                <input type="number" class="form-control form-control-sm" 
+                                                       step="5" min="0"
+                                                       value="{{ record.stipend.special_pay or 0 }}"
+                                                       data-field="special_pay"
+                                                       onchange="updateCalculations(this)"
+                                                       placeholder="Work study, etc.">
+                                            </div>
+                                            <div class="col-12 mb-2">
+                                                <label class="form-label-sm">Final Amount</label>
+                                                <input type="number" class="form-control form-control-sm fw-bold final-amount" 
+                                                       value="{{ record.stipend.final_amount or 0 }}" 
+                                                       readonly style="background-color: #d4edda; font-weight: bold; color: #155724;">
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label-sm">Status</label>
+                                                <select class="form-select form-select-sm" data-field="payment_status" onchange="updateCalculations(this)">
+                                                    <option value="Pending" {% if record.stipend.payment_status == 'Pending' %}selected{% endif %}>Pending</option>
+                                                    <option value="Paid" {% if record.stipend.payment_status == 'Paid' %}selected{% endif %}>Paid</option>
+                                                    <option value="Cancelled" {% if record.stipend.payment_status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- Actions (spans both rows) -->
+                                    <td rowspan="2" style="vertical-align: middle;">
+                                        <div class="d-flex flex-column gap-1">
+                                            <a href="{{ url_for('kollel.edit_kollel_student', kollel_student_id=record.kollel_student.id) }}" 
+                                               class="btn btn-outline-warning btn-sm" style="padding: 0.25rem; font-size: 0.7rem;" title="Edit Student">
+                                                <i class="fas fa-edit fa-xs"></i>
+                                            </a>
+                                            <button class="btn btn-outline-secondary btn-sm" style="padding: 0.25rem; font-size: 0.7rem;" 
+                                                    title="Override Pro-rated Credits" 
+                                                    onclick="toggleCreditsOverride(this)"
+                                                    data-bs-toggle="button"
+                                                    {% if record.stipend.credits_override %}aria-pressed="true"{% endif %}>
+                                                <i class="fas fa-unlock fa-xs"></i>
+                                            </button>
+                                            <button class="btn btn-outline-info btn-sm" style="padding: 0.25rem; font-size: 0.7rem;" 
+                                                    onclick="viewHistory({{ record.kollel_student.id }})" title="View History">
+                                                <i class="fas fa-history fa-xs"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Second row: Bonuses -->
+                                <tr class="student-row-2" data-student-id="{{ record.student.id }}" 
+                                    data-stipend-id="{{ record.stipend.id }}"
+                                    data-student-name="{{ record.student.student_name }}">
+                                    
+                                    <!-- Student column spanned from first row -->
+                                    
+                                    <!-- Bonuses & Deductions Section -->
+                                    <td>
+                                        <div class="row g-1">
+                                            <div class="col">
+                                                <label class="form-label-sm">KE Bonus</label>
+                                                <div class="input-group input-group-sm">
+                                                    <input type="number" class="form-control" 
+                                                           step="100" min="0" max="1000"
+                                                           value="{{ record.stipend.kollel_elyon_bonus or 0 }}"
+                                                           data-field="kollel_elyon_bonus"
+                                                           onchange="updateCalculations(this)"
+                                                           {% if record.kollel_student.is_kollel_elyon %}
+                                                           style="border-left: 3px solid #ffc107;"
+                                                           {% endif %}>
+                                                    {% if record.kollel_student.is_kollel_elyon %}
+                                                    <span class="input-group-text bg-warning text-dark">
+                                                        <i class="fas fa-star fa-xs"></i>
+                                                    </span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <label class="form-label-sm">Retzufin</label>
+                                                <input type="number" class="form-control form-control-sm" 
+                                                       step="25" min="0" max="500"
+                                                       value="{{ record.stipend.retufin_pay or 0 }}"
+                                                       data-field="retufin_pay"
+                                                       onchange="updateCalculations(this)">
+                                            </div>
+                                            <div class="col">
+                                                <label class="form-label-sm">Mussar</label>
+                                                <select class="form-select form-select-sm" 
+                                                        data-field="mussar_chabura_count"
+                                                        onchange="updateCalculations(this)">
+                                                    <option value="0" {% if (record.stipend.mussar_chabura_pay or 0) == 0 %}selected{% endif %}>0 ($0)</option>
+                                                    <option value="1" {% if (record.stipend.mussar_chabura_pay or 0) == 25 %}selected{% endif %}>1 ($25)</option>
+                                                    <option value="2" {% if (record.stipend.mussar_chabura_pay or 0) == 50 %}selected{% endif %}>2 ($50)</option>
+                                                    <option value="3" {% if (record.stipend.mussar_chabura_pay or 0) == 75 %}selected{% endif %}>3 ($75)</option>
+                                                </select>
+                                            </div>
+                                            <div class="col">
+                                                <label class="form-label-sm">Iyun</label>
+                                                <select class="form-select form-select-sm" 
+                                                        data-field="iyun_chabura_count"
+                                                        onchange="updateCalculations(this)">
+                                                    <option value="0" {% if (record.stipend.iyun_chabura_pay or 0) == 0 %}selected{% endif %}>0 ($0)</option>
+                                                    <option value="1" {% if (record.stipend.iyun_chabura_pay or 0) == 100 %}selected{% endif %}>1 ($100)</option>
+                                                    <option value="2" {% if (record.stipend.iyun_chabura_pay or 0) == 200 %}selected{% endif %}>2 ($200)</option>
+                                                    <option value="3" {% if (record.stipend.iyun_chabura_pay or 0) == 300 %}selected{% endif %}>3 ($300)</option>
+                                                </select>
+                                            </div>
+                                            <div class="col">
+                                                <label class="form-label-sm">Deductions</label>
+                                                <input type="number" class="form-control form-control-sm" 
+                                                       step="5" min="0"
+                                                       value="{{ (record.stipend.missed_time_deduction or 0) + (record.stipend.other_deductions or 0) }}"
+                                                       data-field="total_deductions"
+                                                       onchange="updateCalculations(this)"
+                                                       style="border-left: 3px solid #dc3545;">
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- Final Calculation column spanned from first row -->
+                                    <!-- Actions column spanned from first row -->
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No Kollel Students Found</h5>
+                        <p class="text-muted">Add students to the Kollel program to begin managing stipends.</p>
+                        <a href="{{ url_for('kollel.kollel_students') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Kollel Students
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if student_records %}
+                <div class="card-footer">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i>
+                                Changes are saved automatically when you modify values.
+                                Incentive calculations: Must earn 10+ credits for incentive. 10 credits = $200, then $25 per additional credit.<br>
+                                <i class="fas fa-star text-warning"></i> KE Bonus auto-populated for Kollel Elyon students ($1,000).
+                                <i class="fas fa-check text-success"></i> Mussar Chabura: $25 per session (all students eligible).
+                                <i class="fas fa-graduation-cap text-info"></i> Iyun Chabura: $100 per session.
+                                <i class="fas fa-bookmark text-primary"></i> Retzufin pay (all students eligible).
+                                For $0 base pay: incentive capped at $500. For others: base + incentive capped at $1,000.
+                            </small>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <strong>Total Monthly Amount: 
+                                <span class="text-success" id="totalAmount">
+                                    ${{ student_records|sum(attribute='stipend.final_amount')|default(0)|round(2) }}
+                                </span>
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Notes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <textarea class="form-control" id="notesTextarea" rows="4" placeholder="Enter notes about this stipend record..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveNotes()">Save Notes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentStipendId = null;
+
+// Auto-submit form when month/school year changes
+document.getElementById('monthSelect').addEventListener('change', function() {
+    document.getElementById('monthYearForm').submit();
+});
+document.getElementById('schoolYearSelect').addEventListener('change', function() {
+    document.getElementById('monthYearForm').submit();
+});
+
+// Calculate incentive pay based on credits - must earn at least 10 credits to get any incentive
+function calculateIncentive(totalCredits) {
+    if (totalCredits < 10) {
+        return 0;  // No incentive if under 10 credits
+    } else if (totalCredits === 10) {
+        return 200;  // Base incentive for exactly 10 credits
+    } else {
+        return 200 + ((totalCredits - 10) * 25);  // Base + additional credits
+    }
+}
+
+// Update calculations for a row
+function updateCalculations(element) {
+    const row = element.closest('tr');
+    const studentId = row.dataset.studentId;
+    
+    // Find both rows for this student
+    const row1 = document.querySelector(`tr.student-row-1[data-student-id="${studentId}"]`);
+    const row2 = document.querySelector(`tr.student-row-2[data-student-id="${studentId}"]`);
+    
+    if (!row1 || !row2) return;
+    
+    // Get values from first row (credits and base calculations)
+    const actualCredits = parseFloat(row1.querySelector('[data-field="actual_credits_earned"]').value) || 0;
+    const proratedCredits = parseFloat(row1.querySelector('[data-field="prorated_credits"]').value) || 0;
+    const baseStipend = parseFloat(row1.querySelector('[data-field="base_stipend_amount"]').value) || 0;
+    
+    // Calculate total credits
+    const totalCredits = actualCredits + proratedCredits;
+    row1.querySelector('.total-credits').value = totalCredits.toFixed(2);
+    
+    // Calculate incentive
+    const incentive = calculateIncentive(totalCredits);
+    row1.querySelector('.incentive-amount').value = incentive.toFixed(2);
+    
+    // Calculate base + incentive with different caps based on base pay
+    let basePlusIncentive;
+    if (baseStipend == 0) {
+        // For 0 base pay students, incentive is capped at 500
+        basePlusIncentive = Math.min(incentive, 500);
+    } else {
+        // For other students, base + incentive is capped at 1000
+        basePlusIncentive = Math.min(baseStipend + incentive, 1000);
+    }
+    row1.querySelector('.base-plus-incentive').value = basePlusIncentive.toFixed(2);
+    
+    // Get bonus values from second row
+    const kelyon = parseFloat(row2.querySelector('[data-field="kollel_elyon_bonus"]').value) || 0;
+    const retufin = parseFloat(row2.querySelector('[data-field="retufin_pay"]').value) || 0;
+    
+    // Calculate amounts from dropdown counts in second row
+    const mussarChaburaCount = parseInt(row2.querySelector('[data-field="mussar_chabura_count"]').value) || 0;
+    const iyunChaburaCount = parseInt(row2.querySelector('[data-field="iyun_chabura_count"]').value) || 0;
+    const mussar = mussarChaburaCount * 25; // $25 per Mussar Chabura
+    const iyun = iyunChaburaCount * 100; // $100 per Iyun Chabura
+    
+    // Get deductions from second row (bonuses section)
+    const deductions = parseFloat(row2.querySelector('[data-field="total_deductions"]').value) || 0;
+    
+    // Get special pay from first row (final calculation section)
+    const specialPay = parseFloat(row1.querySelector('[data-field="special_pay"]').value) || 0;
+    
+    // Calculate final amount
+    const finalAmount = basePlusIncentive + kelyon + retufin + mussar + iyun + specialPay - deductions;
+    row1.querySelector('.final-amount').value = finalAmount.toFixed(2);
+    
+    // Update total
+    updateTotalAmount();
+    
+    // Auto-save the changes
+    saveRowChanges(row);
+}
+
+// Toggle credits override
+function toggleCreditsOverride(button) {
+    const row = button.closest('tr');
+    const studentId = row.dataset.studentId;
+    
+    // Find the first row that contains the prorated input
+    const row1 = document.querySelector(`tr.student-row-1[data-student-id="${studentId}"]`);
+    if (!row1) return;
+    
+    const proratedInput = row1.querySelector('[data-field="prorated_credits"]');
+    const isPressed = button.getAttribute('aria-pressed') === 'true';
+    
+    if (!isPressed) {
+        // Enable override
+        button.setAttribute('aria-pressed', 'true');
+        button.classList.add('active');
+        proratedInput.removeAttribute('readonly');
+        proratedInput.style.backgroundColor = '#fff';
+    } else {
+        // Disable override
+        button.setAttribute('aria-pressed', 'false');
+        button.classList.remove('active');
+        proratedInput.setAttribute('readonly', 'readonly');
+        proratedInput.style.backgroundColor = '#e9ecef';
+        // Recalculate pro-rated credits based on actual credits
+        const actualCredits = parseFloat(row1.querySelector('[data-field="actual_credits_earned"]').value) || 0;
+        proratedInput.value = Math.round(actualCredits * 0.4 * 4) / 4; // Round to nearest 0.25
+    }
+    
+    updateCalculations(proratedInput);
+}
+
+// Update total amount display
+function updateTotalAmount() {
+    let total = 0;
+    document.querySelectorAll('.final-amount').forEach(input => {
+        total += parseFloat(input.value) || 0;
+    });
+    document.getElementById('totalAmount').textContent = '$' + total.toFixed(2);
+}
+
+// Save changes for a specific row
+function saveRowChanges(row) {
+    const stipendId = row.dataset.stipendId;
+    const studentName = row.dataset.studentName;
+    const studentId = row.dataset.studentId;
+    
+    // Find both rows for this student
+    const row1 = document.querySelector(`tr.student-row-1[data-student-id="${studentId}"]`);
+    const row2 = document.querySelector(`tr.student-row-2[data-student-id="${studentId}"]`);
+    
+    if (!row1 || !row2) return;
+    
+    // Collect all data from both rows
+    const data = {};
+    [row1, row2].forEach(r => {
+        r.querySelectorAll('[data-field]').forEach(input => {
+            const field = input.dataset.field;
+            data[field] = input.type === 'checkbox' ? input.checked : (parseFloat(input.value) || 0);
+        });
+    });
+    
+    // Calculate actual amounts from dropdown counts in second row
+    const mussarCount = parseInt(row2.querySelector('[data-field="mussar_chabura_count"]').value) || 0;
+    const iyunCount = parseInt(row2.querySelector('[data-field="iyun_chabura_count"]').value) || 0;
+    data.mussar_chabura_pay = mussarCount * 25;
+    data.iyun_chabura_pay = iyunCount * 100;
+    
+    // Ensure special_pay is included in the data
+    if (!data.special_pay) {
+        data.special_pay = 0;
+    }
+    
+    // Add special handling for credits override
+    const overrideButton = row1.querySelector('button[title="Override Pro-rated Credits"]');
+    data.credits_override = overrideButton ? overrideButton.getAttribute('aria-pressed') === 'true' : false;
+    
+    // Save to server
+    fetch(`/kollel/stipends/${stipendId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            // Update calculated fields with server response
+            if (result.stipend && row1) {
+                row1.querySelector('.total-credits').value = result.stipend.total_credits.toFixed(2);
+                row1.querySelector('.incentive-amount').value = result.stipend.incentive_amount.toFixed(2);
+                row1.querySelector('.base-plus-incentive').value = result.stipend.base_plus_incentive.toFixed(2);
+                row1.querySelector('.final-amount').value = result.stipend.final_amount.toFixed(2);
+                updateTotalAmount();
+            }
+            
+            // Show success feedback
+            showToast('success', `Updated ${studentName} stipend`);
+        } else {
+            showToast('error', `Failed to update ${studentName}: ${result.message}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('error', `Error updating ${studentName} stipend`);
+    });
+}
+
+// Save all changes
+function saveAllChanges() {
+    const rows = document.querySelectorAll('#stipendTable tbody tr');
+    let completed = 0;
+    
+    rows.forEach(row => {
+        saveRowChanges(row);
+        completed++;
+    });
+    
+    showToast('info', `Saving changes for ${completed} students...`);
+}
+
+// Apply break credits to all students
+function applyBreaks() {
+    const month = document.getElementById('monthSelect').value;
+    const schoolYear = document.getElementById('schoolYearSelect').value;
+    
+    const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    if (!confirm(`Apply pro-rated break credits to all students for ${monthNames[month]} (Academic Year ${schoolYear}-${parseInt(schoolYear)+1})?`)) {
+        return;
+    }
+    
+    fetch(`/kollel/apply-breaks/${month}/${schoolYear}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showToast('success', result.message);
+            // Reload the page to show updated credits
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast('error', result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('error', 'Error applying break credits');
+    });
+}
+
+// View student history
+function viewHistory(kollelStudentId) {
+    window.open(`/kollel/history/${kollelStudentId}`, '_blank');
+}
+
+// Edit notes
+function editNotes(stipendId) {
+    currentStipendId = stipendId;
+    
+    // Get current notes (you might want to fetch from server)
+    const row = document.querySelector(`tr[data-stipend-id="${stipendId}"]`);
+    document.getElementById('notesTextarea').value = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('notesModal'));
+    modal.show();
+}
+
+// Save notes
+function saveNotes() {
+    const notes = document.getElementById('notesTextarea').value;
+    
+    fetch(`/kollel/stipends/${currentStipendId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notes: notes })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showToast('success', 'Notes saved successfully');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('notesModal'));
+            modal.hide();
+        } else {
+            showToast('error', 'Failed to save notes');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('error', 'Error saving notes');
+    });
+}
+
+// Toast notification function
+function showToast(type, message) {
+    // Create toast element
+    const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+    
+    const toastElement = document.createElement('div');
+    toastElement.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0`;
+    toastElement.setAttribute('role', 'alert');
+    toastElement.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toastElement);
+    
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.className = 'toast-container position-fixed top-0 end-0 p-3';
+    document.body.appendChild(container);
+    return container;
+}
+
+// Initialize calculations on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateTotalAmount();
+});
+
+// Change academic year for kollel module
+function changeKollelAcademicYear() {
+    const yearId = document.getElementById('kollelAcademicYearSelector').value;
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('academic_year_id', yearId);
+    window.location.href = currentUrl.toString();
+}
+</script>
+
+{% endblock %} 

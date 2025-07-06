@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}{{ division }} Financial Configuration{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-cog text-primary"></i>
+                        {{ division }} Financial Configuration
+                    </h1>
+                    <p class="text-muted mb-0">Configure financial aid and tuition contract settings</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('financial.financial_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Financial Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="divisionConfigForm">
+        <div class="row">
+            <!-- Financial Aid Settings -->
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-hands-helping"></i> Financial Aid Application Settings
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Financial Aid Enabled</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="aidApplicationEnabled" 
+                                       {% if config.aid_application_enabled %}checked{% endif %}>
+                                <label class="form-check-label" for="aidApplicationEnabled">
+                                    Enable financial aid applications for this division
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Application Deadline</label>
+                            <input type="date" class="form-control" id="aidApplicationDeadline" 
+                                   value="{{ config.aid_application_deadline.isoformat() if config.aid_application_deadline }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Required Documents</label>
+                            <div id="requiredDocuments">
+                                {% if config.aid_application_requirements %}
+                                    {% for doc in config.aid_application_requirements %}
+                                    <div class="input-group mb-2">
+                                        <input type="text" class="form-control document-requirement" value="{{ doc }}">
+                                        <button class="btn btn-outline-danger" type="button" onclick="removeRequirement(this)">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addRequirement()">
+                                <i class="fas fa-plus"></i> Add Document Requirement
+                            </button>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Review Committee (Email Addresses)</label>
+                            <textarea class="form-control" id="aidReviewCommittee" rows="3" 
+                                      placeholder="Enter email addresses separated by commas">{{ config.aid_review_committee|join(', ') if config.aid_review_committee }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tuition Contract Settings -->
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-file-contract"></i> Tuition Contract Settings
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Base Tuition Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="baseTuitionAmount" 
+                                       value="{{ config.base_tuition_amount }}" step="0.01">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Available Payment Plans</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="paymentPlanAnnual" 
+                                       {% if 'Annual' in config.payment_plans_available %}checked{% endif %}>
+                                <label class="form-check-label" for="paymentPlanAnnual">Annual</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="paymentPlanSemester" 
+                                       {% if 'Semester' in config.payment_plans_available %}checked{% endif %}>
+                                <label class="form-check-label" for="paymentPlanSemester">Semester</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="paymentPlanMonthly" 
+                                       {% if 'Monthly' in config.payment_plans_available %}checked{% endif %}>
+                                <label class="form-check-label" for="paymentPlanMonthly">Monthly (10 payments)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="paymentPlanCustom" 
+                                       {% if 'Custom' in config.payment_plans_available %}checked{% endif %}>
+                                <label class="form-check-label" for="paymentPlanCustom">Custom</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Late Fee Policy</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">Fixed Amount</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="lateFeeAmount" 
+                                               value="{{ config.late_fee_policy.amount if config.late_fee_policy }}" step="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Percentage</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="lateFeePercentage" 
+                                               value="{{ config.late_fee_policy.percentage if config.late_fee_policy }}" step="0.1">
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Grace Period</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="gracePeroidDays" 
+                                               value="{{ config.late_fee_policy.grace_days if config.late_fee_policy else 10 }}">
+                                        <span class="input-group-text">days</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- E-Signature Settings -->
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-signature"></i> E-Signature Settings (OpenSign)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">OpenSign Template ID</label>
+                            <input type="text" class="form-control" id="opensignTemplateId" 
+                                   value="{{ config.opensign_template_id }}" 
+                                   placeholder="Enter template ID for contracts">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">OpenSign Folder ID</label>
+                            <input type="text" class="form-control" id="opensignFolderId" 
+                                   value="{{ config.opensign_folder_id }}" 
+                                   placeholder="Enter folder ID for signed documents">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Branding Settings -->
+            <div class="col-lg-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-palette"></i> Branding Settings
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Letterhead Path</label>
+                            <input type="text" class="form-control" id="letterheadPath" 
+                                   value="{{ config.letterhead_path }}" 
+                                   placeholder="/path/to/letterhead.png">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Logo Path</label>
+                            <input type="text" class="form-control" id="logoPath" 
+                                   value="{{ config.logo_path }}" 
+                                   placeholder="/path/to/logo.png">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Primary Color</label>
+                            <input type="color" class="form-control form-control-color" id="primaryColor" 
+                                   value="{{ config.primary_color or '#0d6efd' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="row">
+            <div class="col-12">
+                <button type="button" class="btn btn-primary" onclick="saveConfiguration()">
+                    <i class="fas fa-save"></i> Save Configuration
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function addRequirement() {
+    const container = document.getElementById('requiredDocuments');
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+        <input type="text" class="form-control document-requirement" placeholder="Enter document requirement">
+        <button class="btn btn-outline-danger" type="button" onclick="removeRequirement(this)">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    container.appendChild(div);
+}
+
+function removeRequirement(button) {
+    button.parentElement.remove();
+}
+
+function saveConfiguration() {
+    // Collect payment plans
+    const paymentPlans = [];
+    if (document.getElementById('paymentPlanAnnual').checked) paymentPlans.push('Annual');
+    if (document.getElementById('paymentPlanSemester').checked) paymentPlans.push('Semester');
+    if (document.getElementById('paymentPlanMonthly').checked) paymentPlans.push('Monthly');
+    if (document.getElementById('paymentPlanCustom').checked) paymentPlans.push('Custom');
+
+    // Collect document requirements
+    const requirements = [];
+    document.querySelectorAll('.document-requirement').forEach(input => {
+        if (input.value.trim()) {
+            requirements.push(input.value.trim());
+        }
+    });
+
+    // Collect review committee emails
+    const reviewCommittee = document.getElementById('aidReviewCommittee').value
+        .split(',')
+        .map(email => email.trim())
+        .filter(email => email);
+
+    const data = {
+        aid_application_enabled: document.getElementById('aidApplicationEnabled').checked,
+        aid_application_deadline: document.getElementById('aidApplicationDeadline').value,
+        aid_application_requirements: requirements,
+        aid_review_committee: reviewCommittee,
+        base_tuition_amount: parseFloat(document.getElementById('baseTuitionAmount').value),
+        payment_plans_available: paymentPlans,
+        late_fee_policy: {
+            amount: parseFloat(document.getElementById('lateFeeAmount').value || 0),
+            percentage: parseFloat(document.getElementById('lateFeePercentage').value || 0),
+            grace_days: parseInt(document.getElementById('gracePeroidDays').value || 10)
+        },
+        opensign_template_id: document.getElementById('opensignTemplateId').value,
+        opensign_folder_id: document.getElementById('opensignFolderId').value,
+        letterhead_path: document.getElementById('letterheadPath').value,
+        logo_path: document.getElementById('logoPath').value,
+        primary_color: document.getElementById('primaryColor').value
+    };
+
+    fetch(`/api/divisions/{{ division }}/config/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert('Configuration saved successfully!');
+        } else {
+            alert(`Error: ${result.error}`);
+        }
+    })
+    .catch(error => {
+        alert(`Error saving configuration: ${error.message}`);
+    });
+}
+</script>
+{% endblock %} 

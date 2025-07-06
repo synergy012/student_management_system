@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Financial Documents - {{ student.student_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="fas fa-folder-open text-primary me-2"></i>Financial Documents</h1>
+            <p class="text-muted mb-0">{{ student.student_name }} | {{ student.email }} | {{ student.division }}</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="uploadDocument()">
+                <i class="fas fa-upload"></i> Upload Document
+            </button>
+            <a href="{{ url_for('financial.financial_dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Financial Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Documents List -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Uploaded Documents</h5>
+        </div>
+        <div class="card-body">
+            {% if documents %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Document Type</th>
+                                <th>Filename</th>
+                                <th>Description</th>
+                                <th>Uploaded By</th>
+                                <th>Upload Date</th>
+                                <th>Size</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for document in documents %}
+                            <tr>
+                                <td>
+                                    <div>
+                                        <span class="badge bg-primary">{{ document.document_type.replace('_', ' ').title() }}</span>
+                                        <br>
+                                        <small class="badge bg-{{ 'info' if document.type == 'manual' else 'success' }} mt-1">{{ document.source }}</small>
+                                    </div>
+                                </td>
+                                <td>{{ document.filename }}</td>
+                                <td>{{ document.description or '-' }}</td>
+                                <td>{{ document.uploaded_by }}</td>
+                                <td>{{ document.uploaded_at.strftime('%m/%d/%Y %I:%M %p') }}</td>
+                                <td>{{ "%.1f KB"|format(document.file_size / 1024) if document.file_size else '-' }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        {% if document.type == 'manual' %}
+                                            <button class="btn btn-outline-primary" onclick="viewManualDocument('{{ document.id }}')" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-info" onclick="downloadManualDocument('{{ document.id }}')" title="Download">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                        {% else %}
+                                            <button class="btn btn-outline-primary" onclick="viewSecureDocument('{{ financial_record.student.id }}')" title="View Contract">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" onclick="alert('Secure uploads can be viewed through the View Contract feature')" title="Info">
+                                                <i class="fas fa-info"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-folder-open fa-3x mb-3"></i>
+                    <h5>No Documents Uploaded</h5>
+                    <p>Click "Upload Document" to add financial documents for this student.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Document Upload Modal -->
+<div class="modal fade" id="documentUploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Financial Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="documentUploadForm" enctype="multipart/form-data">
+                    <input type="hidden" id="uploadRecordId" value="{{ financial_record.id }}">
+                    <div class="mb-3">
+                        <label class="form-label">Document Type</label>
+                        <select class="form-select" id="documentType">
+                            <option value="financial_aid_form">Financial Aid Form</option>
+                            <option value="enrollment_contract">Enrollment Contract</option>
+                            <option value="fafsa_document">FAFSA Document</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Select File</label>
+                        <input type="file" class="form-control" id="documentFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
+                        <small class="text-muted">Accepted formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="documentDescription" rows="2"></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-lock"></i> Documents are encrypted and stored securely
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="uploadDocumentSubmit()">Upload Document</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Function to handle document upload
+function uploadDocument() {
+    // Reset the form
+    document.getElementById('documentUploadForm').reset();
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('documentUploadModal'));
+    modal.show();
+}
+
+// Function to handle the actual upload submission
+function uploadDocumentSubmit() {
+    const form = document.getElementById('documentUploadForm');
+    const formData = new FormData();
+    
+    // Get form values
+    const recordId = document.getElementById('uploadRecordId').value;
+    const documentType = document.getElementById('documentType').value;
+    const documentFile = document.getElementById('documentFile').files[0];
+    const documentDescription = document.getElementById('documentDescription').value;
+    
+    // Validate inputs
+    if (!recordId) {
+        alert('Error: No record ID specified');
+        return;
+    }
+    
+    if (!documentType) {
+        alert('Please select a document type');
+        return;
+    }
+    
+    if (!documentFile) {
+        alert('Please select a file to upload');
+        return;
+    }
+    
+    // Check file size (10MB limit)
+    if (documentFile.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+    }
+    
+    // Prepare form data
+    formData.append('financial_record_id', recordId);
+    formData.append('document_type', documentType);
+    formData.append('file', documentFile);
+    formData.append('description', documentDescription);
+    
+    // Show loading state
+    const uploadButton = document.querySelector('#documentUploadModal .btn-primary');
+    const originalText = uploadButton.innerHTML;
+    uploadButton.disabled = true;
+    uploadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+    
+    // Submit upload
+    fetch('/api/financial/documents/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('documentUploadModal')).hide();
+            
+            // Show success message
+            alert('Document uploaded successfully!');
+            
+            // Refresh the page to show new document
+            location.reload();
+        } else {
+            alert('Upload failed: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        alert('Upload failed: ' + error.message);
+    })
+    .finally(() => {
+        // Reset button state
+        uploadButton.disabled = false;
+        uploadButton.innerHTML = originalText;
+    });
+}
+
+// Functions for manual document handling
+function viewManualDocument(documentId) {
+    // Implement manual document viewing functionality
+    alert('Manual document viewing feature coming soon!');
+}
+
+function downloadManualDocument(documentId) {
+    // Implement manual document download functionality
+    window.location.href = `/api/financial/documents/${documentId}/download`;
+}
+
+// Functions for secure document handling
+function viewSecureDocument(studentId) {
+    // Open the uploaded contract view (works for secure uploads)
+    window.open(`/students/${studentId}/view-uploaded-contract`, '_blank');
+}
+
+// Legacy functions for backward compatibility
+function viewDocument(documentId) {
+    viewManualDocument(documentId);
+}
+
+function downloadDocument(documentId) {
+    downloadManualDocument(documentId);
+}
+</script>
+{% endblock %} 

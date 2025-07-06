@@ -1,0 +1,3100 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings{% endblock %}
+
+{% block content %}
+<style>
+    .nav-tabs {
+        border-bottom: 2px solid #dee2e6 !important;
+        margin-bottom: 1rem;
+    }
+    
+    .nav-tabs .nav-link {
+        color: #495057 !important;
+        background-color: #f8f9fa !important;
+        border: 1px solid #dee2e6 !important;
+        border-bottom: none !important;
+        margin-right: 2px;
+        border-radius: 0.375rem 0.375rem 0 0 !important;
+        padding: 0.75rem 1rem;
+        font-weight: 500;
+        display: flex !important;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #007bff !important;
+        background-color: #fff !important;
+        border-color: #dee2e6 #dee2e6 #fff !important;
+        font-weight: bold !important;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        border-color: #b3d7ff !important;
+        background-color: #e3f2fd !important;
+        color: #0056b3 !important;
+    }
+    
+    .tab-content {
+        border: none;
+        padding: 0;
+    }
+    
+    .tab-pane {
+        padding: 0;
+    }
+</style>
+<div class="container mt-4">
+    <h1 class="mb-4">
+        <i class="fas fa-cogs"></i> System Settings
+    </h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Settings Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="email-tab" data-bs-toggle="tab" data-bs-target="#email" type="button" role="tab">
+                <i class="fas fa-envelope"></i> Email Configuration
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="email-recipients-tab" data-bs-toggle="tab" data-bs-target="#email-recipients" type="button" role="tab">
+                <i class="fas fa-users"></i> Email Recipients
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="webhook-tab" data-bs-toggle="tab" data-bs-target="#webhook" type="button" role="tab">
+                <i class="fas fa-link"></i> Webhook Settings
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+                <i class="fas fa-shield-alt"></i> Security Settings
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="storage-tab" data-bs-toggle="tab" data-bs-target="#storage" type="button" role="tab">
+                <i class="fas fa-cloud"></i> File Storage
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="dropbox-sign-tab" data-bs-toggle="tab" data-bs-target="#dropbox-sign" type="button" role="tab">
+                <i class="fas fa-signature"></i> Dropbox Sign API
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="division-tab" data-bs-toggle="tab" data-bs-target="#division" type="button" role="tab">
+                <i class="fas fa-building"></i> Division Settings
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="kollel-tab" data-bs-toggle="tab" data-bs-target="#kollel" type="button" role="tab">
+                <i class="fas fa-calculator"></i> Kollel Configuration
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="academic-years-tab" data-bs-toggle="tab" data-bs-target="#academic-years" type="button" role="tab">
+                <i class="fas fa-calendar-alt"></i> Academic Years
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" href="/pdf-templates">
+                <i class="fas fa-file-pdf"></i> PDF Templates
+            </a>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="settingsTabContent">
+        <!-- Email Configuration Tab -->
+        <div class="tab-pane fade show active" id="email" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Email Server Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('settings.update_email_settings') }}">
+                        <div class="alert alert-info mb-4">
+                            <h6><i class="fas fa-info-circle"></i> Email Provider Setup Instructions</h6>
+                            <p class="mb-2">Choose your email provider below for specific instructions:</p>
+                            <div class="accordion" id="emailProviderAccordion">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#gmailInstructions">
+                                            <i class="fab fa-google text-danger me-2"></i> Gmail Configuration
+                                        </button>
+                                    </h2>
+                                    <div id="gmailInstructions" class="accordion-collapse collapse" data-bs-parent="#emailProviderAccordion">
+                                        <div class="accordion-body">
+                                            <ol>
+                                                <li>Enable 2-Factor Authentication in your Google Account</li>
+                                                <li>Go to <a href="https://myaccount.google.com/apppasswords" target="_blank">App Passwords</a></li>
+                                                <li>Generate a new app password for "Mail"</li>
+                                                <li>Use the 16-character password below (not your regular password)</li>
+                                            </ol>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="setGmailDefaults()">
+                                                Use Gmail Settings
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#outlookInstructions">
+                                            <i class="fab fa-microsoft text-primary me-2"></i> Outlook/Office 365
+                                        </button>
+                                    </h2>
+                                    <div id="outlookInstructions" class="accordion-collapse collapse" data-bs-parent="#emailProviderAccordion">
+                                        <div class="accordion-body">
+                                            <p><strong>Personal Outlook.com:</strong></p>
+                                            <ul>
+                                                <li>Server: smtp-mail.outlook.com</li>
+                                                <li>Port: 587</li>
+                                                <li>Use your regular password</li>
+                                            </ul>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="setOutlookDefaults()">
+                                                Use Outlook Settings
+                                            </button>
+                                            <hr>
+                                            <p><strong>Office 365 Business:</strong></p>
+                                            <ul>
+                                                <li>Server: smtp.office365.com</li>
+                                                <li>Port: 587</li>
+                                                <li>Use your business email and password</li>
+                                            </ul>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="setOffice365Defaults()">
+                                                Use Office 365 Settings
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="mail_server" class="form-label">
+                                    <i class="fas fa-server"></i> Mail Server
+                                    <small class="text-muted">(SMTP server address)</small>
+                                </label>
+                                <input type="text" class="form-control" id="mail_server" name="mail_server" 
+                                       value="{{ email_config.MAIL_SERVER }}" required
+                                       placeholder="smtp.gmail.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="mail_port" class="form-label">
+                                    <i class="fas fa-plug"></i> Port
+                                    <small class="text-muted">(Usually 587 for TLS, 465 for SSL)</small>
+                                </label>
+                                <input type="number" class="form-control" id="mail_port" name="mail_port" 
+                                       value="{{ email_config.MAIL_PORT }}" required
+                                       placeholder="587">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="mail_username" class="form-label">
+                                    <i class="fas fa-user"></i> Email Username
+                                    <small class="text-muted">(Your email address)</small>
+                                </label>
+                                <input type="email" class="form-control" id="mail_username" name="mail_username" 
+                                       value="{{ email_config.MAIL_USERNAME }}" required
+                                       placeholder="your-email@gmail.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="mail_password" class="form-label">
+                                    <i class="fas fa-key"></i> Email Password
+                                    <small class="text-muted">(App password for Gmail)</small>
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="mail_password" name="mail_password" 
+                                           value="" required
+                                           placeholder="••••••••••••••••">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('mail_password')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="mail_default_sender" class="form-label">
+                                    <i class="fas fa-reply"></i> Default Sender Email
+                                    <small class="text-muted">(From address)</small>
+                                </label>
+                                <input type="email" class="form-control" id="mail_default_sender" name="mail_default_sender" 
+                                       value="{{ email_config.MAIL_DEFAULT_SENDER }}" required
+                                       placeholder="noreply@yourdomain.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fas fa-lock"></i> Security Protocol
+                                </label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="mail_use_tls" id="use_tls" value="true" 
+                                               {% if email_config.MAIL_USE_TLS %}checked{% endif %}>
+                                        <label class="form-check-label" for="use_tls">
+                                            TLS (Port 587)
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="mail_use_tls" id="use_ssl" value="false"
+                                               {% if not email_config.MAIL_USE_TLS %}checked{% endif %}>
+                                        <label class="form-check-label" for="use_ssl">
+                                            SSL (Port 465)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Email Settings
+                            </button>
+                            <div>
+                                <button type="button" class="btn btn-outline-success me-2" onclick="testEmailSettings()">
+                                    <i class="fas fa-paper-plane"></i> Send Test Email
+                                </button>
+                                <button type="button" class="btn btn-outline-info" onclick="sendDivisionTestEmails()">
+                                    <i class="fas fa-envelope-open"></i> Test YZA & YOH Emails
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Recipients Tab -->
+        <div class="tab-pane fade" id="email-recipients" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users me-2"></i>Division Email Settings
+                    </h5>
+                    <small class="text-white-50">Configure sender information and default recipients for each division</small>
+                </div>
+                <div class="card-body">
+                    <!-- Division Tabs for Email Settings -->
+                    <style>
+                        /* Fix inactive tab visibility */
+                        #emailSettingsTabs .nav-link:not(.active) {
+                            color: #495057 !important;
+                            background-color: #f8f9fa !important;
+                            border: 1px solid #dee2e6 !important;
+                        }
+                        #emailSettingsTabs .nav-link:not(.active):hover {
+                            color: #007bff !important;
+                            background-color: #e9ecef !important;
+                        }
+                        #emailSettingsTabs .nav-link.active {
+                            color: #fff !important;
+                            background-color: #007bff !important;
+                            border-color: #007bff !important;
+                        }
+                    </style>
+                    <ul class="nav nav-pills mb-4" id="emailSettingsTabs">
+                        <li class="nav-item">
+                            <button class="nav-link active" id="yza-email-tab" data-bs-toggle="tab" data-bs-target="#yza-email-content" type="button">
+                                <i class="fas fa-graduation-cap text-info me-2"></i>YZA Email Settings
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="yoh-email-tab" data-bs-toggle="tab" data-bs-target="#yoh-email-content" type="button">
+                                <i class="fas fa-graduation-cap text-success me-2"></i>YOH Email Settings
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="kollel-email-tab" data-bs-toggle="tab" data-bs-target="#kollel-email-content" type="button">
+                                <i class="fas fa-mosque text-warning me-2"></i>KOLLEL Email Settings
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <!-- Email Settings Tab Content -->
+                    <div class="tab-content" id="emailSettingsTabContent">
+                        <!-- YZA Email Settings -->
+                        <div class="tab-pane fade show active" id="yza-email-content">
+                            <div class="row">
+                                <!-- Send From Settings Column -->
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-info text-white">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-paper-plane me-2"></i>Send From Settings
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <form method="POST" action="{{ url_for('settings.update_division_email', division='YZA') }}">
+                                                <div class="mb-3">
+                                                    <label class="form-label">From Email Address</label>
+                                                    <input type="email" class="form-control" name="email_from_address" 
+                                                           value="{{ yza_config.email_from_address if yza_config else 'admissions@yza.edu' }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">From Name</label>
+                                                    <input type="text" class="form-control" name="email_from_name" 
+                                                           value="{{ yza_config.email_from_name if yza_config else 'YZA Admissions Office' }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Reply-To Email</label>
+                                                    <input type="email" class="form-control" name="email_reply_to" 
+                                                           value="{{ yza_config.email_reply_to if yza_config else 'admissions@yza.edu' }}">
+                                                </div>
+                                                <button type="submit" class="btn btn-info">
+                                                    <i class="fas fa-save"></i> Save Send From Settings
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Email Recipients Column -->
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-info text-white">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-users me-2"></i>Default Recipients
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="yza-email-settings">
+                                                <!-- Content loaded via JavaScript -->
+                                                <div class="text-center">
+                                                    <div class="spinner-border text-info" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    <p class="mt-2 text-muted">Loading recipient settings...</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- YOH Email Settings -->
+                        <div class="tab-pane fade" id="yoh-email-content">
+                            <div class="row">
+                                <!-- Send From Settings Column -->
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-success text-white">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-paper-plane me-2"></i>Send From Settings
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <form method="POST" action="{{ url_for('settings.update_division_email', division='YOH') }}">
+                                                <div class="mb-3">
+                                                    <label class="form-label">From Email Address</label>
+                                                    <input type="email" class="form-control" name="email_from_address" 
+                                                           value="{{ yoh_config.email_from_address if yoh_config else 'admissions@yoh.edu' }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">From Name</label>
+                                                    <input type="text" class="form-control" name="email_from_name" 
+                                                           value="{{ yoh_config.email_from_name if yoh_config else 'YOH Admissions Office' }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Reply-To Email</label>
+                                                    <input type="email" class="form-control" name="email_reply_to" 
+                                                           value="{{ yoh_config.email_reply_to if yoh_config else 'admissions@yoh.edu' }}">
+                                                </div>
+                                                <button type="submit" class="btn btn-success">
+                                                    <i class="fas fa-save"></i> Save Send From Settings
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Email Recipients Column -->
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-success text-white">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-users me-2"></i>Default Recipients
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="yoh-email-settings">
+                                                <!-- Content loaded via JavaScript -->
+                                                <div class="text-center">
+                                                    <div class="spinner-border text-success" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    <p class="mt-2 text-muted">Loading recipient settings...</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- KOLLEL Email Settings -->
+                        <div class="tab-pane fade" id="kollel-email-content">
+                            <div class="row">
+                                <!-- Send From Settings Column -->
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-warning text-dark">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-paper-plane me-2"></i>Send From Settings
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <form method="POST" action="{{ url_for('settings.update_division_email', division='KOLLEL') }}">
+                                                <div class="mb-3">
+                                                    <label class="form-label">From Email Address</label>
+                                                    <input type="email" class="form-control" name="email_from_address" 
+                                                           value="{{ kollel_config.email_from_address if kollel_config else 'kollel@institution.edu' }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">From Name</label>
+                                                    <input type="text" class="form-control" name="email_from_name" 
+                                                           value="{{ kollel_config.email_from_name if kollel_config else 'Kollel Administration' }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Reply-To Email</label>
+                                                    <input type="email" class="form-control" name="email_reply_to" 
+                                                           value="{{ kollel_config.email_reply_to if kollel_config else 'kollel@institution.edu' }}">
+                                                </div>
+                                                <button type="submit" class="btn btn-warning">
+                                                    <i class="fas fa-save"></i> Save Send From Settings
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Email Recipients Column -->
+                                <div class="col-md-6">
+                                    <div class="card h-100">
+                                        <div class="card-header bg-warning text-dark">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-users me-2"></i>Default Recipients
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="kollel-email-settings">
+                                                <!-- Content loaded via JavaScript -->
+                                                <div class="text-center">
+                                                    <div class="spinner-border text-warning" role="status">
+                                                        <span class="visually-hidden">Loading...</span>
+                                                    </div>
+                                                    <p class="mt-2 text-muted">Loading recipient settings...</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Webhook Settings Tab -->
+        <div class="tab-pane fade" id="webhook" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">Webhook Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('settings.update_webhook_settings') }}">
+                        <div class="alert alert-warning mb-4">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Important: Webhook URLs</h6>
+                            <p>Configure these URLs in your Gravity Forms webhooks:</p>
+                            <ul class="mb-0">
+                                <li><strong>YZA Forms:</strong> <code>{{ request.url_root }}api/gravity-forms/webhook/yza</code></li>
+                                <li><strong>YOH Forms:</strong> <code>{{ request.url_root }}api/gravity-forms/webhook/yoh</code></li>
+                                <li><strong>Auto-detect:</strong> <code>{{ request.url_root }}api/gravity-forms/webhook</code></li>
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="webhook_secret" class="form-label">
+                                <i class="fas fa-key"></i> Webhook Secret
+                                <small class="text-muted">(Shared secret for webhook validation)</small>
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="webhook_secret" name="webhook_secret" 
+                                       value="{{ webhook_config.FORMS_WEBHOOK_SECRET }}" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="generateWebhookSecret()">
+                                    <i class="fas fa-sync"></i> Generate New
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">
+                                This must match the secret configured in Gravity Forms
+                            </small>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Webhook Settings
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Settings Tab -->
+        <div class="tab-pane fade" id="security" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">Security Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('settings.update_security_settings') }}">
+                        <div class="alert alert-danger mb-4">
+                            <h6><i class="fas fa-shield-alt"></i> Security Notice</h6>
+                            <p class="mb-0">Changing these values will log out all users and invalidate all sessions.</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="secret_key" class="form-label">
+                                <i class="fas fa-key"></i> Flask Secret Key
+                                <small class="text-muted">(Used for session encryption)</small>
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="secret_key" name="secret_key" 
+                                       value="{{ security_config.SECRET_KEY }}" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="generateSecretKey()">
+                                    <i class="fas fa-sync"></i> Generate New
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="csrf_key" class="form-label">
+                                <i class="fas fa-shield-alt"></i> CSRF Protection Key
+                                <small class="text-muted">(Protects against cross-site request forgery)</small>
+                            </label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="csrf_key" name="csrf_key" 
+                                       value="{{ security_config.WTF_CSRF_SECRET_KEY }}" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="generateCSRFKey()">
+                                    <i class="fas fa-sync"></i> Generate New
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-save"></i> Update Security Settings
+                        </button>
+                    </form>
+                </div>
+            </div>
+                </div>
+        
+        <!-- Storage Settings Tab -->
+        <div class="tab-pane fade" id="storage" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">File Storage Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('settings.update_storage_settings') }}">
+                        <div class="alert alert-info mb-4">
+                            <h6><i class="fas fa-info-circle"></i> Storage Options</h6>
+                            <p class="mb-2">Choose where to store uploaded files:</p>
+                            <ul class="mb-0">
+                                <li><strong>Local Storage:</strong> Files stored on your server (limited by disk space)</li>
+                                <li><strong>Dropbox:</strong> Files stored in your Dropbox account (unlimited space)</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Current Storage Status -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card border-{% if storage_info.current_backend == 'local' %}success{% else %}secondary{% endif %}">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-server fa-2x mb-2 text-{% if storage_info.current_backend == 'local' %}success{% else %}muted{% endif %}"></i>
+                                        <h6>Local Storage</h6>
+                                        <p class="small mb-0">
+                                            {% if storage_info.local_storage_used_formatted %}
+                                                Used: {{ storage_info.local_storage_used_formatted }}
+                                            {% endif %}
+                                        </p>
+                                        {% if storage_info.current_backend == 'local' %}
+                                            <span class="badge bg-success">Currently Active</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-{% if storage_info.current_backend == 'dropbox' %}success{% else %}secondary{% endif %}">
+                                    <div class="card-body text-center">
+                                        <i class="fab fa-dropbox fa-2x mb-2 text-{% if storage_info.current_backend == 'dropbox' %}success{% else %}muted{% endif %}"></i>
+                                        <h6>Dropbox Storage</h6>
+                                        <p class="small mb-0">
+                                            {% if storage_info.dropbox_available %}
+                                                {% if storage_info.dropbox_usage and not storage_info.dropbox_usage.error %}
+                                                    Used: {{ storage_info.dropbox_usage.used_formatted }} / {{ storage_info.dropbox_usage.allocated_formatted }}
+                                                {% else %}
+                                                    Connected
+                                                {% endif %}
+                                            {% else %}
+                                                Not configured
+                                            {% endif %}
+                                        </p>
+                                        {% if storage_info.current_backend == 'dropbox' %}
+                                            <span class="badge bg-success">Currently Active</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Storage Backend Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-cog"></i> Storage Backend
+                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="storage_backend" id="storage_local" value="local" 
+                                       {% if storage_info.current_backend == 'local' %}checked{% endif %}>
+                                <label class="form-check-label" for="storage_local">
+                                    <i class="fas fa-server"></i> Local Storage (Server Disk)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="storage_backend" id="storage_dropbox" value="dropbox"
+                                       {% if storage_info.current_backend == 'dropbox' %}checked{% endif %}>
+                                <label class="form-check-label" for="storage_dropbox">
+                                    <i class="fab fa-dropbox"></i> Dropbox Cloud Storage
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Dropbox Configuration -->
+                        <div id="dropbox-config" style="{% if storage_info.current_backend != 'dropbox' %}display: none;{% endif %}">
+                            <div class="card border-primary mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="fab fa-dropbox"></i> Dropbox Configuration</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if storage_info.dropbox_account and storage_info.dropbox_account.success %}
+                                    <div class="alert alert-success">
+                                        <h6><i class="fas fa-check-circle"></i> Connected to Dropbox</h6>
+                                        <p class="mb-1"><strong>Account:</strong> {{ storage_info.dropbox_account.name }}</p>
+                                        <p class="mb-0"><strong>Email:</strong> {{ storage_info.dropbox_account.email }}</p>
+                                    </div>
+                                    {% elif storage_info.dropbox_account and storage_info.dropbox_account.error %}
+                                    <div class="alert alert-danger">
+                                        <h6><i class="fas fa-exclamation-circle"></i> Dropbox Connection Error</h6>
+                                        <p class="mb-0">{{ storage_info.dropbox_account.error }}</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <div class="mb-3">
+                                        <label for="dropbox_access_token" class="form-label">
+                                            <i class="fas fa-key"></i> Dropbox Access Token
+                                            <small class="text-muted">(Leave blank to keep existing)</small>
+                                        </label>
+                                        <input type="password" class="form-control" id="dropbox_access_token" name="dropbox_access_token" 
+                                               placeholder="Enter your Dropbox access token">
+                                        <div class="form-text">
+                                            <a href="https://www.dropbox.com/developers/apps" target="_blank">
+                                                <i class="fas fa-external-link-alt"></i> Get your Dropbox access token
+                                            </a>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="dropbox_folder_prefix" class="form-label">
+                                            <i class="fas fa-folder"></i> Dropbox Folder
+                                        </label>
+                                        <input type="text" class="form-control" id="dropbox_folder_prefix" name="dropbox_folder_prefix" 
+                                               value="{{ config.DROPBOX_FOLDER_PREFIX or '/StudentManagement' }}"
+                                               placeholder="/StudentManagement">
+                                        <div class="form-text">
+                                            All files will be stored in this folder in your Dropbox
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="button" class="btn btn-outline-primary" onclick="testDropboxConnection()">
+                                        <i class="fas fa-plug"></i> Test Connection
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Storage Settings
+                            </button>
+                            <div>
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i> 
+                                    Changing storage will affect new uploads only. Existing files remain in their current location.
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dropbox Sign Settings Tab -->
+        <div class="tab-pane fade" id="dropbox-sign" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-signature"></i> Dropbox Sign API Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <h6><i class="fas fa-info-circle"></i> Dropbox Sign Setup Instructions</h6>
+                        <p class="mb-2">To configure Dropbox Sign for electronic signatures:</p>
+                        <ol class="mb-2">
+                            <li>Go to <a href="https://app.hellosign.com/api/reference" target="_blank">Dropbox Sign API Console</a></li>
+                            <li>Create a new API application</li>
+                            <li>Copy your API Key and Client ID from the dashboard</li>
+                            <li>Set test mode to "true" for development, "false" for production</li>
+                            <li>Configure webhook secret for secure event handling (optional)</li>
+                        </ol>
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            <strong>Important:</strong> Keep your API credentials secure. Never share them publicly.
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('settings.update_dropbox_sign_settings') }}">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="dropbox_sign_api_key" class="form-label">
+                                    <i class="fas fa-key"></i> API Key
+                                    <small class="text-muted">(Required)</small>
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="dropbox_sign_api_key" 
+                                           name="dropbox_sign_api_key" 
+                                           value="{{ dropbox_sign_config.DROPBOX_SIGN_API_KEY }}" 
+                                           placeholder="Enter your Dropbox Sign API key">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('dropbox_sign_api_key')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="dropbox_sign_client_id" class="form-label">
+                                    <i class="fas fa-id-card"></i> Client ID
+                                    <small class="text-muted">(Required for embedded signing)</small>
+                                </label>
+                                <input type="text" class="form-control" id="dropbox_sign_client_id" 
+                                       name="dropbox_sign_client_id" 
+                                       value="{{ dropbox_sign_config.DROPBOX_SIGN_CLIENT_ID }}" 
+                                       placeholder="Enter your Dropbox Sign Client ID">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="dropbox_sign_webhook_secret" class="form-label">
+                                    <i class="fas fa-shield-alt"></i> Webhook Secret
+                                    <small class="text-muted">(Optional - for secure webhooks)</small>
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="dropbox_sign_webhook_secret" 
+                                           name="dropbox_sign_webhook_secret" 
+                                           value="{{ dropbox_sign_config.DROPBOX_SIGN_WEBHOOK_SECRET }}" 
+                                           placeholder="Enter webhook secret (optional)">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('dropbox_sign_webhook_secret')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fas fa-cog"></i> Environment Mode
+                                </label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="dropbox_sign_test_mode" 
+                                           name="dropbox_sign_test_mode" 
+                                           {% if dropbox_sign_config.DROPBOX_SIGN_TEST_MODE %}checked{% endif %}>
+                                    <label class="form-check-label" for="dropbox_sign_test_mode">
+                                        Test Mode (Development)
+                                    </label>
+                                </div>
+                                <small class="text-muted">
+                                    Enable for development/testing. Disable for production use.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save"></i> Save Dropbox Sign Settings
+                            </button>
+                            <div>
+                                <button type="button" class="btn btn-outline-success" onclick="testDropboxSignConnection()">
+                                    <i class="fas fa-plug"></i> Test Connection
+                                </button>
+                                <button type="button" class="btn btn-outline-info ms-2" onclick="showApiQuota()">
+                                    <i class="fas fa-chart-pie"></i> Check API Quota
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Connection Status -->
+                    <div id="dropbox-sign-status" class="mt-3" style="display: none;">
+                        <!-- Status messages will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Division Settings Tab -->
+        <div class="tab-pane fade" id="division" role="tabpanel">
+            <div class="accordion" id="divisionAccordion">
+                <!-- YZA Division Settings -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#yzaSettings" aria-expanded="true" aria-controls="yzaSettings">
+                            <i class="fas fa-graduation-cap text-info me-2"></i>
+                            <strong>YZA Division Email Settings</strong>
+                        </button>
+                    </h2>
+                    <div id="yzaSettings" class="accordion-collapse collapse show" data-bs-parent="#divisionAccordion">
+                        <div class="accordion-body">
+                            <form method="POST" action="{{ url_for('settings.update_division_email', division='YZA') }}">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">From Email Address</label>
+                                        <input type="email" class="form-control" name="email_from_address" 
+                                               value="{{ yza_config.email_from_address if yza_config else 'admissions@yza.edu' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">From Name</label>
+                                        <input type="text" class="form-control" name="email_from_name" 
+                                               value="{{ yza_config.email_from_name if yza_config else 'YZA Admissions Office' }}">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Reply-To Email</label>
+                                    <input type="email" class="form-control" name="email_reply_to" 
+                                           value="{{ yza_config.email_reply_to if yza_config else 'admissions@yza.edu' }}">
+                                </div>
+                                <button type="submit" class="btn btn-info">
+                                    <i class="fas fa-save"></i> Save YZA Settings
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- YOH Division Settings -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#yohSettings" aria-expanded="false" aria-controls="yohSettings">
+                            <i class="fas fa-graduation-cap text-success me-2"></i>
+                            <strong>YOH Division Email Settings</strong>
+                        </button>
+                    </h2>
+                    <div id="yohSettings" class="accordion-collapse collapse" data-bs-parent="#divisionAccordion">
+                        <div class="accordion-body">
+                            <form method="POST" action="{{ url_for('settings.update_division_email', division='YOH') }}">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">From Email Address</label>
+                                        <input type="email" class="form-control" name="email_from_address" 
+                                               value="{{ yoh_config.email_from_address if yoh_config else 'admissions@yoh.edu' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">From Name</label>
+                                        <input type="text" class="form-control" name="email_from_name" 
+                                               value="{{ yoh_config.email_from_name if yoh_config else 'YOH Admissions Office' }}">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Reply-To Email</label>
+                                    <input type="email" class="form-control" name="email_reply_to" 
+                                           value="{{ yoh_config.email_reply_to if yoh_config else 'admissions@yoh.edu' }}">
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Save YOH Settings
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Acceptance Email Templates Section -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#emailTemplates" aria-expanded="false" aria-controls="emailTemplates">
+                            <i class="fas fa-envelope-open-text text-warning me-2"></i>
+                            <strong>Acceptance Email Templates</strong>
+                        </button>
+                    </h2>
+                    <div id="emailTemplates" class="accordion-collapse collapse" data-bs-parent="#divisionAccordion">
+                        <div class="accordion-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> 
+                                Configure the acceptance email templates for each division. These templates are used when sending acceptance notifications to students.
+                            </div>
+                            
+                            <!-- YZA Acceptance Email Template -->
+                            <div class="mb-4">
+                                <h6 class="text-primary"><i class="fas fa-graduation-cap"></i> YZA Acceptance Email Template</h6>
+                                <form method="POST" action="{{ url_for('settings.update_acceptance_template', division='YZA') }}">
+                                    <div class="mb-3">
+                                        <label class="form-label">Subject Line</label>
+                                        <input type="text" class="form-control" name="subject" 
+                                               value="Acceptance to YZA - Congratulations!" 
+                                               placeholder="Enter email subject">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Email Template</label>
+                                        <textarea class="form-control" name="template" rows="8" 
+                                                  placeholder="Enter email template (HTML supported)">Dear {student_name},
+
+Congratulations! We are pleased to inform you that you have been accepted to YZA.
+
+Your application has been reviewed and approved. We look forward to welcoming you to our institution.
+
+Next Steps:
+1. Review your acceptance package
+2. Complete enrollment requirements
+3. Submit any required documentation
+
+If you have any questions, please don't hesitate to contact our admissions office.
+
+Best regards,
+YZA Admissions Office</textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-info">
+                                        <i class="fas fa-save"></i> Save YZA Template
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <hr>
+                            
+                            <!-- YOH Acceptance Email Template -->
+                            <div class="mb-4">
+                                <h6 class="text-success"><i class="fas fa-graduation-cap"></i> YOH Acceptance Email Template</h6>
+                                <form method="POST" action="{{ url_for('settings.update_acceptance_template', division='YOH') }}">
+                                    <div class="mb-3">
+                                        <label class="form-label">Subject Line</label>
+                                        <input type="text" class="form-control" name="subject" 
+                                               value="Acceptance to YOH - Congratulations!" 
+                                               placeholder="Enter email subject">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Email Template</label>
+                                        <textarea class="form-control" name="template" rows="8" 
+                                                  placeholder="Enter email template (HTML supported)">Dear {student_name},
+
+Congratulations! We are pleased to inform you that you have been accepted to YOH.
+
+Your application has been reviewed and approved. We look forward to welcoming you to our institution.
+
+Next Steps:
+1. Review your acceptance package
+2. Complete enrollment requirements
+3. Submit any required documentation
+
+If you have any questions, please don't hesitate to contact our admissions office.
+
+Best regards,
+YOH Admissions Office</textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save"></i> Save YOH Template
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <!-- Test Email Section -->
+                            <div class="mt-4 p-3 bg-light rounded">
+                                <h6><i class="fas fa-paper-plane"></i> Test Division Emails</h6>
+                                <p class="text-muted mb-3">Send test acceptance emails from both divisions to verify configuration.</p>
+                                <button type="button" class="btn btn-outline-primary" onclick="sendDivisionTestEmails()">
+                                    <i class="fas fa-envelope"></i> Test YZA & YOH Emails
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- PDF Templates Section -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#pdfTemplates" aria-expanded="false" aria-controls="pdfTemplates">
+                            <i class="fas fa-file-pdf text-danger me-2"></i>
+                            <strong>PDF Acceptance Letter Templates</strong>
+                        </button>
+                    </h2>
+                    <div id="pdfTemplates" class="accordion-collapse collapse" data-bs-parent="#divisionAccordion">
+                        <div class="accordion-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> 
+                                Configure the PDF acceptance letter templates for each division. These templates are used when generating PDF acceptance letters.
+                            </div>
+                            
+                            <!-- YZA PDF Template -->
+                            <div class="mb-4">
+                                <h6 class="text-primary"><i class="fas fa-graduation-cap"></i> YZA PDF Template</h6>
+                                <form method="POST" action="{{ url_for('settings.update_pdf_template', division='YZA') }}">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">School Name (Header)</label>
+                                                <input type="text" class="form-control" name="pdf_letterhead_title" 
+                                                       value="{{ yza_config.pdf_letterhead_title if yza_config and yza_config.pdf_letterhead_title else 'Yeshiva Zichron Aryeh' }}" 
+                                                       placeholder="School name for PDF header">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Subtitle/Tagline</label>
+                                                <input type="text" class="form-control" name="pdf_letterhead_subtitle" 
+                                                       value="{{ yza_config.pdf_letterhead_subtitle if yza_config and yza_config.pdf_letterhead_subtitle else 'Excellence in Torah Learning and Personal Growth' }}" 
+                                                       placeholder="Subtitle for PDF header">
+                                            </div>
+                                            
+                                            <!-- Letterhead Image Section -->
+                                            <div class="mb-3">
+                                                <label class="form-label"><i class="fas fa-image"></i> Letterhead Logo</label>
+                                                <input type="text" class="form-control" name="pdf_letterhead_logo_path" 
+                                                       value="{{ yza_config.pdf_letterhead_logo_path if yza_config and yza_config.pdf_letterhead_logo_path else '' }}" 
+                                                       placeholder="Path to letterhead logo image (e.g., static/letterhead/yza_logo.png)">
+                                                <div class="form-text">Upload your logo image to the server and enter the full path here.</div>
+                                            </div>
+                                            
+                                            <!-- Letterhead Layout Options -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Letterhead Layout</label>
+                                                        <select class="form-control" name="pdf_letterhead_layout">
+                                                            <option value="logo_above_text" {{ 'selected' if yza_config and yza_config.pdf_letterhead_layout == 'logo_above_text' else '' }}>Logo Above Text</option>
+                                                            <option value="logo_beside_text" {{ 'selected' if yza_config and yza_config.pdf_letterhead_layout == 'logo_beside_text' else '' }}>Logo Beside Text</option>
+                                                            <option value="logo_only" {{ 'selected' if yza_config and yza_config.pdf_letterhead_layout == 'logo_only' else '' }}>Logo Only</option>
+                                                            <option value="text_only" {{ 'selected' if yza_config and yza_config.pdf_letterhead_layout == 'text_only' else '' }}>Text Only</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Full Width Letterhead</label>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" name="pdf_letterhead_full_width" value="1" 
+                                                                   {{ 'checked' if yza_config and yza_config.pdf_letterhead_full_width else '' }}>
+                                                            <label class="form-check-label">
+                                                                Use full page width for letterhead
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-text">Recommended for wide letterhead images</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Logo Width (points)</label>
+                                                        <input type="number" class="form-control" name="pdf_letterhead_logo_width" 
+                                                               value="{{ yza_config.pdf_letterhead_logo_width if yza_config and yza_config.pdf_letterhead_logo_width else 150 }}" 
+                                                               placeholder="150 (or 450 for full-width)">
+                                                        <div class="form-text">72 points = 1 inch</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Logo Height (points)</label>
+                                                        <input type="number" class="form-control" name="pdf_letterhead_logo_height" 
+                                                               value="{{ yza_config.pdf_letterhead_logo_height if yza_config and yza_config.pdf_letterhead_logo_height else 75 }}" 
+                                                               placeholder="75 (or 150 for full-width)">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Header Text Color</label>
+                                                        <input type="color" class="form-control form-control-color" name="pdf_letterhead_text_color" 
+                                                               value="{{ yza_config.pdf_letterhead_text_color if yza_config and yza_config.pdf_letterhead_text_color else '#003366' }}" 
+                                                               title="Choose header text color">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Background Color</label>
+                                                        <input type="color" class="form-control form-control-color" name="pdf_letterhead_background_color" 
+                                                               value="{{ yza_config.pdf_letterhead_background_color if yza_config and yza_config.pdf_letterhead_background_color else '#ffffff' }}" 
+                                                               title="Choose header background color">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Bottom Margin</label>
+                                                        <input type="number" class="form-control" name="pdf_letterhead_margin_bottom" 
+                                                               value="{{ yza_config.pdf_letterhead_margin_bottom if yza_config and yza_config.pdf_letterhead_margin_bottom else 20 }}" 
+                                                               placeholder="20">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Signatory Name</label>
+                                                <input type="text" class="form-control" name="pdf_signature_name" 
+                                                       value="{{ yza_config.pdf_signature_name if yza_config and yza_config.pdf_signature_name else 'Rabbi [Name]' }}" 
+                                                       placeholder="Name of person signing">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Signatory Title</label>
+                                                <input type="text" class="form-control" name="pdf_signature_title" 
+                                                       value="{{ yza_config.pdf_signature_title if yza_config and yza_config.pdf_signature_title else 'Rosh Yeshiva' }}" 
+                                                       placeholder="Title of signatory">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label"><i class="fas fa-signature"></i> Signature Image</label>
+                                                <input type="text" class="form-control" name="pdf_signature_image_path" 
+                                                       value="{{ yza_config.pdf_signature_image_path if yza_config and yza_config.pdf_signature_image_path else '' }}" 
+                                                       placeholder="Path to signature image (e.g., /path/to/signature.png)">
+                                                <div class="form-text">Optional: Upload signature image to server and enter path here.</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Greeting Text</label>
+                                                <textarea class="form-control" name="pdf_greeting_text" rows="3" 
+                                                          placeholder="Custom greeting paragraph">{{ yza_config.pdf_greeting_text if yza_config and yza_config.pdf_greeting_text else 'בס״ד\n\nDear {student_name},' }}</textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Main Content</label>
+                                                <textarea class="form-control" name="pdf_main_content" rows="4" 
+                                                          placeholder="Main acceptance content">{{ yza_config.pdf_main_content if yza_config and yza_config.pdf_main_content else 'We are delighted to inform you that you have been accepted to Yeshiva Zichron Aryeh for the upcoming academic year. After careful review of your application and credentials, we are confident that you will be a valuable addition to our Yeshiva community.' }}</textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Next Steps</label>
+                                                <textarea class="form-control" name="pdf_next_steps" rows="3" 
+                                                          placeholder="Next steps instructions">{{ yza_config.pdf_next_steps if yza_config and yza_config.pdf_next_steps else '1. Confirm your acceptance by responding to this email within 14 days\n2. Complete the enrollment forms that will be sent separately\n3. Submit any remaining required documents\n4. Attend the orientation session (details to follow)' }}</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Closing Text</label>
+                                        <textarea class="form-control" name="pdf_closing_text" rows="2" 
+                                                  placeholder="Closing paragraph">{{ yza_config.pdf_closing_text if yza_config and yza_config.pdf_closing_text else 'We are excited to welcome you to our Beis Medrash, where you will join a vibrant community of talmidim dedicated to Torah study and avodas Hashem.' }}</textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Contact Information (Footer)</label>
+                                        <textarea class="form-control" name="pdf_contact_info" rows="2" 
+                                                  placeholder="Footer contact information">{{ yza_config.pdf_contact_info if yza_config and yza_config.pdf_contact_info else 'Yeshiva Zichron Aryeh\n[Address]\nPhone: [Phone] | Email: [Email]' }}</textarea>
+                                    </div>
+                                    
+                                    <!-- Footer Image Section -->
+                                    <div class="mb-3">
+                                        <label class="form-label"><i class="fas fa-image"></i> Footer Letterhead Image</label>
+                                        <input type="text" class="form-control" name="pdf_footer_image_path" 
+                                               value="{{ yza_config.pdf_footer_image_path if yza_config and yza_config.pdf_footer_image_path else '' }}" 
+                                               placeholder="Path to footer letterhead image (e.g., /path/to/footer.png)">
+                                        <div class="form-text">Optional: Upload footer image to server and enter path here.</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">Footer Width (points)</label>
+                                                <input type="number" class="form-control" name="pdf_footer_image_width" 
+                                                       value="{{ yza_config.pdf_footer_image_width if yza_config and yza_config.pdf_footer_image_width else 500 }}" 
+                                                       placeholder="500">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">Footer Height (points)</label>
+                                                <input type="number" class="form-control" name="pdf_footer_image_height" 
+                                                       value="{{ yza_config.pdf_footer_image_height if yza_config and yza_config.pdf_footer_image_height else 100 }}" 
+                                                       placeholder="100">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">Footer Background</label>
+                                                <input type="color" class="form-control form-control-color" name="pdf_footer_background_color" 
+                                                       value="{{ yza_config.pdf_footer_background_color if yza_config and yza_config.pdf_footer_background_color else '#ffffff' }}" 
+                                                       title="Choose footer background color">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-info">
+                                        <i class="fas fa-save"></i> Save YZA PDF Template
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <hr>
+                            
+                            <!-- YOH PDF Template -->
+                            <div class="mb-4">
+                                <h6 class="text-success"><i class="fas fa-graduation-cap"></i> YOH PDF Template</h6>
+                                <form method="POST" action="{{ url_for('settings.update_pdf_template', division='YOH') }}">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">School Name (Header)</label>
+                                                <input type="text" class="form-control" name="pdf_letterhead_title" 
+                                                       value="{{ yoh_config.pdf_letterhead_title if yoh_config and yoh_config.pdf_letterhead_title else 'Yeshiva Ohr Hatzafon' }}" 
+                                                       placeholder="School name for PDF header">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Subtitle/Tagline</label>
+                                                <input type="text" class="form-control" name="pdf_letterhead_subtitle" 
+                                                       value="{{ yoh_config.pdf_letterhead_subtitle if yoh_config and yoh_config.pdf_letterhead_subtitle else 'Illuminating Paths in Torah and Wisdom' }}" 
+                                                       placeholder="Subtitle for PDF header">
+                                            </div>
+                                            
+                                            <!-- Letterhead Image Section -->
+                                            <div class="mb-3">
+                                                <label class="form-label"><i class="fas fa-image"></i> Letterhead Logo</label>
+                                                <input type="text" class="form-control" name="pdf_letterhead_logo_path" 
+                                                       value="{{ yoh_config.pdf_letterhead_logo_path if yoh_config and yoh_config.pdf_letterhead_logo_path else '' }}" 
+                                                       placeholder="Path to letterhead logo image (e.g., static/letterhead/yoh_logo.png)">
+                                                <div class="form-text">Upload your logo image to the server and enter the full path here.</div>
+                                            </div>
+                                            
+                                            <!-- Letterhead Layout Options -->
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Letterhead Layout</label>
+                                                        <select class="form-control" name="pdf_letterhead_layout">
+                                                            <option value="logo_above_text" {{ 'selected' if yoh_config and yoh_config.pdf_letterhead_layout == 'logo_above_text' else '' }}>Logo Above Text</option>
+                                                            <option value="logo_beside_text" {{ 'selected' if yoh_config and yoh_config.pdf_letterhead_layout == 'logo_beside_text' else '' }}>Logo Beside Text</option>
+                                                            <option value="logo_only" {{ 'selected' if yoh_config and yoh_config.pdf_letterhead_layout == 'logo_only' else '' }}>Logo Only</option>
+                                                            <option value="text_only" {{ 'selected' if yoh_config and yoh_config.pdf_letterhead_layout == 'text_only' else '' }}>Text Only</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Full Width Letterhead</label>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" name="pdf_letterhead_full_width" value="1" 
+                                                                   {{ 'checked' if yoh_config and yoh_config.pdf_letterhead_full_width else '' }}>
+                                                            <label class="form-check-label">
+                                                                Use full page width for letterhead
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-text">Recommended for wide letterhead images</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Logo Width (points)</label>
+                                                        <input type="number" class="form-control" name="pdf_letterhead_logo_width" 
+                                                               value="{{ yoh_config.pdf_letterhead_logo_width if yoh_config and yoh_config.pdf_letterhead_logo_width else 150 }}" 
+                                                               placeholder="150 (or 450 for full-width)">
+                                                        <div class="form-text">72 points = 1 inch</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Logo Height (points)</label>
+                                                        <input type="number" class="form-control" name="pdf_letterhead_logo_height" 
+                                                               value="{{ yoh_config.pdf_letterhead_logo_height if yoh_config and yoh_config.pdf_letterhead_logo_height else 75 }}" 
+                                                               placeholder="75 (or 150 for full-width)">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Header Text Color</label>
+                                                        <input type="color" class="form-control form-control-color" name="pdf_letterhead_text_color" 
+                                                               value="{{ yoh_config.pdf_letterhead_text_color if yoh_config and yoh_config.pdf_letterhead_text_color else '#1e4d2b' }}" 
+                                                               title="Choose header text color">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Background Color</label>
+                                                        <input type="color" class="form-control form-control-color" name="pdf_letterhead_background_color" 
+                                                               value="{{ yoh_config.pdf_letterhead_background_color if yoh_config and yoh_config.pdf_letterhead_background_color else '#ffffff' }}" 
+                                                               title="Choose header background color">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Bottom Margin</label>
+                                                        <input type="number" class="form-control" name="pdf_letterhead_margin_bottom" 
+                                                               value="{{ yoh_config.pdf_letterhead_margin_bottom if yoh_config and yoh_config.pdf_letterhead_margin_bottom else 20 }}" 
+                                                               placeholder="20">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Signatory Name</label>
+                                                <input type="text" class="form-control" name="pdf_signature_name" 
+                                                       value="{{ yoh_config.pdf_signature_name if yoh_config and yoh_config.pdf_signature_name else 'Rabbi [Name]' }}" 
+                                                       placeholder="Name of person signing">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Signatory Title</label>
+                                                <input type="text" class="form-control" name="pdf_signature_title" 
+                                                       value="{{ yoh_config.pdf_signature_title if yoh_config and yoh_config.pdf_signature_title else 'Rosh Yeshiva' }}" 
+                                                       placeholder="Title of signatory">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label"><i class="fas fa-signature"></i> Signature Image</label>
+                                                <input type="text" class="form-control" name="pdf_signature_image_path" 
+                                                       value="{{ yoh_config.pdf_signature_image_path if yoh_config and yoh_config.pdf_signature_image_path else '' }}" 
+                                                       placeholder="Path to signature image (e.g., /path/to/signature.png)">
+                                                <div class="form-text">Optional: Upload signature image to server and enter path here.</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Greeting Text</label>
+                                                <textarea class="form-control" name="pdf_greeting_text" rows="3" 
+                                                          placeholder="Custom greeting paragraph">{{ yoh_config.pdf_greeting_text if yoh_config and yoh_config.pdf_greeting_text else 'בס״ד\n\nDear {student_name},' }}</textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Main Content</label>
+                                                <textarea class="form-control" name="pdf_main_content" rows="4" 
+                                                          placeholder="Main acceptance content">{{ yoh_config.pdf_main_content if yoh_config and yoh_config.pdf_main_content else 'It is with great pleasure that we inform you of your acceptance to Yeshiva Ohr Hatzafon for the upcoming zman. Your application demonstrated the qualities and commitment we value in our talmidim, and we are confident you will thrive in our unique learning environment.' }}</textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Next Steps</label>
+                                                <textarea class="form-control" name="pdf_next_steps" rows="3" 
+                                                          placeholder="Next steps instructions">{{ yoh_config.pdf_next_steps if yoh_config and yoh_config.pdf_next_steps else '1. Reply to this email confirming your intention to attend\n2. Submit the enrollment deposit within 10 business days\n3. Complete the online registration forms\n4. Schedule your pre-arrival meeting with the Mashgiach' }}</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Closing Text</label>
+                                        <textarea class="form-control" name="pdf_closing_text" rows="2" 
+                                                  placeholder="Closing paragraph">{{ yoh_config.pdf_closing_text if yoh_config and yoh_config.pdf_closing_text else 'Our Rebbeim are looking forward to learning with you and helping you reach new heights in your Torah studies. The unique approach of Yeshiva Ohr Hatzafon combines rigorous textual analysis with practical application.' }}</textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Contact Information (Footer)</label>
+                                        <textarea class="form-control" name="pdf_contact_info" rows="2" 
+                                                  placeholder="Footer contact information">{{ yoh_config.pdf_contact_info if yoh_config and yoh_config.pdf_contact_info else 'Yeshiva Ohr Hatzafon\n[Address]\nPhone: [Phone] | Email: [Email]' }}</textarea>
+                                    </div>
+                                    
+                                    <!-- Footer Image Section -->
+                                    <div class="mb-3">
+                                        <label class="form-label"><i class="fas fa-image"></i> Footer Letterhead Image</label>
+                                        <input type="text" class="form-control" name="pdf_footer_image_path" 
+                                               value="{{ yoh_config.pdf_footer_image_path if yoh_config and yoh_config.pdf_footer_image_path else '' }}" 
+                                               placeholder="Path to footer letterhead image (e.g., /path/to/footer.png)">
+                                        <div class="form-text">Optional: Upload footer image to server and enter path here.</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">Footer Width (points)</label>
+                                                <input type="number" class="form-control" name="pdf_footer_image_width" 
+                                                       value="{{ yoh_config.pdf_footer_image_width if yoh_config and yoh_config.pdf_footer_image_width else 500 }}" 
+                                                       placeholder="500">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">Footer Height (points)</label>
+                                                <input type="number" class="form-control" name="pdf_footer_image_height" 
+                                                       value="{{ yoh_config.pdf_footer_image_height if yoh_config and yoh_config.pdf_footer_image_height else 100 }}" 
+                                                       placeholder="100">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">Footer Background</label>
+                                                <input type="color" class="form-control form-control-color" name="pdf_footer_background_color" 
+                                                       value="{{ yoh_config.pdf_footer_background_color if yoh_config and yoh_config.pdf_footer_background_color else '#ffffff' }}" 
+                                                       title="Choose footer background color">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save"></i> Save YOH PDF Template
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <!-- Test PDF Section -->
+                            <div class="mt-4 p-3 bg-light rounded">
+                                <h6><i class="fas fa-file-pdf"></i> Test PDF Generation</h6>
+                                <p class="text-muted mb-3">Generate test PDF acceptance letters from both divisions to verify templates.</p>
+                                <button type="button" class="btn btn-outline-danger" onclick="testPDFGeneration()">
+                                    <i class="fas fa-file-pdf"></i> Test YZA & YOH PDFs
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Form Templates Section -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#formTemplates" aria-expanded="false" aria-controls="formTemplates">
+                            <i class="fas fa-file-upload text-primary me-2"></i>
+                            <strong>Form Templates Upload</strong>
+                        </button>
+                    </h2>
+                    <div id="formTemplates" class="accordion-collapse collapse" data-bs-parent="#divisionAccordion">
+                        <div class="accordion-body">
+                            <div class="alert alert-info mb-4">
+                                <h6><i class="fas fa-info-circle"></i> Upload Division-Specific Forms</h6>
+                                <p class="mb-2">Upload your existing PDF forms for each division:</p>
+                                <ul class="mb-0">
+                                    <li><strong>Financial Aid Applications:</strong> These will be sent to families for completion and secure upload</li>
+                                    <li><strong>Tuition Contracts:</strong> Can be sent via OpenSign for e-signature OR printed and uploaded</li>
+                                    <li><strong>File Format:</strong> Only PDF files are accepted</li>
+                                    <li><strong>Security:</strong> All forms are stored securely with the same protection as student data</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="row">
+                                <!-- YZA Forms -->
+                                <div class="col-md-4">
+                                    <div class="card border-primary">
+                                        <div class="card-header bg-primary text-white">
+                                            <h6 class="mb-0"><i class="fas fa-graduation-cap"></i> YZA Forms</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Financial Aid Form -->
+                                            <div class="mb-3">
+                                                <label class="form-label small"><strong>Financial Aid Application</strong></label>
+                                                {% if yza_config and yza_config.financial_aid_form_path %}
+                                                    <div class="d-flex align-items-center mb-2 p-2 bg-light rounded">
+                                                        <i class="fas fa-file-pdf text-danger me-2"></i>
+                                                        <small class="text-success me-auto">✓ Form uploaded</small>
+                                                        <a href="{{ url_for('settings.download_division_form', division='YZA', form_type='financial_aid') }}" 
+                                                           class="btn btn-sm btn-outline-primary" title="Download current form">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                    </div>
+                                                {% endif %}
+                                                <form method="POST" action="{{ url_for('settings.upload_division_form', division='YZA') }}" 
+                                                      enctype="multipart/form-data" class="d-flex">
+                                                    <input type="hidden" name="form_type" value="financial_aid">
+                                                    <input type="file" name="form_file" accept=".pdf" class="form-control form-control-sm me-2" required>
+                                                    <button type="submit" class="btn btn-sm btn-primary" title="Upload new form">
+                                                        <i class="fas fa-upload"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            
+                                            <!-- Tuition Contract Form -->
+                                            <div class="mb-0">
+                                                <label class="form-label small"><strong>Tuition Contract</strong></label>
+                                                {% if yza_config and yza_config.tuition_contract_form_path %}
+                                                    <div class="d-flex align-items-center mb-2 p-2 bg-light rounded">
+                                                        <i class="fas fa-file-pdf text-danger me-2"></i>
+                                                        <small class="text-success me-auto">✓ Form uploaded</small>
+                                                        <a href="{{ url_for('settings.download_division_form', division='YZA', form_type='tuition_contract') }}" 
+                                                           class="btn btn-sm btn-outline-primary" title="Download current form">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                    </div>
+                                                {% endif %}
+                                                <form method="POST" action="{{ url_for('settings.upload_division_form', division='YZA') }}" 
+                                                      enctype="multipart/form-data" class="d-flex">
+                                                    <input type="hidden" name="form_type" value="tuition_contract">
+                                                    <input type="file" name="form_file" accept=".pdf" class="form-control form-control-sm me-2" required>
+                                                    <button type="submit" class="btn btn-sm btn-primary" title="Upload new form">
+                                                        <i class="fas fa-upload"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- YOH Forms -->
+                                <div class="col-md-4">
+                                    <div class="card border-success">
+                                        <div class="card-header bg-success text-white">
+                                            <h6 class="mb-0"><i class="fas fa-graduation-cap"></i> YOH Forms</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Financial Aid Form -->
+                                            <div class="mb-3">
+                                                <label class="form-label small"><strong>Financial Aid Application</strong></label>
+                                                {% if yoh_config and yoh_config.financial_aid_form_path %}
+                                                    <div class="d-flex align-items-center mb-2 p-2 bg-light rounded">
+                                                        <i class="fas fa-file-pdf text-danger me-2"></i>
+                                                        <small class="text-success me-auto">✓ Form uploaded</small>
+                                                        <a href="{{ url_for('settings.download_division_form', division='YOH', form_type='financial_aid') }}" 
+                                                           class="btn btn-sm btn-outline-success" title="Download current form">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                    </div>
+                                                {% endif %}
+                                                <form method="POST" action="{{ url_for('settings.upload_division_form', division='YOH') }}" 
+                                                      enctype="multipart/form-data" class="d-flex">
+                                                    <input type="hidden" name="form_type" value="financial_aid">
+                                                    <input type="file" name="form_file" accept=".pdf" class="form-control form-control-sm me-2" required>
+                                                    <button type="submit" class="btn btn-sm btn-success" title="Upload new form">
+                                                        <i class="fas fa-upload"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            
+                                            <!-- Tuition Contract Form -->
+                                            <div class="mb-0">
+                                                <label class="form-label small"><strong>Tuition Contract</strong></label>
+                                                {% if yoh_config and yoh_config.tuition_contract_form_path %}
+                                                    <div class="d-flex align-items-center mb-2 p-2 bg-light rounded">
+                                                        <i class="fas fa-file-pdf text-danger me-2"></i>
+                                                        <small class="text-success me-auto">✓ Form uploaded</small>
+                                                        <a href="{{ url_for('settings.download_division_form', division='YOH', form_type='tuition_contract') }}" 
+                                                           class="btn btn-sm btn-outline-success" title="Download current form">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                    </div>
+                                                {% endif %}
+                                                <form method="POST" action="{{ url_for('settings.upload_division_form', division='YOH') }}" 
+                                                      enctype="multipart/form-data" class="d-flex">
+                                                    <input type="hidden" name="form_type" value="tuition_contract">
+                                                    <input type="file" name="form_file" accept=".pdf" class="form-control form-control-sm me-2" required>
+                                                    <button type="submit" class="btn btn-sm btn-success" title="Upload new form">
+                                                        <i class="fas fa-upload"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- KOLLEL Forms -->
+                                <div class="col-md-4">
+                                    <div class="card border-warning">
+                                        <div class="card-header bg-warning text-dark">
+                                            <h6 class="mb-0"><i class="fas fa-graduation-cap"></i> KOLLEL Forms</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Financial Aid Form -->
+                                            <div class="mb-3">
+                                                <label class="form-label small"><strong>Financial Aid Application</strong></label>
+                                                {% if kollel_config and kollel_config.financial_aid_form_path %}
+                                                    <div class="d-flex align-items-center mb-2 p-2 bg-light rounded">
+                                                        <i class="fas fa-file-pdf text-danger me-2"></i>
+                                                        <small class="text-success me-auto">✓ Form uploaded</small>
+                                                        <a href="{{ url_for('settings.download_division_form', division='KOLLEL', form_type='financial_aid') }}" 
+                                                           class="btn btn-sm btn-outline-warning" title="Download current form">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                    </div>
+                                                {% endif %}
+                                                <form method="POST" action="{{ url_for('settings.upload_division_form', division='KOLLEL') }}" 
+                                                      enctype="multipart/form-data" class="d-flex">
+                                                    <input type="hidden" name="form_type" value="financial_aid">
+                                                    <input type="file" name="form_file" accept=".pdf" class="form-control form-control-sm me-2" required>
+                                                    <button type="submit" class="btn btn-sm btn-warning" title="Upload new form">
+                                                        <i class="fas fa-upload"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            
+                                            <!-- Tuition Contract Form -->
+                                            <div class="mb-0">
+                                                <label class="form-label small"><strong>Tuition Contract</strong></label>
+                                                {% if kollel_config and kollel_config.tuition_contract_form_path %}
+                                                    <div class="d-flex align-items-center mb-2 p-2 bg-light rounded">
+                                                        <i class="fas fa-file-pdf text-danger me-2"></i>
+                                                        <small class="text-success me-auto">✓ Form uploaded</small>
+                                                        <a href="{{ url_for('settings.download_division_form', division='KOLLEL', form_type='tuition_contract') }}" 
+                                                           class="btn btn-sm btn-outline-warning" title="Download current form">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                    </div>
+                                                {% endif %}
+                                                <form method="POST" action="{{ url_for('settings.upload_division_form', division='KOLLEL') }}" 
+                                                      enctype="multipart/form-data" class="d-flex">
+                                                    <input type="hidden" name="form_type" value="tuition_contract">
+                                                    <input type="file" name="form_file" accept=".pdf" class="form-control form-control-sm me-2" required>
+                                                    <button type="submit" class="btn btn-sm btn-warning" title="Upload new form">
+                                                        <i class="fas fa-upload"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-success mt-4">
+                                <h6><i class="fas fa-shield-alt"></i> Security & Usage</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <ul class="mb-0 small">
+                                            <li><strong>Secure Storage:</strong> Forms stored with same encryption as student data</li>
+                                            <li><strong>Access Control:</strong> Only admins can upload/download forms</li>
+                                            <li><strong>Version Control:</strong> New uploads replace previous versions</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <ul class="mb-0 small">
+                                            <li><strong>Distribution:</strong> Forms sent via secure links to families</li>
+                                            <li><strong>Hybrid Options:</strong> Digital signature OR print & upload</li>
+                                            <li><strong>Audit Trail:</strong> All form usage is logged and tracked</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Template Migration Notice -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#templateNotice" aria-expanded="false" aria-controls="templateNotice">
+                            <i class="fas fa-info-circle text-info me-2"></i>
+                            <strong>PDF Templates - Important Notice</strong>
+                        </button>
+                    </h2>
+                    <div id="templateNotice" class="accordion-collapse collapse" data-bs-parent="#divisionAccordion">
+                        <div class="accordion-body">
+                            <div class="alert alert-warning">
+                                <h5><i class="fas fa-exclamation-triangle"></i> PDF Templates Have Moved!</h5>
+                                <p class="mb-2">We've created a new, more powerful PDF Template management system:</p>
+                                <ul class="mb-3">
+                                    <li><strong>Centralized Management:</strong> All PDF templates are now managed in one place</li>
+                                    <li><strong>Version Control:</strong> Track changes and maintain template history</li>
+                                    <li><strong>Variable Management:</strong> Define and manage template variables</li>
+                                    <li><strong>Division Assignments:</strong> Assign templates to specific divisions</li>
+                                    <li><strong>Better Organization:</strong> Categories for different document types</li>
+                                </ul>
+                                <div class="text-center">
+                                    <a href="{{ url_for('pdf_templates.template_manager') }}" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-file-pdf me-2"></i> Go to PDF Templates
+                                    </a>
+                                </div>
+                                <hr>
+                                <p class="text-muted small mb-0">
+                                    <i class="fas fa-info-circle"></i> The template configuration options previously available here have been deprecated. 
+                                    Please use the new PDF Templates system for all your template needs.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Kollel Configuration Tab -->
+        <div class="tab-pane fade" id="kollel" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calculator"></i> Kollel Stipend Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <h6><i class="fas fa-info-circle"></i> About Kollel Stipend Settings</h6>
+                        <p class="mb-2">Configure the stipend calculation rates and bonus amounts for the Kollel division:</p>
+                        <ul class="mb-0">
+                            <li><strong>Base Stipend:</strong> Available monthly amounts (e.g., $500, $600, $700)</li>
+                            <li><strong>Credit Tiers:</strong> Incentive pay based on credits earned</li>
+                            <li><strong>Bonuses:</strong> Additional payments for special programs</li>
+                            <li><strong>Caps:</strong> Maximum amounts to prevent overpayment</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for('kollel.kollel_settings') }}" id="kollelSettingsForm">
+                        <div class="row">
+                            <!-- Base Stipend Configuration -->
+                            <div class="col-md-6">
+                                <h6 class="text-success mb-3">
+                                    <i class="fas fa-money-bill-wave"></i> Base Stipend Options
+                                </h6>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Available Base Stipend Amounts
+                                        <small class="text-muted">(comma-separated values)</small>
+                                    </label>
+                                    <input type="text" class="form-control" name="base_stipend_options" 
+                                           value="{{ kollel_config.kollel_base_stipend_options if kollel_config and kollel_config.kollel_base_stipend_options else '500,600,700' }}" placeholder="500,600,700">
+                                    <div class="form-text">Students can choose from these monthly base amounts.</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Base + Incentive Cap
+                                        <small class="text-muted">($)</small>
+                                    </label>
+                                    <input type="number" class="form-control" name="base_incentive_cap" 
+                                           value="{{ kollel_config.kollel_base_incentive_cap if kollel_config and kollel_config.kollel_base_incentive_cap else '1000' }}" placeholder="1000">
+                                    <div class="form-text">Maximum total for base stipend + incentive pay.</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Credit-Based Incentive Configuration -->
+                            <div class="col-md-6">
+                                <h6 class="text-success mb-3">
+                                    <i class="fas fa-chart-line"></i> Credit-Based Incentive Pay
+                                </h6>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">First Tier Credits</label>
+                                            <input type="number" class="form-control" name="first_tier_credit_count" 
+                                                   value="{{ kollel_config.kollel_first_tier_credit_count if kollel_config and kollel_config.kollel_first_tier_credit_count else '10' }}" placeholder="10">
+                                            <div class="form-text">Number of credits in first tier</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">First Tier Amount ($)</label>
+                                            <input type="number" class="form-control" name="first_tier_credit_amount" 
+                                                   value="{{ kollel_config.kollel_first_tier_credit_amount if kollel_config and kollel_config.kollel_first_tier_credit_amount else '20' }}" placeholder="20">
+                                            <div class="form-text">Amount per credit (first tier)</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Additional Credits Amount
+                                        <small class="text-muted">($)</small>
+                                    </label>
+                                    <input type="number" class="form-control" name="second_tier_credit_amount" 
+                                           value="{{ kollel_config.kollel_second_tier_credit_amount if kollel_config and kollel_config.kollel_second_tier_credit_amount else '25' }}" placeholder="25">
+                                    <div class="form-text">Amount per credit beyond first tier.</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Bonus Configuration -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h6 class="text-success mb-3">
+                                    <i class="fas fa-trophy"></i> Bonus Payment Configuration
+                                </h6>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Kollel Elyon Bonus
+                                        <small class="text-muted">($)</small>
+                                    </label>
+                                    <input type="number" class="form-control" name="kollel_elyon_bonus" 
+                                           value="{{ kollel_config.kollel_elyon_bonus if kollel_config and kollel_config.kollel_elyon_bonus else '1000' }}" placeholder="1000">
+                                    <div class="form-text">Monthly bonus for Kollel Elyon students</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Mussar Chabura Bonus
+                                        <small class="text-muted">($)</small>
+                                    </label>
+                                    <input type="number" class="form-control" name="mussar_chabura_bonus" 
+                                           value="{{ kollel_config.kollel_mussar_chabura_bonus if kollel_config and kollel_config.kollel_mussar_chabura_bonus else '25' }}" placeholder="25">
+                                    <div class="form-text">Monthly bonus for Mussar Chabura participation</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Default Iyun Chabura
+                                        <small class="text-muted">($)</small>
+                                    </label>
+                                    <input type="number" class="form-control" name="default_iyun_chabura_bonus" 
+                                           value="{{ kollel_config.kollel_default_iyun_chabura_bonus if kollel_config and kollel_config.kollel_default_iyun_chabura_bonus else '100' }}" placeholder="100">
+                                    <div class="form-text">Default monthly amount for Iyun Chabura</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="alert alert-light p-2">
+                                    <small><i class="fas fa-info-circle text-info"></i> <strong>Note:</strong> Retufin pay amounts are configured individually per student as they vary.</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Calculation Preview -->
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h6><i class="fas fa-calculator"></i> Calculation Preview</h6>
+                            <div class="row" id="calculationPreview">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Example: Student with $600 base, 12 credits</strong></p>
+                                    <ul class="list-unstyled small text-muted">
+                                        <li>• Base stipend: $600</li>
+                                        <li>• First 10 credits: 10 × $20 = $200</li>
+                                        <li>• Additional 2 credits: 2 × $25 = $50</li>
+                                        <li>• Incentive subtotal: $250</li>
+                                        <li>• Base + Incentive: $850 (under $1000 cap)</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>With Kollel Elyon bonus:</strong></p>
+                                    <ul class="list-unstyled small text-muted">
+                                        <li>• Base + Incentive: $850</li>
+                                        <li>• Kollel Elyon: $1000</li>
+                                        <li>• Mussar Chabura: $25</li>
+                                        <li>• <strong>Total: $1,875</strong></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save"></i> Save Kollel Settings
+                            </button>
+                            <div>
+                                <button type="button" class="btn btn-outline-info" onclick="loadCurrentSettings()">
+                                    <i class="fas fa-sync"></i> Load Current Settings
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="resetToDefaults()">
+                                    <i class="fas fa-undo"></i> Reset to Defaults
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Academic Years Tab -->
+        <div class="tab-pane fade" id="academic-years" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt"></i> Academic Year Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <h6><i class="fas fa-info-circle"></i> About Academic Years</h6>
+                        <p class="mb-2">Academic years define the school calendar and are used throughout the system:</p>
+                        <ul class="mb-0">
+                            <li>Format: "2024-2025" (runs from September to August)</li>
+                            <li>Only one academic year can be marked as "active" at a time</li>
+                            <li>Each module can work with different academic years independently</li>
+                            <li>Creating a new year automatically sets up default shiurim and attendance periods</li>
+                        </ul>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <button class="btn btn-primary btn-lg w-100" onclick="createNextAcademicYear()">
+                                <i class="fas fa-plus me-2"></i>
+                                Create Next Academic Year
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-outline-info btn-lg w-100" onclick="refreshAcademicYears()">
+                                <i class="fas fa-sync me-2"></i>
+                                Refresh List
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="academicYearsContainer">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-muted mt-2">Loading academic years...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = event.target.closest('button').querySelector('i');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        field.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+function setGmailDefaults() {
+    document.getElementById('mail_server').value = 'smtp.gmail.com';
+    document.getElementById('mail_port').value = '587';
+    document.getElementById('use_tls').checked = true;
+}
+
+function setOutlookDefaults() {
+    document.getElementById('mail_server').value = 'smtp-mail.outlook.com';
+    document.getElementById('mail_port').value = '587';
+    document.getElementById('use_tls').checked = true;
+}
+
+function setOffice365Defaults() {
+    document.getElementById('mail_server').value = 'smtp.office365.com';
+    document.getElementById('mail_port').value = '587';
+    document.getElementById('use_tls').checked = true;
+}
+
+function generateWebhookSecret() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let secret = '';
+    for (let i = 0; i < 24; i++) {
+        secret += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    document.getElementById('webhook_secret').value = secret;
+}
+
+function generateSecretKey() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let key = '';
+    for (let i = 0; i < 32; i++) {
+        key += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    document.getElementById('secret_key').value = key;
+}
+
+function generateCSRFKey() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let key = '';
+    for (let i = 0; i < 32; i++) {
+        key += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    document.getElementById('csrf_key').value = key;
+}
+
+function testEmailSettings() {
+    const button = event.target.closest('button');
+    const originalContent = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+    
+    fetch('/test_email')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Test email sent successfully! Check your inbox.');
+            } else {
+                alert('Error sending test email: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error testing email: ' + error);
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = originalContent;
+        });
+}
+
+// Check if we need to show restart modal
+window.addEventListener('DOMContentLoaded', function() {
+    {% if session.get('show_restart_modal') %}
+        // Clear the session flag
+        fetch('/clear-restart-flag', {method: 'POST'})
+            .then(() => {
+                // Show the restart modal
+                const restartModal = new bootstrap.Modal(document.getElementById('restartModal'));
+                restartModal.show();
+            });
+    {% endif %}
+});
+
+function restartApplication() {
+    const button = document.getElementById('restartButton');
+    const originalContent = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Restarting...';
+    
+    fetch('/restart-application', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            document.getElementById('restartStatus').innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> Application is restarting...
+                    <br><small>This page will refresh automatically in 5 seconds.</small>
+                </div>
+            `;
+            
+            // Wait a bit for the server to restart, then refresh
+            setTimeout(() => {
+                window.location.reload();
+            }, 5000);
+        } else {
+            document.getElementById('restartStatus').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> Error restarting application: ${data.error}
+                </div>
+            `;
+            button.disabled = false;
+            button.innerHTML = originalContent;
+        }
+    })
+    .catch(error => {
+        document.getElementById('restartStatus').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle"></i> Error: ${error}
+            </div>
+        `;
+        button.disabled = false;
+        button.innerHTML = originalContent;
+    });
+}
+
+function sendDivisionTestEmails() {
+    const email = prompt('Enter email address to receive test emails:', 'synergy012@gmail.com');
+    if (!email) return;
+    
+    const button = event.target.closest('button');
+    const originalContent = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+    
+    fetch(`/send-test-emails/${encodeURIComponent(email)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let message = `Test emails sent to ${data.email}!\n\n`;
+                
+                // Show results
+                data.results.forEach(result => {
+                    message += `${result.division}: ${result.message}\n`;
+                });
+                
+                message += '\nDivision Configurations:\n';
+                data.configurations.forEach(config => {
+                    message += `${config.division}: ${config.from_name} <${config.from_address}>\n`;
+                });
+                
+                message += '\nInstructions:\n';
+                data.instructions.forEach(instruction => {
+                    message += `• ${instruction}\n`;
+                });
+                
+                alert(message);
+            } else {
+                alert('Error sending test emails: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error);
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = originalContent;
+        });
+}
+
+function testPDFGeneration() {
+    const button = event.target.closest('button');
+    const originalContent = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating...';
+    
+    fetch('/test-pdf-generation')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let message = 'Test PDFs generated successfully!\n\n';
+                
+                // Show results
+                data.results.forEach(result => {
+                    message += `${result.division}: ${result.message}\n`;
+                });
+                
+                if (data.download_links) {
+                    message += '\nDownload Links:\n';
+                    data.download_links.forEach(link => {
+                        message += `${link.division}: ${link.url}\n`;
+                    });
+                }
+                
+                alert(message);
+            } else {
+                alert('Error generating test PDFs: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error generating test PDFs: ' + error);
+        })
+        .finally(() => {
+            button.disabled = false;
+            button.innerHTML = originalContent;
+        });
+}
+
+// Kollel Settings Functions
+function loadCurrentSettings() {
+    const button = event.target.closest('button');
+    const originalContent = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
+    
+    fetch('/kollel/settings', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const settings = data.settings;
+            
+            // Populate form fields with current settings
+            if (data.settings) {
+                const settings = data.settings;
+                document.querySelector('input[name="base_stipend_options"]').value = settings.base_stipend_options || '';
+                document.querySelector('input[name="first_tier_credit_amount"]').value = settings.first_tier_credit_amount || '';
+                document.querySelector('input[name="first_tier_credit_count"]').value = settings.first_tier_credit_count || '';
+                document.querySelector('input[name="second_tier_credit_amount"]').value = settings.second_tier_credit_amount || '';
+                document.querySelector('input[name="base_incentive_cap"]').value = settings.base_incentive_cap || '';
+                document.querySelector('input[name="kollel_elyon_bonus"]').value = settings.kollel_elyon_bonus || '';
+                document.querySelector('input[name="mussar_chabura_bonus"]').value = settings.mussar_chabura_bonus || '';
+                document.querySelector('input[name="default_iyun_chabura_bonus"]').value = settings.default_iyun_chabura_bonus || '';
+            }
+            
+            // Update calculation preview
+            updateCalculationPreview();
+            
+            alert('Current settings loaded successfully!');
+        } else {
+            alert('Error loading current settings: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Error loading settings: ' + error);
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalContent;
+    });
+}
+
+function resetToDefaults() {
+    if (confirm('Are you sure you want to reset all Kollel settings to defaults?')) {
+        // Reset to default values
+        document.querySelector('input[name="base_stipend_options"]').value = '500,600,700';
+        document.querySelector('input[name="first_tier_credit_amount"]').value = '20';
+        document.querySelector('input[name="first_tier_credit_count"]').value = '10';
+        document.querySelector('input[name="second_tier_credit_amount"]').value = '25';
+        document.querySelector('input[name="base_incentive_cap"]').value = '1000';
+        document.querySelector('input[name="kollel_elyon_bonus"]').value = '1000';
+        document.querySelector('input[name="mussar_chabura_bonus"]').value = '25';
+        document.querySelector('input[name="default_iyun_chabura_bonus"]').value = '100';
+        
+        // Update calculation preview
+        updateCalculationPreview();
+    }
+}
+
+function updateCalculationPreview() {
+    const firstTierAmount = parseInt(document.querySelector('input[name="first_tier_credit_amount"]').value) || 20;
+    const firstTierCount = parseInt(document.querySelector('input[name="first_tier_credit_count"]').value) || 10;
+    const secondTierAmount = parseInt(document.querySelector('input[name="second_tier_credit_amount"]').value) || 25;
+    const cap = parseInt(document.querySelector('input[name="base_incentive_cap"]').value) || 1000;
+    const kollelElyonBonus = parseInt(document.querySelector('input[name="kollel_elyon_bonus"]').value) || 1000;
+    const mussarBonus = parseInt(document.querySelector('input[name="mussar_chabura_bonus"]').value) || 25;
+    
+    // Example calculation: $600 base, 12 credits
+    const baseStipend = 600;
+    const totalCredits = 12;
+    
+    // Calculate incentive
+    let incentive = 0;
+    if (totalCredits <= firstTierCount) {
+        incentive = totalCredits * firstTierAmount;
+    } else {
+        incentive = (firstTierCount * firstTierAmount) + ((totalCredits - firstTierCount) * secondTierAmount);
+    }
+    
+    const baseIncentive = Math.min(baseStipend + incentive, cap);
+    const total = baseIncentive + kollelElyonBonus + mussarBonus;
+    
+    // Update the preview
+    document.getElementById('calculationPreview').innerHTML = `
+        <div class="col-md-6">
+            <p class="mb-1"><strong>Example: Student with $${baseStipend} base, ${totalCredits} credits</strong></p>
+            <ul class="list-unstyled small text-muted">
+                <li>• Base stipend: $${baseStipend}</li>
+                <li>• First ${firstTierCount} credits: ${Math.min(totalCredits, firstTierCount)} × $${firstTierAmount} = $${Math.min(totalCredits, firstTierCount) * firstTierAmount}</li>
+                ${totalCredits > firstTierCount ? `<li>• Additional ${totalCredits - firstTierCount} credits: ${totalCredits - firstTierCount} × $${secondTierAmount} = $${(totalCredits - firstTierCount) * secondTierAmount}</li>` : ''}
+                <li>• Incentive subtotal: $${incentive}</li>
+                <li>• Base + Incentive: $${baseIncentive} ${baseStipend + incentive > cap ? `(capped at $${cap})` : `(under $${cap} cap)`}</li>
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <p class="mb-1"><strong>With Kollel Elyon bonus:</strong></p>
+            <ul class="list-unstyled small text-muted">
+                <li>• Base + Incentive: $${baseIncentive}</li>
+                <li>• Kollel Elyon: $${kollelElyonBonus}</li>
+                <li>• Mussar Chabura: $${mussarBonus}</li>
+                <li>• <strong>Total: $${total.toLocaleString()}</strong></li>
+            </ul>
+        </div>
+    `;
+}
+
+// Update calculation preview when inputs change
+document.addEventListener('DOMContentLoaded', function() {
+    const kollelForm = document.getElementById('kollelSettingsForm');
+    if (kollelForm) {
+        // Add event listeners to all numeric inputs
+        const inputs = kollelForm.querySelectorAll('input[type="number"], input[name="base_stipend_options"]');
+        inputs.forEach(input => {
+            input.addEventListener('input', updateCalculationPreview);
+        });
+        
+        // Initial preview update
+        updateCalculationPreview();
+    }
+    
+    // Load academic years when the tab is shown
+    const academicYearsTab = document.getElementById('academic-years-tab');
+    if (academicYearsTab) {
+        academicYearsTab.addEventListener('shown.bs.tab', function() {
+            loadAcademicYears();
+        });
+    }
+    
+    // Storage settings - Show/hide Dropbox config based on selection
+    const storageRadios = document.querySelectorAll('input[name="storage_backend"]');
+    const dropboxConfig = document.getElementById('dropbox-config');
+    
+    if (storageRadios.length > 0 && dropboxConfig) {
+        storageRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'dropbox') {
+                    dropboxConfig.style.display = 'block';
+                } else {
+                    dropboxConfig.style.display = 'none';
+                }
+            });
+        });
+    }
+});
+
+// Academic Years Management Functions
+function loadAcademicYears() {
+    const container = document.getElementById('academicYearsContainer');
+    container.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted mt-2">Loading academic years...</p>
+        </div>
+    `;
+    
+    fetch('/api/academic-years')
+        .then(response => response.json())
+        .then(data => {
+            if (Array.isArray(data)) {
+                displayAcademicYears(data);
+            } else {
+                throw new Error(data.error || 'Unknown error');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading academic years:', error);
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> 
+                    Error loading academic years: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function displayAcademicYears(years) {
+    const container = document.getElementById('academicYearsContainer');
+    
+    if (years.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No Academic Years Found</h5>
+                <p class="text-muted">Create your first academic year to get started.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Academic Year</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Students</th>
+                        <th>Shiurim</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    years.forEach(year => {
+        const statusBadge = year.is_active 
+            ? '<span class="badge bg-success"><i class="fas fa-check-circle"></i> Active</span>'
+            : '<span class="badge bg-secondary">Inactive</span>';
+            
+        html += `
+            <tr ${year.is_active ? 'class="table-success"' : ''}>
+                <td>
+                    <strong>${year.name}</strong>
+                    ${year.is_active ? '<i class="fas fa-star text-warning ms-2" title="Active Year"></i>' : ''}
+                </td>
+                <td>${new Date(year.start_date).toLocaleDateString()}</td>
+                <td>${new Date(year.end_date).toLocaleDateString()}</td>
+                <td><span class="badge bg-info">${year.student_count}</span></td>
+                <td><span class="badge bg-primary">${year.shiur_count}</span></td>
+                <td>${statusBadge}</td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        ${!year.is_active ? `
+                            <button class="btn btn-outline-success" onclick="setActiveYear(${year.id}, '${year.name}')" title="Set as Active">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-outline-primary" onclick="editAcademicYear(${year.id})" title="Edit Dates">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-info" onclick="viewYearDetails(${year.id})" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += `
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+function createNextAcademicYear() {
+    const button = event.target.closest('button');
+    const originalContent = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+    
+    fetch('/api/academic-years/create-next', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Academic year ${data.year.name} created successfully!`);
+            loadAcademicYears(); // Refresh the list
+        } else {
+            alert('Error creating academic year: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error creating academic year:', error);
+        alert('Error creating academic year: ' + error.message);
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalContent;
+    });
+}
+
+function setActiveYear(yearId, yearName) {
+    if (!confirm(`Set "${yearName}" as the active academic year?\\n\\nThis will affect the global active year setting.`)) {
+        return;
+    }
+    
+    fetch(`/api/academic-years/set-active/${yearId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            loadAcademicYears(); // Refresh the list
+        } else {
+            alert('Error setting active year: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error setting active year:', error);
+        alert('Error setting active year: ' + error.message);
+    });
+}
+
+function refreshAcademicYears() {
+    loadAcademicYears();
+}
+
+function viewYearDetails(yearId) {
+    // This could open a modal with detailed information about the academic year
+    alert(`View details for academic year ${yearId} - Feature coming soon!`);
+}
+
+function editAcademicYear(yearId) {
+    // Get the year data from the current list
+    fetch('/api/academic-years')
+        .then(response => response.json())
+        .then(years => {
+            const year = years.find(y => y.id === yearId);
+            if (!year) {
+                alert('Academic year not found');
+                return;
+            }
+            
+            // Populate the edit form
+            document.getElementById('editYearId').value = year.id;
+            document.getElementById('editYearLabel').value = year.name;
+            document.getElementById('editStartDate').value = year.start_date;
+            document.getElementById('editEndDate').value = year.end_date;
+            document.getElementById('editTuitionDueDate').value = year.tuition_due_date || '';
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('editAcademicYearModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error loading year data:', error);
+            alert('Error loading year data: ' + error.message);
+        });
+}
+
+function saveAcademicYear() {
+    const yearId = document.getElementById('editYearId').value;
+    const yearLabel = document.getElementById('editYearLabel').value;
+    const startDate = document.getElementById('editStartDate').value;
+    const endDate = document.getElementById('editEndDate').value;
+    const tuitionDueDate = document.getElementById('editTuitionDueDate').value;
+    
+    // Validate required fields
+    if (!yearLabel || !startDate || !endDate) {
+        alert('Year label, start date, and end date are required');
+        return;
+    }
+    
+    // Validate date order
+    if (new Date(startDate) >= new Date(endDate)) {
+        alert('Start date must be before end date');
+        return;
+    }
+    
+    const button = document.getElementById('saveAcademicYearBtn');
+    const originalContent = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+    
+    const data = {
+        year_label: yearLabel,
+        start_date: startDate,
+        end_date: endDate
+    };
+    
+    if (tuitionDueDate) {
+        data.tuition_due_date = tuitionDueDate;
+    }
+    
+    fetch(`/api/academic-years/${yearId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editAcademicYearModal'));
+            modal.hide();
+            
+            // Refresh the academic years list
+            loadAcademicYears();
+        } else {
+            alert('Error updating academic year: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating academic year:', error);
+        alert('Error updating academic year: ' + error.message);
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalContent;
+    });
+}
+
+// Storage settings functions
+async function testDropboxConnection() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+    
+    try {
+        const response = await fetch('{{ url_for("settings.test_dropbox_connection") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showStorageAlert('success', result.message);
+        } else {
+            showStorageAlert('danger', 'Connection failed: ' + result.error);
+        }
+    } catch (error) {
+        showStorageAlert('danger', 'Error testing connection: ' + error.message);
+    } finally {
+        button.disabled = false;
+        button.innerHTML = originalText;
+    }
+}
+
+function showStorageAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert after the dropbox config card
+    const dropboxCard = document.querySelector('#dropbox-config .card');
+    if (dropboxCard) {
+        dropboxCard.parentNode.insertBefore(alertDiv, dropboxCard.nextSibling);
+    }
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Email Recipient Settings Functions
+function loadAllEmailSettings() {
+    ['YZA', 'YOH', 'KOLLEL'].forEach(division => {
+        loadEmailSettings(division);
+    });
+}
+
+function loadEmailSettings(division) {
+    const url = `/api/divisions/${division}/email-recipient-settings`;
+    const containerId = `${division.toLowerCase()}-email-settings`;
+    const container = document.getElementById(containerId);
+    
+    console.log(`Loading email settings for ${division}, container:`, container);
+    
+    if (!container) {
+        console.error(`Container not found for division ${division}:`, containerId);
+        return;
+    }
+    
+    // Show loading state
+    container.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading ${division} recipient settings...</p>
+        </div>
+    `;
+    
+    fetch(url)
+        .then(response => {
+            console.log(`Response for ${division}:`, response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log(`Data for ${division}:`, data);
+            if (data.success) {
+                renderEmailSettings(division, data.settings);
+            } else {
+                console.error(`Error loading ${division} email settings:`, data.error);
+                container.innerHTML = `
+                    <div class="alert alert-danger">
+                        Error loading ${division} settings: ${data.error || 'Unknown error'}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error(`Error loading ${division} email settings:`, error);
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    Error loading ${division} settings: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function renderEmailSettings(division, settings) {
+    const container = document.getElementById(`${division.toLowerCase()}-email-settings`);
+    
+    const emailTypes = [
+        { key: 'acceptance_email', label: 'Acceptance Letters', icon: 'fa-graduation-cap', color: 'success' },
+        { key: 'financial_aid_email', label: 'Financial Aid Forms', icon: 'fa-file-invoice-dollar', color: 'warning' },
+        { key: 'tuition_contract_email', label: 'Tuition Contracts', icon: 'fa-file-contract', color: 'primary' },
+        { key: 'general_email', label: 'General Communications', icon: 'fa-envelope', color: 'info' }
+    ];
+    
+    let html = '<div class="space-y-3">';
+    
+    emailTypes.forEach(emailType => {
+        const currentRecipients = settings[`${emailType.key}_default_recipients`] || ['student'];
+        
+        html += `
+            <div class="border rounded p-3 mb-3">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas ${emailType.icon} text-${emailType.color} me-2"></i>
+                    <strong class="small">${emailType.label}</strong>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" 
+                               id="${division}_${emailType.key}_student" 
+                               ${currentRecipients.includes('student') ? 'checked' : ''}
+                               onchange="updateEmailRecipients('${division}', '${emailType.key}')">
+                        <label class="form-check-label small" for="${division}_${emailType.key}_student">
+                            <i class="fas fa-user text-primary me-1"></i>Student
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" 
+                               id="${division}_${emailType.key}_father" 
+                               ${currentRecipients.includes('father') ? 'checked' : ''}
+                               onchange="updateEmailRecipients('${division}', '${emailType.key}')">
+                        <label class="form-check-label small" for="${division}_${emailType.key}_father">
+                            <i class="fas fa-male text-info me-1"></i>Father
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" 
+                               id="${division}_${emailType.key}_mother" 
+                               ${currentRecipients.includes('mother') ? 'checked' : ''}
+                               onchange="updateEmailRecipients('${division}', '${emailType.key}')">
+                        <label class="form-check-label small" for="${division}_${emailType.key}_mother">
+                            <i class="fas fa-female text-danger me-1"></i>Mother
+                        </label>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+        <div class="mt-3">
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                These are default recipients. You can override them when sending individual emails.
+            </small>
+        </div>
+    </div>`;
+    
+    container.innerHTML = html;
+}
+
+function updateEmailRecipients(division, emailType) {
+    const studentChecked = document.getElementById(`${division}_${emailType}_student`).checked;
+    const fatherChecked = document.getElementById(`${division}_${emailType}_father`).checked;
+    const motherChecked = document.getElementById(`${division}_${emailType}_mother`).checked;
+    
+    // Ensure at least one recipient is selected
+    if (!studentChecked && !fatherChecked && !motherChecked) {
+        alert('At least one recipient must be selected!');
+        document.getElementById(`${division}_${emailType}_student`).checked = true;
+        return;
+    }
+    
+    const recipients = [];
+    if (studentChecked) recipients.push('student');
+    if (fatherChecked) recipients.push('father');
+    if (motherChecked) recipients.push('mother');
+    
+    const data = {
+        email_type: emailType,
+        recipients: recipients
+    };
+    
+    const url = `/api/divisions/${division}/email-recipient-settings`;
+    
+    fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success indicator
+            showSuccessIndicator(`${division} ${emailType} recipients updated`);
+        } else {
+            alert('Error updating email recipients: ' + data.error);
+            // Reload settings to reset checkboxes
+            loadEmailSettings(division);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating email recipients:', error);
+        alert('Error updating email recipients');
+        // Reload settings to reset checkboxes
+        loadEmailSettings(division);
+    });
+}
+
+function showSuccessIndicator(message) {
+    // Create a temporary success message
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+        }
+    }, 3000);
+}
+
+// Add event listener for email recipients tab activation
+document.addEventListener('DOMContentLoaded', function() {
+    // Load email settings when the email recipients tab is shown
+    const emailRecipientsTab = document.getElementById('email-recipients-tab');
+    if (emailRecipientsTab) {
+        emailRecipientsTab.addEventListener('shown.bs.tab', function (e) {
+            // Load settings for YZA by default when the tab is first shown
+            loadEmailSettings('YZA');
+        });
+        
+        // If the email recipients tab is active by default, load settings immediately
+        if (emailRecipientsTab.classList.contains('active')) {
+            loadEmailSettings('YZA');
+        }
+    }
+    
+    // Add event listeners for division tab switches within email recipients
+    // Use a more robust approach to attach event listeners
+    function attachDivisionTabListeners() {
+        const divisionTabs = document.querySelectorAll('#emailSettingsTabs .nav-link');
+        console.log('Found division tabs:', divisionTabs.length);
+        
+        divisionTabs.forEach(tab => {
+            // Remove any existing listeners to avoid duplicates
+            tab.removeEventListener('shown.bs.tab', handleTabSwitch);
+            tab.addEventListener('shown.bs.tab', handleTabSwitch);
+            
+            // Also add click listeners as a fallback
+            tab.removeEventListener('click', handleTabClick);
+            tab.addEventListener('click', handleTabClick);
+        });
+    }
+    
+    function handleTabSwitch(e) {
+        const tabId = e.target.getAttribute('id');
+        const division = tabId.replace('-email-tab', '').toUpperCase();
+        console.log('Tab switch detected:', tabId, 'Division:', division);
+        loadEmailSettings(division);
+    }
+    
+    function handleTabClick(e) {
+        // Small delay to ensure the tab has become active
+        setTimeout(() => {
+            const tabId = e.target.getAttribute('id');
+            const division = tabId.replace('-email-tab', '').toUpperCase();
+            console.log('Tab click detected:', tabId, 'Division:', division);
+            loadEmailSettings(division);
+        }, 100);
+    }
+    
+    // Attach listeners immediately
+    attachDivisionTabListeners();
+    
+    // Also attach listeners when the email recipients tab becomes visible
+    // in case the tabs aren't rendered yet
+    if (emailRecipientsTab) {
+        emailRecipientsTab.addEventListener('shown.bs.tab', function() {
+            setTimeout(attachDivisionTabListeners, 100);
+        });
+    }
+});
+
+// Dropbox Sign Settings Functions
+async function testDropboxSignConnection() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+    
+    try {
+        const response = await fetch('{{ url_for("settings.test_dropbox_sign_connection") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showDropboxSignAlert('success', result.message);
+        } else {
+            showDropboxSignAlert('danger', 'Connection failed: ' + result.error);
+        }
+    } catch (error) {
+        showDropboxSignAlert('danger', 'Error testing connection: ' + error.message);
+    } finally {
+        button.disabled = false;
+        button.innerHTML = originalText;
+    }
+}
+
+async function showApiQuota() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+    
+    try {
+        const response = await fetch('{{ url_for("settings.get_dropbox_sign_quota") }}', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const quota = result.quota;
+            const quotaMessage = `
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-chart-pie"></i> API Quota Usage</h6>
+                    <p><strong>Account:</strong> ${result.account_email}</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Documents:</strong><br>
+                            Used: ${quota.documents_used}<br>
+                            Remaining: ${quota.documents_remaining}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>API Requests:</strong><br>
+                            Used: ${quota.api_requests_used}<br>
+                            Remaining: ${quota.api_requests_remaining}</p>
+                        </div>
+                    </div>
+                    <div class="progress mb-2">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: ${(quota.documents_used / (quota.documents_used + quota.documents_remaining)) * 100}%"
+                             aria-valuenow="${quota.documents_used}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="${quota.documents_used + quota.documents_remaining}">
+                        </div>
+                    </div>
+                    <small class="text-muted">Document Usage: ${quota.documents_used}/${quota.documents_used + quota.documents_remaining}</small>
+                </div>
+            `;
+            showDropboxSignAlert('info', quotaMessage);
+        } else {
+            showDropboxSignAlert('danger', 'Failed to retrieve quota: ' + result.error);
+        }
+    } catch (error) {
+        showDropboxSignAlert('danger', 'Error retrieving quota: ' + error.message);
+    } finally {
+        button.disabled = false;
+        button.innerHTML = originalText;
+    }
+}
+
+function showDropboxSignAlert(type, message) {
+    const statusDiv = document.getElementById('dropbox-sign-status');
+    statusDiv.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    statusDiv.style.display = 'block';
+    
+    // Auto-dismiss after 10 seconds for non-error messages
+    if (type !== 'danger') {
+        setTimeout(() => {
+            const alert = statusDiv.querySelector('.alert');
+            if (alert) {
+                alert.classList.remove('show');
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 150);
+            }
+        }, 10000);
+    }
+}
+</script>
+
+<!-- Edit Academic Year Modal -->
+<div class="modal fade" id="editAcademicYearModal" tabindex="-1" aria-labelledby="editAcademicYearModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editAcademicYearModalLabel">
+                    <i class="fas fa-edit"></i> Edit Academic Year
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editAcademicYearForm">
+                    <input type="hidden" id="editYearId">
+                    
+                    <div class="mb-3">
+                        <label for="editYearLabel" class="form-label">Academic Year Label</label>
+                        <input type="text" class="form-control" id="editYearLabel" placeholder="e.g., 2024-2025" required>
+                        <div class="form-text">Format: YYYY-YYYY (e.g., 2024-2025)</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editStartDate" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="editStartDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editEndDate" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="editEndDate" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editTuitionDueDate" class="form-label">Tuition Due Date <span class="text-muted">(Optional)</span></label>
+                        <input type="date" class="form-control" id="editTuitionDueDate">
+                        <div class="form-text">When tuition payments are due for this academic year</div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Note:</strong> Changing academic year dates may affect existing records, reports, and calculations. 
+                        Please ensure the new dates are correct before saving.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="saveAcademicYearBtn" onclick="saveAcademicYear()">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Restart Application Modal -->
+<div class="modal fade" id="restartModal" tabindex="-1" aria-labelledby="restartModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="restartModalLabel">
+                    <i class="fas fa-sync-alt"></i> Application Restart Required
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle"></i> Your settings have been saved successfully!
+                </div>
+                <p>The changes you made require the application to restart to take effect.</p>
+                <p>Would you like to restart the application now?</p>
+                <div id="restartStatus"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Restart Later
+                </button>
+                <button type="button" class="btn btn-warning" id="restartButton" onclick="restartApplication()">
+                    <i class="fas fa-sync-alt"></i> Restart Now
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}{{ division }} Financial Aid Applications{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-hands-helping text-primary"></i>
+                        {{ division }} Financial Aid Applications
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Academic Year: 
+                        <select class="form-select form-select-sm d-inline-block ms-1" style="width: auto;" 
+                                id="academicYearSelector" onchange="changeAcademicYear()">
+                            {% for year in all_academic_years %}
+                            <option value="{{ year.id }}" {% if year.id == academic_year.id %}selected{% endif %}>
+                                {{ year.year_label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="createNewApplication()">
+                        <i class="fas fa-plus"></i> New Application
+                    </button>
+                    <a href="{{ url_for('financial.financial_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Financial Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Applications</h6>
+                            <h3 class="mb-0">{{ applications|length }}</h3>
+                        </div>
+                        <div class="text-primary">
+                            <i class="fas fa-file-alt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Under Review</h6>
+                            <h3 class="mb-0">{{ applications|selectattr('application_status', 'equalto', 'Under Review')|list|length }}</h3>
+                        </div>
+                        <div class="text-warning">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Approved</h6>
+                            <h3 class="mb-0">{{ applications|selectattr('application_status', 'equalto', 'Approved')|list|length }}</h3>
+                        </div>
+                        <div class="text-success">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Denied</h6>
+                            <h3 class="mb-0">{{ applications|selectattr('application_status', 'equalto', 'Denied')|list|length }}</h3>
+                        </div>
+                        <div class="text-danger">
+                            <i class="fas fa-times-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Applications Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Financial Aid Applications</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Application Date</th>
+                            <th>Status</th>
+                            <th>Household Income</th>
+                            <th>Household Size</th>
+                            <th>Requested Aid</th>
+                            <th>Approved Aid</th>
+                            <th>Documents</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in applications %}
+                        <tr>
+                            <td>
+                                <div>
+                                    <strong>{{ app.student.student_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ app.student.id }}</small>
+                                </div>
+                            </td>
+                            <td>{{ app.application_date.strftime('%m/%d/%Y') }}</td>
+                            <td>
+                                <span class="badge bg-{{ app.status_color }}">{{ app.application_status }}</span>
+                            </td>
+                            <td>
+                                {% if app.household_income %}
+                                    ${{ "{:,.2f}".format(app.household_income) }}
+                                {% else %}
+                                    <span class="text-muted">Not provided</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ app.household_size or '-' }}</td>
+                            <td>
+                                {% if app.requested_aid_amount %}
+                                    ${{ "{:,.2f}".format(app.requested_aid_amount) }}
+                                    {% if app.requested_aid_percentage %}
+                                        <br><small>({{ app.requested_aid_percentage }}%)</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if app.approved_aid_amount %}
+                                    <strong class="text-success">${{ "{:,.2f}".format(app.approved_aid_amount) }}</strong>
+                                    {% if app.approved_aid_percentage %}
+                                        <br><small>({{ app.approved_aid_percentage }}%)</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewDocuments({{ app.id }})">
+                                    <i class="fas fa-folder"></i> {{ app.documents.count() }}
+                                </button>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick="viewApplication({{ app.id }})" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-warning" onclick="editApplication({{ app.id }})" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    {% if app.application_status == 'Submitted' %}
+                                    <button class="btn btn-outline-success" onclick="reviewApplication({{ app.id }})" title="Review">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    {% endif %}
+                                    {% if app.esign_sent and not app.esign_completed %}
+                                    <button class="btn btn-outline-info" onclick="checkSignatureStatus({{ app.id }})" title="Check Signature">
+                                        <i class="fas fa-signature"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function changeAcademicYear() {
+    const yearId = document.getElementById('academicYearSelector').value;
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('academic_year_id', yearId);
+    window.location.href = currentUrl.toString();
+}
+
+function createNewApplication() {
+    // TODO: Implement new application creation
+    alert('Create new financial aid application');
+}
+
+function viewApplication(applicationId) {
+    // TODO: Implement view application
+    window.location.href = `/financial-aid/application/${applicationId}`;
+}
+
+function editApplication(applicationId) {
+    // TODO: Implement edit application
+    window.location.href = `/financial-aid/application/${applicationId}/edit`;
+}
+
+function reviewApplication(applicationId) {
+    // TODO: Implement review application
+    window.location.href = `/financial-aid/application/${applicationId}/review`;
+}
+
+function viewDocuments(applicationId) {
+    // TODO: Implement view documents
+    window.location.href = `/financial-aid/application/${applicationId}/documents`;
+}
+
+function checkSignatureStatus(applicationId) {
+    // TODO: Check e-signature status
+    fetch(`/api/financial-aid/${applicationId}/signature-status`)
+        .then(response => response.json())
+        .then(data => {
+            alert(`Signature Status: ${data.status}`);
+        });
+}
+</script>
+{% endblock %} 

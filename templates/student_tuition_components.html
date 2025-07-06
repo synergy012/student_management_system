@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Tuition Components - {{ student.student_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">Tuition Components</h1>
+                    <p class="text-muted">{{ student.student_name }} - {{ student.division }} Division</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('students.student_details', student_id=student.id) }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Student
+                    </a>
+                </div>
+            </div>
+
+            <!-- Tuition Components -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-ul"></i> Tuition Components
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="componentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Component</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="componentsTableBody">
+                                <!-- Components will be loaded via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentStudentId = '{{ student.id }}';
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadComponents();
+});
+
+function loadComponents() {
+    fetch(`/api/students/${currentStudentId}/tuition-components`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderComponentsTable(data.components);
+            } else {
+                alert('Error loading components: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading components');
+        });
+}
+
+function renderComponentsTable(components) {
+    const tbody = document.getElementById('componentsTableBody');
+    tbody.innerHTML = '';
+    
+    components.forEach(comp => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${comp.name}</strong></td>
+            <td><span class="badge bg-primary">${comp.component_type}</span></td>
+            <td>$${comp.calculated_amount.toFixed(2)}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="editComponent(${comp.id})" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function editComponent(componentId) {
+    alert('Edit component: ' + componentId);
+}
+</script>
+{% endblock %} 

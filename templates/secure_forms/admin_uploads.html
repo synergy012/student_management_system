@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Form Uploads - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-file-upload text-primary"></i>
+                    Form Uploads Management
+                </h1>
+                <a href="{{ url_for('secure_forms.admin_secure_forms') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-link"></i> Manage Links
+                </a>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Form Type</th>
+                                    <th>Document</th>
+                                    <th>Category</th>
+                                    <th>Size</th>
+                                    <th>Uploaded</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for upload in uploads %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ upload.student.student_name }}</strong><br>
+                                        <small class="text-muted">{{ upload.student.division }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ upload.secure_link.form_type.replace('_', ' ').title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <strong>{{ upload.original_filename }}</strong>
+                                        {% if upload.document_description %}
+                                        <br><small class="text-muted">{{ upload.document_description }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if upload.document_category %}
+                                        <span class="badge bg-secondary">
+                                            {{ upload.document_category.replace('_', ' ').title() }}
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ upload.file_size_formatted }}</td>
+                                    <td>
+                                        {{ upload.uploaded_at.strftime('%m/%d/%Y %I:%M %p') }}<br>
+                                        <small class="text-muted">{{ upload.upload_ip }}</small>
+                                    </td>
+                                    <td>
+                                        {% if upload.processing_status == 'pending' %}
+                                        <span class="badge bg-warning">Pending Review</span>
+                                        {% elif upload.processing_status == 'processed' %}
+                                        <span class="badge bg-success">Processed</span>
+                                        {% elif upload.processing_status == 'failed' %}
+                                        <span class="badge bg-danger">Failed</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('secure_forms.admin_download_upload', upload_id=upload.id) }}" 
+                                               class="btn btn-outline-primary" title="Download">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            {% if upload.processing_status == 'pending' %}
+                                            <button class="btn btn-outline-success" 
+                                                    onclick="markProcessed({{ upload.id }})" title="Mark as Processed">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                                        No form uploads yet
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Process Upload Modal -->
+<div class="modal fade" id="processModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Mark Upload as Processed</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="processingNotes" class="form-label">Processing Notes</label>
+                    <textarea class="form-control" id="processingNotes" rows="3" 
+                              placeholder="Add any notes about processing this document..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="confirmProcessed()">Mark as Processed</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentUploadId = null;
+
+function markProcessed(uploadId) {
+    currentUploadId = uploadId;
+    const modal = new bootstrap.Modal(document.getElementById('processModal'));
+    modal.show();
+}
+
+async function confirmProcessed() {
+    if (!currentUploadId) return;
+    
+    const notes = document.getElementById('processingNotes').value;
+    
+    try {
+        const response = await fetch(`/api/admin/upload/${currentUploadId}/mark-processed`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ notes: notes })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            location.reload(); // Refresh page to show updated status
+        } else {
+            alert('Error: ' + (result.error || 'Failed to mark as processed'));
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('processModal'));
+    modal.hide();
+}
+</script>
+{% endblock %} 

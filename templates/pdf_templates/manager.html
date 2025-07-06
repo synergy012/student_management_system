@@ -1,0 +1,1091 @@
+{% extends "base.html" %}
+
+{% block title %}PDF Template Manager{% endblock %}
+
+
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">PDF Template Manager</h1>
+                    <p class="text-muted">Create and manage PDF templates for forms and documents</p>
+                </div>
+                <button class="btn btn-primary" onclick="showCreateTemplateModal()">
+                    <i class="fas fa-plus"></i> Create New Template
+                </button>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs mb-4" id="templateTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="library-tab" data-bs-toggle="tab" data-bs-target="#library" type="button" role="tab" aria-controls="library" aria-selected="true">
+                        <i class="fas fa-book"></i> Template Library
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="assignments-tab" data-bs-toggle="tab" data-bs-target="#assignments" type="button" role="tab" aria-controls="assignments" aria-selected="false">
+                        <i class="fas fa-link"></i> Division Assignments
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="variables-tab" data-bs-toggle="tab" data-bs-target="#variables" type="button" role="tab" aria-controls="variables" aria-selected="false">
+                        <i class="fas fa-code"></i> Template Variables
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="templateTabContent">
+                <!-- Template Library Tab -->
+                <div class="tab-pane fade show active" id="library">
+                    <div class="card">
+                        <div class="card-body">
+                            <!-- Category Filter -->
+                            <div class="row mb-4">
+                                <div class="col-md-4">
+                                    <select class="form-select" id="categoryFilter" onchange="filterTemplates()">
+                                        <option value="">All Categories</option>
+                                        {% for key, value in categories.items() %}
+                                        <option value="{{ key }}">{{ value }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select class="form-select" id="divisionFilter" onchange="filterTemplates()">
+                                        <option value="">All Divisions</option>
+                                        <option value="global">Global Templates</option>
+                                        <option value="YZA">YZA Only</option>
+                                        <option value="YOH">YOH Only</option>
+                                        <option value="KOLLEL">KOLLEL Only</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                        <input type="text" class="form-control" id="searchTemplates" placeholder="Search templates..." onkeyup="filterTemplates()">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Templates Grid -->
+                            <div class="row" id="templatesGrid">
+                                <!-- Templates will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Division Assignments Tab -->
+                <div class="tab-pane fade" id="assignments">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row">
+                                {% for division in ['YZA', 'YOH', 'KOLLEL'] %}
+                                <div class="col-md-4">
+                                    <h5 class="mb-3">{{ division }} Division</h5>
+                                    <div class="division-assignments" id="{{ division.lower() }}-assignments">
+                                        {% for doc_type, doc_name in document_types.items() %}
+                                        <div class="card mb-3">
+                                            <div class="card-body">
+                                                <h6 class="card-title">{{ doc_name }}</h6>
+                                                <div class="assignment-selector" data-division="{{ division }}" data-doc-type="{{ doc_type }}">
+                                                    <select class="form-select form-select-sm template-assignment" onchange="updateAssignment('{{ division }}', '{{ doc_type }}', this.value)">
+                                                        <option value="">Select template...</option>
+                                                    </select>
+                                                    <small class="text-muted d-block mt-1">No template assigned</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Template Variables Tab -->
+                <div class="tab-pane fade" id="variables" role="tabpanel" aria-labelledby="variables-tab">
+                    <div class="card">
+                        <div class="card-body">
+                            <!-- Template-Specific Variables -->
+                            <div class="mb-4">
+                                <h5>Template Variables by Template</h5>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i> Select a template to see its specific variables
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <select class="form-select" id="templateVariableSelector" onchange="showTemplateVariables()">
+                                            <option value="">Select a template...</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div id="templateSpecificVariables" style="display: none;">
+                                    <h6>Variables in Selected Template:</h6>
+                                    <div id="templateVariablesList">
+                                        <!-- Template variables will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <!-- Common Variables Reference -->
+                            <div>
+                                <h5>Common Variables Reference</h5>
+                                <div class="alert alert-info">
+                                    <p>These common variables can be used in any template and will be replaced with actual data when generating documents.</p>
+                                    <p><small>Use these variables in your templates by wrapping them in double curly braces: <code>{{variable_name}}</code></small></p>
+                                </div>
+                            </div>
+                            
+                            {% for category, vars in common_variables.items() %}
+                            <div class="mb-4">
+                                <h6 class="text-primary text-uppercase">
+                                    {% if category == 'student' %}
+                                        <i class="fas fa-user me-2"></i>{{ category|title }} Information
+                                    {% elif category == 'parents' %}
+                                        <i class="fas fa-users me-2"></i>{{ category|title }} Information
+                                    {% elif category == 'academic' %}
+                                        <i class="fas fa-graduation-cap me-2"></i>{{ category|title }} Information
+                                    {% elif category == 'financial' %}
+                                        <i class="fas fa-dollar-sign me-2"></i>{{ category|title }} Information
+                                    {% elif category == 'system' %}
+                                        <i class="fas fa-cog me-2"></i>{{ category|title }} Information
+                                    {% else %}
+                                        {{ category|title }}
+                                    {% endif %}
+                                </h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Variable</th>
+                                                <th>Description</th>
+                                                <th>Example Data</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for var, info in vars.items() %}
+                                            <tr>
+                                                <td><code>{{ var }}</code></td>
+                                                <td>{{ info.description }}</td>
+                                                <td><code>{{ info.example }}</code></td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Template Modal -->
+<div class="modal fade" id="templateModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="templateModalTitle">Create New Template</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="templateForm">
+                    <input type="hidden" id="templateId">
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label class="form-label">Template Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="templateName" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Category <span class="text-danger">*</span></label>
+                                <select class="form-select" id="templateCategory" required>
+                                    <option value="">Select category...</option>
+                                    {% for key, value in categories.items() %}
+                                    <option value="{{ key }}">{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="templateDescription" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Template Type</label>
+                                <select class="form-select" id="templateType" onchange="toggleTemplateType()">
+                                    <option value="uploaded_pdf">Upload PDF File</option>
+                                    <option value="html">HTML Template (Coming Soon)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Division Access</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="isGlobal" onchange="toggleDivisionAccess()">
+                                    <label class="form-check-label" for="isGlobal">
+                                        Available to all divisions
+                                    </label>
+                                </div>
+                                <div id="divisionAccess" class="mt-2">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="allowYZA" value="YZA">
+                                        <label class="form-check-label" for="allowYZA">YZA</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="allowYOH" value="YOH">
+                                        <label class="form-check-label" for="allowYOH">YOH</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="allowKOLLEL" value="KOLLEL">
+                                        <label class="form-check-label" for="allowKOLLEL">KOLLEL</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- File Upload Section -->
+                    <div id="fileUploadSection">
+                        <div class="mb-3">
+                            <label class="form-label">Upload PDF Template</label>
+                            <input type="file" class="form-control" id="templateFile" accept=".pdf">
+                            <div class="form-text">Only PDF files are allowed. Maximum size: 10MB</div>
+                        </div>
+                        
+                        <!-- PDF Template Instructions -->
+                        <div class="alert alert-warning">
+                            <h6 class="alert-heading"><i class="fas fa-info-circle"></i> Important: Creating PDF Templates with Fillable Fields</h6>
+                            <p class="mb-2">To create a PDF template that works with our system:</p>
+                            <ol class="mb-2">
+                                <li><strong>Use Adobe Acrobat</strong> (not just Reader) to create your PDF form</li>
+                                <li><strong>Add form fields</strong> using the "Prepare Form" tool</li>
+                                <li><strong>Name your fields exactly</strong> as shown in the variables reference below</li>
+                                <li><strong>Save as a PDF form</strong> (not a flat PDF)</li>
+                            </ol>
+                            
+                            <h6 class="mt-3">Step-by-Step Instructions:</h6>
+                            <ol class="small">
+                                <li>Open your PDF in Adobe Acrobat Pro</li>
+                                <li>Go to Tools → Prepare Form</li>
+                                <li>Click "Add a Text Field" for each variable you want to fill</li>
+                                <li>Double-click each field to set its name (e.g., <code>student_name</code>, <code>tuition_amount</code>)</li>
+                                <li>Use the EXACT variable names from our system (see Variables tab for reference)</li>
+                                <li>Set field properties (font, size, alignment) as needed</li>
+                                <li>Save the PDF when done</li>
+                            </ol>
+                            
+                            <h6 class="mt-3">Common Field Types:</h6>
+                            <ul class="small mb-0">
+                                <li><strong>Text Fields:</strong> For names, addresses, descriptions</li>
+                                <li><strong>Number Fields:</strong> For amounts, set format to Number with currency symbol</li>
+                                <li><strong>Date Fields:</strong> For dates, set format to match your preference</li>
+                                <li><strong>Checkboxes:</strong> For yes/no options</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- HTML Editor Section (hidden by default) -->
+                    <div id="htmlEditorSection" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> HTML template editor coming soon. For now, please upload a PDF file.
+                        </div>
+                    </div>
+                    
+                    <!-- Template Variables -->
+                    <div class="mb-3">
+                        <label class="form-label">Template Variables</label>
+                        <div class="alert alert-info">
+                            <p class="mb-2"><strong>Define the variables used in this template.</strong></p>
+                            <p class="small mb-2">These variable names must match EXACTLY with the field names in your PDF form. When the system generates a document, it will look for PDF form fields with these names and fill them with actual data.</p>
+                            <p class="small mb-0"><strong>Example:</strong> If you add a variable named <code>student_name</code> here, your PDF must have a form field also named <code>student_name</code>.</p>
+                        </div>
+                        <div id="templateVariables">
+                            <!-- Variables will be added here -->
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary me-2" onclick="addVariable()">
+                            <i class="fas fa-plus"></i> Add Variable
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-info" onclick="showCommonVariables()">
+                            <i class="fas fa-list"></i> Show Common Variables
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveTemplate()">
+                    <i class="fas fa-save"></i> Save Template
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Template Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent">
+                    <!-- Preview content will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Common Variables Reference Modal -->
+<div class="modal fade" id="commonVariablesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Common Variables Reference</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Click on any variable to add it to your template
+                </div>
+                
+                <!-- Student Variables -->
+                <div class="mb-4">
+                    <h6 class="text-primary"><i class="fas fa-user"></i> Student Information</h6>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('student_name', 'Student full name')">
+                                <code>student_name</code> - Full name
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('student_first_name', 'Student first name')">
+                                <code>student_first_name</code> - First name
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('student_last_name', 'Student last name')">
+                                <code>student_last_name</code> - Last name
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('hebrew_name', 'Student Hebrew name')">
+                                <code>hebrew_name</code> - Hebrew name
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('student_email', 'Student email address')">
+                                <code>student_email</code> - Email address
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('student_phone', 'Student phone number')">
+                                <code>student_phone</code> - Phone number
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Financial Variables -->
+                <div class="mb-4">
+                    <h6 class="text-success"><i class="fas fa-dollar-sign"></i> Financial Information</h6>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('tuition_amount', 'Total tuition amount')">
+                                <code>tuition_amount</code> - Total tuition
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('registration_fee', 'Registration fee amount')">
+                                <code>registration_fee</code> - Registration fee
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('room_board', 'Room and board amount')">
+                                <code>room_board</code> - Room & board
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('financial_aid_amount', 'Financial aid awarded')">
+                                <code>financial_aid_amount</code> - Financial aid
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('total_amount', 'Total amount due')">
+                                <code>total_amount</code> - Total due
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('payment_plan', 'Selected payment plan')">
+                                <code>payment_plan</code> - Payment plan
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Academic Variables -->
+                <div class="mb-4">
+                    <h6 class="text-info"><i class="fas fa-graduation-cap"></i> Academic Information</h6>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('academic_year', 'Current academic year')">
+                                <code>academic_year</code> - Academic year
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('division', 'Student division')">
+                                <code>division</code> - Division (YZA/YOH/KOLLEL)
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('current_date', 'Current date')">
+                                <code>current_date</code> - Today's date
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('acceptance_date', 'Acceptance date')">
+                                <code>acceptance_date</code> - Acceptance date
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Parent/Guardian Variables -->
+                <div class="mb-4">
+                    <h6 class="text-warning"><i class="fas fa-users"></i> Parent/Guardian Information</h6>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('parent_name', 'Parent/guardian name')">
+                                <code>parent_name</code> - Parent name
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('parent_email', 'Parent email')">
+                                <code>parent_email</code> - Parent email
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('parent_phone', 'Parent phone')">
+                                <code>parent_phone</code> - Parent phone
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small border rounded p-2 common-variable" onclick="addVariableFromCommon('parent_address', 'Parent address')">
+                                <code>parent_address</code> - Parent address
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.common-variable {
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.common-variable:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>
+
+<script>
+// Global variables
+let templates = [];
+let assignments = {};
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadTemplates();
+    loadAssignments();
+    updateTemplateVariableSelector();
+});
+
+// Load templates from API
+function loadTemplates() {
+    fetch('/api/pdf-templates')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                templates = data.templates;
+                renderTemplates();
+                updateAssignmentDropdowns();
+                updateTemplateVariableSelector();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading templates:', error);
+            showToast('Error loading templates', 'error');
+        });
+}
+
+// Render templates grid
+function renderTemplates() {
+    const grid = document.getElementById('templatesGrid');
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    const divisionFilter = document.getElementById('divisionFilter').value;
+    const searchTerm = document.getElementById('searchTemplates').value.toLowerCase();
+    
+    let filteredTemplates = templates;
+    
+    // Apply filters
+    if (categoryFilter) {
+        filteredTemplates = filteredTemplates.filter(t => t.category === categoryFilter);
+    }
+    
+    if (divisionFilter) {
+        if (divisionFilter === 'global') {
+            filteredTemplates = filteredTemplates.filter(t => t.is_global);
+        } else {
+            filteredTemplates = filteredTemplates.filter(t => 
+                !t.is_global && t.allowed_divisions.includes(divisionFilter)
+            );
+        }
+    }
+    
+    if (searchTerm) {
+        filteredTemplates = filteredTemplates.filter(t => 
+            t.name.toLowerCase().includes(searchTerm) ||
+            t.description.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    // Clear grid
+    grid.innerHTML = '';
+    
+    if (filteredTemplates.length === 0) {
+        grid.innerHTML = `
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-file-pdf fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No templates found</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Render each template
+    filteredTemplates.forEach(template => {
+        const categoryBadge = getCategoryBadge(template.category);
+        const divisionBadge = getDivisionBadge(template);
+        
+        const card = document.createElement('div');
+        card.className = 'col-md-6 col-lg-4 mb-4';
+        card.innerHTML = `
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title mb-0">${template.name}</h5>
+                        <span class="badge bg-secondary">v${template.version}</span>
+                    </div>
+                    <p class="card-text text-muted small">${template.description || 'No description'}</p>
+                    <div class="mb-3">
+                        ${categoryBadge}
+                        ${divisionBadge}
+                        ${template.variable_count > 0 ? `<span class="badge bg-info"><i class="fas fa-code"></i> ${template.variable_count} variables</span>` : ''}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            Updated by ${template.updated_by}<br>
+                            ${new Date(template.created_at).toLocaleDateString()}
+                        </small>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="editTemplate(${template.id})" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-outline-info" onclick="previewTemplate(${template.id})" title="Preview">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="deleteTemplate(${template.id})" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+// Get category badge HTML
+function getCategoryBadge(category) {
+    const categories = {
+        'financial_aid_form': { label: 'Financial Aid', color: 'success' },
+        'tuition_contract': { label: 'Tuition Contract', color: 'primary' },
+        'acceptance_letter': { label: 'Acceptance Letter', color: 'info' },
+        'enrollment_form': { label: 'Enrollment', color: 'warning' },
+        'custom': { label: 'Custom', color: 'secondary' }
+    };
+    
+    const cat = categories[category] || { label: category, color: 'secondary' };
+    return `<span class="badge bg-${cat.color}">${cat.label}</span>`;
+}
+
+// Get division badge HTML
+function getDivisionBadge(template) {
+    if (template.is_global) {
+        return '<span class="badge bg-dark">Global</span>';
+    }
+    
+    const divisions = template.allowed_divisions || [];
+    if (divisions.length === 0) {
+        return '<span class="badge bg-secondary">No divisions</span>';
+    }
+    
+    return divisions.map(d => `<span class="badge bg-light text-dark">${d}</span>`).join(' ');
+}
+
+// Filter templates
+function filterTemplates() {
+    renderTemplates();
+}
+
+// Show create template modal
+function showCreateTemplateModal() {
+    document.getElementById('templateModalTitle').textContent = 'Create New Template';
+    document.getElementById('templateForm').reset();
+    document.getElementById('templateId').value = '';
+    document.getElementById('templateVariables').innerHTML = '';
+    document.getElementById('isGlobal').checked = false;
+    toggleDivisionAccess();
+    toggleTemplateType();
+    
+    const modal = new bootstrap.Modal(document.getElementById('templateModal'));
+    modal.show();
+}
+
+// Toggle template type sections
+function toggleTemplateType() {
+    const type = document.getElementById('templateType').value;
+    document.getElementById('fileUploadSection').style.display = type === 'uploaded_pdf' ? 'block' : 'none';
+    document.getElementById('htmlEditorSection').style.display = type === 'html' ? 'block' : 'none';
+}
+
+// Toggle division access checkboxes
+function toggleDivisionAccess() {
+    const isGlobal = document.getElementById('isGlobal').checked;
+    document.getElementById('divisionAccess').style.display = isGlobal ? 'none' : 'block';
+}
+
+// Add variable to template
+let variableCount = 0;
+function addVariable(name = '', description = '', defaultValue = '', isRequired = true) {
+    const container = document.getElementById('templateVariables');
+    const varId = `var_${variableCount++}`;
+    
+    const varDiv = document.createElement('div');
+    varDiv.className = 'row mb-2';
+    varDiv.id = varId;
+    varDiv.innerHTML = `
+        <div class="col-md-3">
+            <input type="text" class="form-control form-control-sm" placeholder="Variable name" value="${name}">
+        </div>
+        <div class="col-md-4">
+            <input type="text" class="form-control form-control-sm" placeholder="Description" value="${description}">
+        </div>
+        <div class="col-md-3">
+            <input type="text" class="form-control form-control-sm" placeholder="Default value" value="${defaultValue}">
+        </div>
+        <div class="col-md-2">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" ${isRequired ? 'checked' : ''}>
+                <label class="form-check-label">Required</label>
+            </div>
+            <button type="button" class="btn btn-sm btn-link text-danger" onclick="removeVariable('${varId}')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(varDiv);
+}
+
+// Remove variable
+function removeVariable(varId) {
+    document.getElementById(varId).remove();
+}
+
+// Save template
+function saveTemplate() {
+    const templateId = document.getElementById('templateId').value;
+    const isEdit = !!templateId;
+    
+    // Gather form data
+    const formData = new FormData();
+    formData.append('name', document.getElementById('templateName').value);
+    formData.append('category', document.getElementById('templateCategory').value);
+    formData.append('description', document.getElementById('templateDescription').value);
+    formData.append('template_type', document.getElementById('templateType').value);
+    formData.append('is_global', document.getElementById('isGlobal').checked);
+    
+    // Add allowed divisions if not global
+    if (!document.getElementById('isGlobal').checked) {
+        const divisions = [];
+        if (document.getElementById('allowYZA').checked) divisions.push('YZA');
+        if (document.getElementById('allowYOH').checked) divisions.push('YOH');
+        if (document.getElementById('allowKOLLEL').checked) divisions.push('KOLLEL');
+        divisions.forEach(d => formData.append('allowed_divisions[]', d));
+    }
+    
+    // Add file if uploaded
+    const fileInput = document.getElementById('templateFile');
+    if (fileInput.files.length > 0) {
+        formData.append('template_file', fileInput.files[0]);
+    }
+    
+    // Add variables
+    const variables = [];
+    document.querySelectorAll('#templateVariables > div').forEach(varDiv => {
+        const inputs = varDiv.querySelectorAll('input');
+        if (inputs[0].value) {  // Only add if variable name is provided
+            variables.push({
+                name: inputs[0].value,
+                description: inputs[1].value,
+                default_value: inputs[2].value,
+                is_required: inputs[3].checked
+            });
+        }
+    });
+    formData.append('variables', JSON.stringify(variables));
+    
+    // Send request
+    const url = isEdit ? `/api/pdf-templates/${templateId}` : '/api/pdf-templates';
+    const method = isEdit ? 'PUT' : 'POST';
+    
+    // Show loading
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+    
+    fetch(url, {
+        method: method,
+        body: isEdit ? JSON.stringify(Object.fromEntries(formData)) : formData,
+        headers: isEdit ? {'Content-Type': 'application/json'} : {}
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            bootstrap.Modal.getInstance(document.getElementById('templateModal')).hide();
+            loadTemplates();
+        } else {
+            showToast(data.error || 'Error saving template', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving template:', error);
+        showToast('Error saving template', 'error');
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    });
+}
+
+// Edit template
+function editTemplate(templateId) {
+    fetch(`/api/pdf-templates/${templateId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const template = data.template;
+                
+                // Populate form
+                document.getElementById('templateModalTitle').textContent = 'Edit Template';
+                document.getElementById('templateId').value = template.id;
+                document.getElementById('templateName').value = template.name;
+                document.getElementById('templateCategory').value = template.category;
+                document.getElementById('templateDescription').value = template.description || '';
+                document.getElementById('templateType').value = template.template_type;
+                document.getElementById('isGlobal').checked = template.is_global;
+                
+                // Set allowed divisions
+                if (!template.is_global) {
+                    document.getElementById('allowYZA').checked = template.allowed_divisions.includes('YZA');
+                    document.getElementById('allowYOH').checked = template.allowed_divisions.includes('YOH');
+                    document.getElementById('allowKOLLEL').checked = template.allowed_divisions.includes('KOLLEL');
+                }
+                
+                toggleDivisionAccess();
+                toggleTemplateType();
+                
+                // Add variables
+                document.getElementById('templateVariables').innerHTML = '';
+                template.variables.forEach(v => {
+                    addVariable(v.variable_name, v.description, v.default_value, v.is_required);
+                });
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('templateModal'));
+                modal.show();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading template:', error);
+            showToast('Error loading template', 'error');
+        });
+}
+
+// Preview template
+function previewTemplate(templateId) {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+    
+    // For now, show basic info
+    const content = document.getElementById('previewContent');
+    content.innerHTML = `
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> PDF preview functionality coming soon.
+        </div>
+        <h5>${template.name}</h5>
+        <p class="text-muted">${template.description || 'No description'}</p>
+        <p><strong>Category:</strong> ${getCategoryBadge(template.category)}</p>
+        <p><strong>Type:</strong> ${template.template_type}</p>
+        <p><strong>Version:</strong> ${template.version}</p>
+        <p><strong>Variables:</strong> ${template.variable_count}</p>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
+}
+
+// Delete template
+function deleteTemplate(templateId) {
+    if (!confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
+        return;
+    }
+    
+    fetch(`/api/pdf-templates/${templateId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Template deleted successfully', 'success');
+            loadTemplates();
+        } else {
+            showToast(data.error || 'Error deleting template', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting template:', error);
+        showToast('Error deleting template', 'error');
+    });
+}
+
+// Load division assignments
+function loadAssignments() {
+    fetch('/api/division-template-assignments')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                assignments = {};
+                data.assignments.forEach(a => {
+                    const key = `${a.division}_${a.document_type}`;
+                    assignments[key] = a;
+                });
+                updateAssignmentSelectors();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading assignments:', error);
+        });
+}
+
+// Update assignment dropdowns
+function updateAssignmentDropdowns() {
+    document.querySelectorAll('.template-assignment').forEach(select => {
+        const division = select.closest('.assignment-selector').dataset.division;
+        
+        // Clear options
+        select.innerHTML = '<option value="">Select template...</option>';
+        
+        // Add templates for this division
+        templates.forEach(template => {
+            if (template.is_global || (template.allowed_divisions && template.allowed_divisions.includes(division))) {
+                const option = document.createElement('option');
+                option.value = template.id;
+                option.textContent = `${template.name} (v${template.version})`;
+                select.appendChild(option);
+            }
+        });
+    });
+    
+    // Update selections based on assignments
+    updateAssignmentSelectors();
+}
+
+// Update assignment selectors with current assignments
+function updateAssignmentSelectors() {
+    document.querySelectorAll('.assignment-selector').forEach(selector => {
+        const division = selector.dataset.division;
+        const docType = selector.dataset.docType;
+        const key = `${division}_${docType}`;
+        const assignment = assignments[key];
+        
+        const select = selector.querySelector('select');
+        const status = selector.querySelector('small');
+        
+        if (assignment) {
+            select.value = assignment.template_id;
+            status.textContent = `Assigned: ${assignment.template_name}`;
+            status.className = 'text-success d-block mt-1';
+        } else {
+            select.value = '';
+            status.textContent = 'No template assigned';
+            status.className = 'text-muted d-block mt-1';
+        }
+    });
+}
+
+// Update assignment
+function updateAssignment(division, docType, templateId) {
+    if (!templateId) return;
+    
+    const data = {
+        division: division,
+        document_type: docType,
+        template_id: parseInt(templateId),
+        is_default: true
+    };
+    
+    fetch('/api/division-template-assignments', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Assignment updated successfully', 'success');
+            loadAssignments();
+        } else {
+            showToast(data.error || 'Error updating assignment', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating assignment:', error);
+        showToast('Error updating assignment', 'error');
+    });
+}
+
+// Show toast notification
+function showToast(message, type = 'info') {
+    // Simple toast implementation - you can enhance this
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} position-fixed top-0 end-0 m-3`;
+    toast.style.zIndex = '9999';
+    toast.innerHTML = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// Update template variable selector dropdown
+function updateTemplateVariableSelector() {
+    const selector = document.getElementById('templateVariableSelector');
+    if (!selector) return;
+    
+    selector.innerHTML = '<option value="">Select a template...</option>';
+    
+    templates.forEach(template => {
+        const option = document.createElement('option');
+        option.value = template.id;
+        option.textContent = `${template.name} (${template.category})`;
+        selector.appendChild(option);
+    });
+}
+
+// Show variables for selected template
+function showTemplateVariables() {
+    const selector = document.getElementById('templateVariableSelector');
+    const templateId = selector.value;
+    
+    if (!templateId) {
+        document.getElementById('templateSpecificVariables').style.display = 'none';
+        return;
+    }
+    
+    // Fetch template details with variables
+    fetch(`/api/pdf-templates/${templateId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const container = document.getElementById('templateVariablesList');
+                const variables = data.template.variables || [];
+                
+                if (variables.length === 0) {
+                    container.innerHTML = '<p class="text-muted">No variables defined for this template.</p>';
+                } else {
+                    let html = '<div class="table-responsive"><table class="table table-sm">';
+                    html += '<thead><tr><th>Variable Name</th><th>Description</th><th>Type</th><th>Required</th><th>Default Value</th></tr></thead>';
+                    html += '<tbody>';
+                    
+                    variables.forEach(v => {
+                        html += '<tr>';
+                        html += '<td><code>{{' + v.variable_name + '}}</code></td>';
+                        html += '<td>' + (v.description || '-') + '</td>';
+                        html += '<td><span class="badge bg-secondary">' + (v.variable_type || 'string') + '</span></td>';
+                        html += '<td>' + (v.is_required ? '<i class="fas fa-check text-success"></i>' : '<i class="fas fa-times text-muted"></i>') + '</td>';
+                        html += '<td>' + (v.default_value || '-') + '</td>';
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table></div>';
+                    container.innerHTML = html;
+                }
+                
+                document.getElementById('templateSpecificVariables').style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading template variables:', error);
+            showToast('Error loading template variables', 'error');
+        });
+}
+
+// Add variable from common variables
+function addVariableFromCommon(name, description) {
+    addVariable(name, description, '', true);
+}
+
+// Show common variables modal
+function showCommonVariables() {
+    const modal = new bootstrap.Modal(document.getElementById('commonVariablesModal'));
+    modal.show();
+}
+</script>
+{% endblock %}

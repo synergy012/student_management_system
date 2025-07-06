@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Edit Student - {{ student.full_name }}{% endblock %}
+{% block title %}Edit Student - {{ student.student_name }}{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container">
     <div class="row mb-4">
         <div class="col">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="/students">Students</a></li>
-                    <li class="breadcrumb-item"><a href="/students/{{ student.id }}">{{ student.full_name }}</a></li>
+                    <li class="breadcrumb-item"><a href="/students/{{ student.id }}">{{ student.student_name }}</a></li>
                     <li class="breadcrumb-item active">Edit</li>
                 </ol>
             </nav>
@@ -18,256 +18,39 @@
 
     <div class="card">
         <div class="card-header">
-            <h4 class="mb-0">Edit Student</h4>
+            <h4 class="mb-0">Edit Student - {{ student.student_name }}</h4>
+            <small class="text-muted">Edit student information</small>
         </div>
         <div class="card-body">
-            <form method="POST" onsubmit="updateStudent(event)">
-                <!-- Personal & Contact Information -->
-                <div class="accordion mb-4" id="studentForm">
+            <form method="POST" id="studentEditForm" onsubmit="updateStudent(event)">
+                <!-- Progress indicator -->
+                <div class="progress mb-4" style="height: 6px;">
+                    <div class="progress-bar" role="progressbar" style="width: 100%"></div>
+                </div>
+
+                <!-- Student Information -->
+                <div class="accordion mb-4" id="studentAccordion">
+                    
+                    <!-- Basic Information Section -->
                     <div class="accordion-item">
                         <h2 class="accordion-header">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#personalInfo" aria-expanded="true" aria-controls="personalInfo">
-                                Personal & Contact Information
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#basicInfo" aria-expanded="true" aria-controls="basicInfo">
+                                Basic Information
                             </button>
                         </h2>
-                        <div id="personalInfo" class="accordion-collapse collapse show" data-bs-parent="#studentForm">
+                        <div id="basicInfo" class="accordion-collapse collapse show" data-bs-parent="#studentAccordion">
                             <div class="accordion-body">
                                 <div class="row g-3">
-                                    <!-- Personal Information -->
-                                    <div class="col-md-4">
-                                        <label for="firstName" class="form-label">First Name*</label>
-                                        <input type="text" class="form-control" id="firstName" name="first_name" value="{{ student.first_name }}" required>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="middleName" class="form-label">Middle Name</label>
-                                        <input type="text" class="form-control" id="middleName" name="middle_name" value="{{ student.middle_name }}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="lastName" class="form-label">Last Name*</label>
-                                        <input type="text" class="form-control" id="lastName" name="last_name" value="{{ student.last_name }}" required>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="hebrewName" class="form-label">Hebrew Name</label>
-                                        <input type="text" class="form-control" id="hebrewName" name="hebrew_name" value="{{ student.hebrew_name }}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="informalName" class="form-label">Informal Name</label>
-                                        <input type="text" class="form-control" id="informalName" name="informal_name" value="{{ student.informal_name }}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="maritalStatus" class="form-label">Marital Status*</label>
-                                        <select class="form-select" id="maritalStatus" name="marital_status" required>
-                                            <option value="">Choose...</option>
-                                            <option value="single" {% if student.marital_status == 'single' %}selected{% endif %}>Single</option>
-                                            <option value="married" {% if student.marital_status == 'married' %}selected{% endif %}>Married</option>
+                                    <div class="col-md-6">
+                                        <label for="division" class="form-label">Division*</label>
+                                        <select class="form-select" id="division" name="division" required>
+                                            <option value="">Choose Division...</option>
+                                            <option value="YZA" {% if student.division == 'YZA' %}selected{% endif %}>YZA</option>
+                                            <option value="YOH" {% if student.division == 'YOH' %}selected{% endif %}>YOH</option>
                                         </select>
                                     </div>
-
-                                    <!-- Additional Information -->
-                                    <div class="col-md-4">
-                                        <label for="dateOfBirth" class="form-label">Date of Birth</label>
-                                        <input type="date" class="form-control" id="dateOfBirth" name="date_of_birth" value="{{ student.date_of_birth }}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="citizenship" class="form-label">Citizenship</label>
-                                        <input type="text" class="form-control" id="citizenship" name="citizenship" value="{{ student.citizenship }}">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="highSchoolGraduate" class="form-label">High School Graduate</label>
-                                        <select class="form-select" id="highSchoolGraduate" name="high_school_graduate">
-                                            <option value="yes" {% if student.high_school_graduate == 'yes' %}selected{% endif %}>Yes</option>
-                                            <option value="no" {% if student.high_school_graduate == 'no' %}selected{% endif %}>No</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- Contact Information -->
                                     <div class="col-md-6">
-                                        <label for="phoneNumber" class="form-label">Phone Number*</label>
-                                        <input type="tel" class="form-control" id="phoneNumber" name="phone_number" value="{{ student.phone_number }}" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="ssn" class="form-label">SSN</label>
-                                        <input type="text" class="form-control" id="ssn" name="ssn" value="{{ student.ssn }}">
-                                    </div>
-
-                                    <!-- Address -->
-                                    <div class="col-12">
-                                        <label for="addressLine1" class="form-label">Address Line 1*</label>
-                                        <input type="text" class="form-control" id="addressLine1" name="address_line1" value="{{ student.address.line1 if student.address }}" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="city" class="form-label">City*</label>
-                                        <input type="text" class="form-control" id="city" name="city" value="{{ student.address.city if student.address }}" required>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="state" class="form-label">State*</label>
-                                        <input type="text" class="form-control" id="state" name="state" value="{{ student.address.state if student.address }}" required>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label for="zip" class="form-label">ZIP*</label>
-                                        <input type="text" class="form-control" id="zip" name="zip" value="{{ student.address.zip if student.address }}" required>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <label for="country" class="form-label">Country</label>
-                                        <input type="text" class="form-control" id="country" name="country" value="{{ student.address.country if student.address }}">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Parents Information -->
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#parentsInfo" aria-expanded="false" aria-controls="parentsInfo">
-                                Parents Information
-                            </button>
-                        </h2>
-                        <div id="parentsInfo" class="accordion-collapse collapse" data-bs-parent="#studentForm">
-                            <div class="accordion-body">
-                                <div class="row g-3">
-                                    <!-- Father's Information -->
-                                    <div class="col-md-6">
-                                        <div class="card">
-                                            <div class="card-header">
-                                                <h6 class="mb-0">Father's Information</h6>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="mb-3">
-                                                    <label for="father_title" class="form-label">Title</label>
-                                                    <select class="form-select" id="father_title" name="father_title">
-                                                        <option value="">Choose...</option>
-                                                        <option value="Mr." {% if student.parents.father.title == 'Mr.' %}selected{% endif %}>Mr.</option>
-                                                        <option value="Dr." {% if student.parents.father.title == 'Dr.' %}selected{% endif %}>Dr.</option>
-                                                        <option value="Rabbi" {% if student.parents.father.title == 'Rabbi' %}selected{% endif %}>Rabbi</option>
-                                                        <option value="Prof." {% if student.parents.father.title == 'Prof.' %}selected{% endif %}>Prof.</option>
-                                                    </select>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="father_first_name" class="form-label">First Name</label>
-                                                    <input type="text" class="form-control" id="father_first_name" name="father_first_name" value="{{ student.parents.father.first_name }}">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="father_last_name" class="form-label">Last Name</label>
-                                                    <input type="text" class="form-control" id="father_last_name" name="father_last_name" value="{{ student.parents.father.last_name }}">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="father_phone" class="form-label">Phone</label>
-                                                    <input type="tel" class="form-control" id="father_phone" name="father_phone" value="{{ student.parents.father.phone }}">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="father_occupation" class="form-label">Occupation</label>
-                                                    <input type="text" class="form-control" id="father_occupation" name="father_occupation" value="{{ student.parents.father.occupation }}">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Mother's Information -->
-                                    <div class="col-md-6">
-                                        <div class="card">
-                                            <div class="card-header">
-                                                <h6 class="mb-0">Mother's Information</h6>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="mb-3">
-                                                    <label for="mother_title" class="form-label">Title</label>
-                                                    <select class="form-select" id="mother_title" name="mother_title">
-                                                        <option value="">Choose...</option>
-                                                        <option value="Mrs." {% if student.parents.mother.title == 'Mrs.' %}selected{% endif %}>Mrs.</option>
-                                                        <option value="Ms." {% if student.parents.mother.title == 'Ms.' %}selected{% endif %}>Ms.</option>
-                                                        <option value="Dr." {% if student.parents.mother.title == 'Dr.' %}selected{% endif %}>Dr.</option>
-                                                        <option value="Prof." {% if student.parents.mother.title == 'Prof.' %}selected{% endif %}>Prof.</option>
-                                                    </select>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="mother_first_name" class="form-label">First Name</label>
-                                                    <input type="text" class="form-control" id="mother_first_name" name="mother_first_name" value="{{ student.parents.mother.first_name }}">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="mother_last_name" class="form-label">Last Name</label>
-                                                    <input type="text" class="form-control" id="mother_last_name" name="mother_last_name" value="{{ student.parents.mother.last_name }}">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="mother_phone" class="form-label">Phone</label>
-                                                    <input type="tel" class="form-control" id="mother_phone" name="mother_phone" value="{{ student.parents.mother.phone }}">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="mother_occupation" class="form-label">Occupation</label>
-                                                    <input type="text" class="form-control" id="mother_occupation" name="mother_occupation" value="{{ student.parents.mother.occupation }}">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Grandparents Information -->
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#grandparentsInfo" aria-expanded="false" aria-controls="grandparentsInfo">
-                                Grandparents Information
-                            </button>
-                        </h2>
-                        <div id="grandparentsInfo" class="accordion-collapse collapse" data-bs-parent="#studentForm">
-                            <div class="accordion-body">
-                                <div class="row g-3">
-                                    <!-- Paternal Grandparents -->
-                                    <div class="col-md-6">
-                                        <div class="card">
-                                            <div class="card-header">
-                                                <h6 class="mb-0">Paternal Grandparents</h6>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="mb-3">
-                                                    <label for="paternal_grandparents_name" class="form-label">Name</label>
-                                                    <input type="text" class="form-control" id="paternal_grandparents_name" name="paternal_grandparents_name" value="{{ student.grandparents.paternal.name if student.grandparents.paternal }}">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="paternal_grandparents_phone" class="form-label">Phone</label>
-                                                    <input type="tel" class="form-control" id="paternal_grandparents_phone" name="paternal_grandparents_phone" value="{{ student.grandparents.paternal.phone if student.grandparents.paternal }}">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Maternal Grandparents -->
-                                    <div class="col-md-6">
-                                        <div class="card">
-                                            <div class="card-header">
-                                                <h6 class="mb-0">Maternal Grandparents</h6>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="mb-3">
-                                                    <label for="maternal_grandparents_name" class="form-label">Name</label>
-                                                    <input type="text" class="form-control" id="maternal_grandparents_name" name="maternal_grandparents_name" value="{{ student.grandparents.maternal.name if student.grandparents.maternal }}">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label for="maternal_grandparents_phone" class="form-label">Phone</label>
-                                                    <input type="tel" class="form-control" id="maternal_grandparents_phone" name="maternal_grandparents_phone" value="{{ student.grandparents.maternal.phone if student.grandparents.maternal }}">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Status Information -->
-                    <div class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#statusInfo" aria-expanded="false" aria-controls="statusInfo">
-                                Status Information
-                            </button>
-                        </h2>
-                        <div id="statusInfo" class="accordion-collapse collapse" data-bs-parent="#studentForm">
-                            <div class="accordion-body">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label for="status" class="form-label">Student Status</label>
+                                        <label for="status" class="form-label">Status</label>
                                         <select class="form-select" id="status" name="status">
                                             <option value="Active" {% if student.status == 'Active' %}selected{% endif %}>Active</option>
                                             <option value="Inactive" {% if student.status == 'Inactive' %}selected{% endif %}>Inactive</option>
@@ -280,115 +63,359 @@
                         </div>
                     </div>
 
-                    <!-- Financial Information -->
+                    <!-- Student Information Section -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#studentInfo" aria-expanded="false" aria-controls="studentInfo">
+                                Student Information
+                            </button>
+                        </h2>
+                        <div id="studentInfo" class="accordion-collapse collapse" data-bs-parent="#studentAccordion">
+                            <div class="accordion-body">
+                                <div class="row g-3">
+                                    <!-- Name Information -->
+                                    <div class="col-md-4">
+                                        <label for="student_first_name" class="form-label">First Name*</label>
+                                        <input type="text" class="form-control" id="student_first_name" name="student_first_name" value="{{ student.student_first_name }}" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="student_middle_name" class="form-label">Middle Name</label>
+                                        <input type="text" class="form-control" id="student_middle_name" name="student_middle_name" value="{{ student.student_middle_name }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="student_last_name" class="form-label">Last Name*</label>
+                                        <input type="text" class="form-control" id="student_last_name" name="student_last_name" value="{{ student.student_last_name }}" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="hebrew_name" class="form-label">Hebrew Name</label>
+                                        <input type="text" class="form-control" id="hebrew_name" name="hebrew_name" value="{{ student.hebrew_name }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="informal_name" class="form-label">Informal Name</label>
+                                        <input type="text" class="form-control" id="informal_name" name="informal_name" value="{{ student.informal_name }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                        <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" value="{{ student.date_of_birth }}">
+                                    </div>
+                                    
+                                    <!-- Contact Information -->
+                                    <div class="col-md-6">
+                                        <label for="phone_number" class="form-label">Phone Number*</label>
+                                        <input type="tel" class="form-control" id="phone_number" name="phone_number" value="{{ student.phone_number }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="email" class="form-label">Email*</label>
+                                        <input type="email" class="form-control" id="email" name="email" value="{{ student.email }}" required>
+                                    </div>
+                                    
+                                    <!-- Personal Information -->
+                                    <div class="col-md-4">
+                                        <label for="marital_status" class="form-label">Marital Status</label>
+                                        <select class="form-select" id="marital_status" name="marital_status">
+                                            <option value="">Choose...</option>
+                                            <option value="Single" {% if student.marital_status == 'Single' %}selected{% endif %}>Single</option>
+                                            <option value="Married" {% if student.marital_status == 'Married' %}selected{% endif %}>Married</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="spouse_name" class="form-label">Spouse Name</label>
+                                        <input type="text" class="form-control" id="spouse_name" name="spouse_name" value="{{ student.spouse_name }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="citizenship" class="form-label">Citizenship</label>
+                                        <input type="text" class="form-control" id="citizenship" name="citizenship" value="{{ student.citizenship }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="social_security_number" class="form-label">Social Security Number</label>
+                                        <input type="text" class="form-control" id="social_security_number" name="social_security_number" value="{{ student.social_security_number }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="high_school_graduate" class="form-label">High School Graduate</label>
+                                        <select class="form-select" id="high_school_graduate" name="high_school_graduate">
+                                            <option value="">Choose...</option>
+                                            <option value="Yes" {% if student.high_school_graduate == 'Yes' %}selected{% endif %}>Yes</option>
+                                            <option value="No" {% if student.high_school_graduate == 'No' %}selected{% endif %}>No</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address Information Section -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#addressInfo" aria-expanded="false" aria-controls="addressInfo">
+                                Address Information
+                            </button>
+                        </h2>
+                        <div id="addressInfo" class="accordion-collapse collapse" data-bs-parent="#studentAccordion">
+                            <div class="accordion-body">
+                                <h6 class="mb-3">Primary Address</h6>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label for="address_line1" class="form-label">Address Line 1*</label>
+                                        <input type="text" class="form-control" id="address_line1" name="address_line1" value="{{ student.address_line1 }}" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="address_line2" class="form-label">Address Line 2</label>
+                                        <input type="text" class="form-control" id="address_line2" name="address_line2" value="{{ student.address_line2 }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="address_city" class="form-label">City*</label>
+                                        <input type="text" class="form-control" id="address_city" name="address_city" value="{{ student.address_city }}" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="address_state" class="form-label">State*</label>
+                                        <input type="text" class="form-control" id="address_state" name="address_state" value="{{ student.address_state }}" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="address_zip" class="form-label">ZIP*</label>
+                                        <input type="text" class="form-control" id="address_zip" name="address_zip" value="{{ student.address_zip }}" required>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label for="address_country" class="form-label">Country</label>
+                                        <input type="text" class="form-control" id="address_country" name="address_country" value="{{ student.address_country }}">
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-4">
+                                <h6 class="mb-3">Alternate Address</h6>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label for="alt_address_line1" class="form-label">Alt Address Line 1</label>
+                                        <input type="text" class="form-control" id="alt_address_line1" name="alt_address_line1" value="{{ student.alt_address_line1 }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="alt_address_line2" class="form-label">Alt Address Line 2</label>
+                                        <input type="text" class="form-control" id="alt_address_line2" name="alt_address_line2" value="{{ student.alt_address_line2 }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="alt_address_city" class="form-label">Alt City</label>
+                                        <input type="text" class="form-control" id="alt_address_city" name="alt_address_city" value="{{ student.alt_address_city }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="alt_address_state" class="form-label">Alt State</label>
+                                        <input type="text" class="form-control" id="alt_address_state" name="alt_address_state" value="{{ student.alt_address_state }}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="alt_address_zip" class="form-label">Alt ZIP</label>
+                                        <input type="text" class="form-control" id="alt_address_zip" name="alt_address_zip" value="{{ student.alt_address_zip }}">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label for="alt_address_country" class="form-label">Alt Country</label>
+                                        <input type="text" class="form-control" id="alt_address_country" name="alt_address_country" value="{{ student.alt_address_country }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Family Information Section -->
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#familyInfo" aria-expanded="false" aria-controls="familyInfo">
+                                Family Information
+                            </button>
+                        </h2>
+                        <div id="familyInfo" class="accordion-collapse collapse" data-bs-parent="#studentAccordion">
+                            <div class="accordion-body">
+                                <!-- Father Information -->
+                                <h6 class="mb-3">Father's Information</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-2">
+                                        <label for="father_title" class="form-label">Title</label>
+                                        <select class="form-select" id="father_title" name="father_title">
+                                            <option value="">Choose...</option>
+                                            <option value="Mr." {% if student.father_title == 'Mr.' %}selected{% endif %}>Mr.</option>
+                                            <option value="Dr." {% if student.father_title == 'Dr.' %}selected{% endif %}>Dr.</option>
+                                            <option value="Rabbi" {% if student.father_title == 'Rabbi' %}selected{% endif %}>Rabbi</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="father_first_name" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="father_first_name" name="father_first_name" value="{{ student.father_first_name }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="father_last_name" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="father_last_name" name="father_last_name" value="{{ student.father_last_name }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="father_phone" class="form-label">Phone</label>
+                                        <input type="tel" class="form-control" id="father_phone" name="father_phone" value="{{ student.father_phone }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="father_email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="father_email" name="father_email" value="{{ student.father_email }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="father_occupation" class="form-label">Occupation</label>
+                                        <input type="text" class="form-control" id="father_occupation" name="father_occupation" value="{{ student.father_occupation }}">
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-4">
+                                <!-- Mother Information -->
+                                <h6 class="mb-3">Mother's Information</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-2">
+                                        <label for="mother_title" class="form-label">Title</label>
+                                        <select class="form-select" id="mother_title" name="mother_title">
+                                            <option value="">Choose...</option>
+                                            <option value="Mrs." {% if student.mother_title == 'Mrs.' %}selected{% endif %}>Mrs.</option>
+                                            <option value="Ms." {% if student.mother_title == 'Ms.' %}selected{% endif %}>Ms.</option>
+                                            <option value="Dr." {% if student.mother_title == 'Dr.' %}selected{% endif %}>Dr.</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="mother_first_name" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="mother_first_name" name="mother_first_name" value="{{ student.mother_first_name }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="mother_last_name" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="mother_last_name" name="mother_last_name" value="{{ student.mother_last_name }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="mother_phone" class="form-label">Phone</label>
+                                        <input type="tel" class="form-control" id="mother_phone" name="mother_phone" value="{{ student.mother_phone }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="mother_email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="mother_email" name="mother_email" value="{{ student.mother_email }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="mother_occupation" class="form-label">Occupation</label>
+                                        <input type="text" class="form-control" id="mother_occupation" name="mother_occupation" value="{{ student.mother_occupation }}">
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-4">
+                                <!-- In-laws Information -->
+                                <h6 class="mb-3">In-laws Information</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="inlaws_first_name" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="inlaws_first_name" name="inlaws_first_name" value="{{ student.inlaws_first_name }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="inlaws_last_name" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="inlaws_last_name" name="inlaws_last_name" value="{{ student.inlaws_last_name }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="inlaws_phone" class="form-label">Phone</label>
+                                        <input type="tel" class="form-control" id="inlaws_phone" name="inlaws_phone" value="{{ student.inlaws_phone }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="inlaws_email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="inlaws_email" name="inlaws_email" value="{{ student.inlaws_email }}">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label for="inlaws_address_line1" class="form-label">Address Line 1</label>
+                                        <input type="text" class="form-control" id="inlaws_address_line1" name="inlaws_address_line1" value="{{ student.inlaws_address_line1 }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="inlaws_address_city" class="form-label">City</label>
+                                        <input type="text" class="form-control" id="inlaws_address_city" name="inlaws_address_city" value="{{ student.inlaws_address_city }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="inlaws_address_state" class="form-label">State</label>
+                                        <input type="text" class="form-control" id="inlaws_address_state" name="inlaws_address_state" value="{{ student.inlaws_address_state }}">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="inlaws_address_zip" class="form-label">ZIP</label>
+                                        <input type="text" class="form-control" id="inlaws_address_zip" name="inlaws_address_zip" value="{{ student.inlaws_address_zip }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Information Section -->
                     <div class="accordion-item">
                         <h2 class="accordion-header">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#financialInfo" aria-expanded="false" aria-controls="financialInfo">
                                 Financial Information
                             </button>
                         </h2>
-                        <div id="financialInfo" class="accordion-collapse collapse" data-bs-parent="#studentForm">
+                        <div id="financialInfo" class="accordion-collapse collapse" data-bs-parent="#studentAccordion">
                             <div class="accordion-body">
                                 <div class="row g-3">
-                                    <div class="col-md-12">
-                                        <label for="financialAidStatus" class="form-label">Financial Aid Status</label>
-                                        <select class="form-select" id="financialAidStatus" name="financial_aid_status">
-                                            <option value="Full Tuition" {% if student.financial_aid.status == 'Full Tuition' %}selected{% endif %}>Full Tuition</option>
-                                            <option value="Not Full Tuition" {% if student.financial_aid.status == 'Not Full Tuition' %}selected{% endif %}>Not Full Tuition</option>
+                                    <div class="col-md-6">
+                                        <label for="tuition_payment_status" class="form-label">Tuition Payment Status</label>
+                                        <select class="form-select" id="tuition_payment_status" name="tuition_payment_status">
+                                            <option value="">Choose...</option>
+                                            <option value="Full Tuition" {% if student.tuition_payment_status == 'Full Tuition' %}selected{% endif %}>Full Tuition</option>
+                                            <option value="Financial Aid" {% if student.tuition_payment_status == 'Financial Aid' %}selected{% endif %}>Financial Aid</option>
+                                            <option value="Scholarship" {% if student.tuition_payment_status == 'Scholarship' %}selected{% endif %}>Scholarship</option>
                                         </select>
                                     </div>
-                                    <div id="scholarshipRequestSection" style="display: none;">
-                                        <div class="col-12">
-                                            <h5 class="mt-3 mb-3">Scholarship Request</h5>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="amountCanPay" class="form-label">Amount Can Pay</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" class="form-control" id="amountCanPay" name="amount_can_pay" 
-                                                       value="{{ student.financial_aid.amount_can_pay if student.financial_aid }}">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="scholarshipAmount" class="form-label">Scholarship Amount</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" class="form-control" id="scholarshipAmount" name="scholarship_amount" 
-                                                       value="{{ student.financial_aid.scholarship_amount if student.financial_aid }}">
-                                            </div>
-                                        </div>
+                                    <div class="col-md-6">
+                                        <label for="dormitory_meals_option" class="form-label">Dormitory & Meals Option</label>
+                                        <input type="text" class="form-control" id="dormitory_meals_option" name="dormitory_meals_option" value="{{ student.dormitory_meals_option }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="amount_can_pay" class="form-label">Amount Can Pay</label>
+                                        <input type="number" step="0.01" class="form-control" id="amount_can_pay" name="amount_can_pay" value="{{ student.amount_can_pay }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="scholarship_amount_requested" class="form-label">Scholarship Amount Requested</label>
+                                        <input type="number" step="0.01" class="form-control" id="scholarship_amount_requested" name="scholarship_amount_requested" value="{{ student.scholarship_amount_requested }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="financial_aid_explanation" class="form-label">Financial Aid Explanation</label>
+                                        <textarea class="form-control" id="financial_aid_explanation" name="financial_aid_explanation" rows="3">{{ student.financial_aid_explanation }}</textarea>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- In-Laws Information -->
-                    <div class="accordion-item" id="inlaws_section" style="display: none;">
+                    <!-- Additional Information Section -->
+                    <div class="accordion-item">
                         <h2 class="accordion-header">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#inlawsInfo" aria-expanded="false" aria-controls="inlawsInfo">
-                                In-Laws Information
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#additionalInfo" aria-expanded="false" aria-controls="additionalInfo">
+                                Additional Information
                             </button>
                         </h2>
-                        <div id="inlawsInfo" class="accordion-collapse collapse" data-bs-parent="#studentForm">
+                        <div id="additionalInfo" class="accordion-collapse collapse" data-bs-parent="#studentAccordion">
                             <div class="accordion-body">
                                 <div class="row g-3">
-                                    <!-- Combined In-Laws Information -->
-                                    <div class="col-md-12">
-                                        <div class="card">
-                                            <div class="card-header">
-                                                <h6 class="mb-0">In-Laws Contact Information</h6>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="row g-3">
-                                                    <!-- Names -->
-                                                    <div class="col-md-12">
-                                                        <label for="inlaws_first_name" class="form-label">In-Laws' First Name</label>
-                                                        <input type="text" class="form-control" id="inlaws_first_name" name="inlaws_first_name" value="{{ student.inlaws.first_name if student.inlaws }}">
-                                                    </div>
-                                                    <div class="col-md-12">
-                                                        <label for="inlaws_last_name" class="form-label">In-Laws' Last Name</label>
-                                                        <input type="text" class="form-control" id="inlaws_last_name" name="inlaws_last_name" value="{{ student.inlaws.last_name if student.inlaws }}">
-                                                    </div>
-                                                    
-                                                    <!-- Contact Information -->
-                                                    <div class="col-md-6">
-                                                        <label for="inlaws_telephone" class="form-label">Telephone</label>
-                                                        <input type="tel" class="form-control" id="inlaws_telephone" name="inlaws_telephone" value="{{ student.inlaws.telephone if student.inlaws }}">
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label for="inlaws_email" class="form-label">Email</label>
-                                                        <input type="email" class="form-control" id="inlaws_email" name="inlaws_email" value="{{ student.inlaws.email if student.inlaws }}">
-                                                    </div>
-
-                                                    <!-- Address -->
-                                                    <div class="col-12">
-                                                        <label for="inlaws_address_line1" class="form-label">Address Line 1</label>
-                                                        <input type="text" class="form-control" id="inlaws_address_line1" name="inlaws_address_line1" value="{{ student.inlaws.address.line1 if student.inlaws and student.inlaws.address }}">
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <label for="inlaws_city" class="form-label">City</label>
-                                                        <input type="text" class="form-control" id="inlaws_city" name="inlaws_city" value="{{ student.inlaws.address.city if student.inlaws and student.inlaws.address }}">
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <label for="inlaws_state" class="form-label">State</label>
-                                                        <input type="text" class="form-control" id="inlaws_state" name="inlaws_state" value="{{ student.inlaws.address.state if student.inlaws and student.inlaws.address }}">
-                                                    </div>
-                                                    <div class="col-md-2">
-                                                        <label for="inlaws_zip" class="form-label">ZIP</label>
-                                                        <input type="text" class="form-control" id="inlaws_zip" name="inlaws_zip" value="{{ student.inlaws.address.zip if student.inlaws and student.inlaws.address }}">
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div class="col-md-6">
+                                        <label for="insurance_company" class="form-label">Insurance Company</label>
+                                        <input type="text" class="form-control" id="insurance_company" name="insurance_company" value="{{ student.insurance_company }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="blood_type" class="form-label">Blood Type</label>
+                                        <select class="form-select" id="blood_type" name="blood_type">
+                                            <option value="">Choose...</option>
+                                            <option value="A+" {% if student.blood_type == 'A+' %}selected{% endif %}>A+</option>
+                                            <option value="A-" {% if student.blood_type == 'A-' %}selected{% endif %}>A-</option>
+                                            <option value="B+" {% if student.blood_type == 'B+' %}selected{% endif %}>B+</option>
+                                            <option value="B-" {% if student.blood_type == 'B-' %}selected{% endif %}>B-</option>
+                                            <option value="AB+" {% if student.blood_type == 'AB+' %}selected{% endif %}>AB+</option>
+                                            <option value="AB-" {% if student.blood_type == 'AB-' %}selected{% endif %}>AB-</option>
+                                            <option value="O+" {% if student.blood_type == 'O+' %}selected{% endif %}>O+</option>
+                                            <option value="O-" {% if student.blood_type == 'O-' %}selected{% endif %}>O-</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="medical_conditions" class="form-label">Medical Conditions</label>
+                                        <textarea class="form-control" id="medical_conditions" name="medical_conditions" rows="3">{{ student.medical_conditions }}</textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="additional_info" class="form-label">Additional Information</label>
+                                        <textarea class="form-control" id="additional_info" name="additional_info" rows="4">{{ student.additional_info }}</textarea>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
                 </div>
 
-                <div class="d-flex justify-content-between mt-4">
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-between">
                     <a href="/students/{{ student.id }}" class="btn btn-secondary">Cancel</a>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
@@ -401,64 +428,15 @@
 function updateStudent(event) {
     event.preventDefault();
     
-    const form = event.target;
-    const formData = new FormData(form);
-    const data = {
-        first_name: formData.get('first_name'),
-        middle_name: formData.get('middle_name'),
-        last_name: formData.get('last_name'),
-        phone_number: formData.get('phone_number'),
-        ssn: formData.get('ssn'),
-        date_of_birth: formData.get('date_of_birth'),
-        citizenship: formData.get('citizenship'),
-        high_school_graduate: formData.get('high_school_graduate'),
-        status: formData.get('status'),
-        marital_status: formData.get('marital_status'),
-        custom_fields: {
-            hebrew_name: formData.get('hebrew_name'),
-            informal_name: formData.get('informal_name')
-        },
-        address: {
-            line1: formData.get('address_line1'),
-            city: formData.get('city'),
-            state: formData.get('state'),
-            zip: formData.get('zip'),
-            country: formData.get('country')
-        },
-        parents: {
-            father: {
-                title: formData.get('father_title'),
-                first_name: formData.get('father_first_name'),
-                last_name: formData.get('father_last_name'),
-                phone: formData.get('father_phone'),
-                occupation: formData.get('father_occupation')
-            },
-            mother: {
-                title: formData.get('mother_title'),
-                first_name: formData.get('mother_first_name'),
-                last_name: formData.get('mother_last_name'),
-                phone: formData.get('mother_phone'),
-                occupation: formData.get('mother_occupation')
-            }
-        },
-        grandparents: {
-            paternal: {
-                name: formData.get('paternal_grandparents_name'),
-                phone: formData.get('paternal_grandparents_phone')
-            },
-            maternal: {
-                name: formData.get('maternal_grandparents_name'),
-                phone: formData.get('maternal_grandparents_phone')
-            }
-        },
-        financial_aid: {
-            status: formData.get('financial_aid_status'),
-            amount_can_pay: formData.get('amount_can_pay'),
-            scholarship_amount: formData.get('scholarship_amount')
-        }
-    };
+    const formData = new FormData(event.target);
+    const data = {};
     
-    fetch(`/api/students/{{ student.id }}`, {
+    // Collect all form data
+    for (let [key, value] of formData.entries()) {
+        data[key] = value;
+    }
+    
+    fetch(`/students/api/{{ student.id }}`, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -466,11 +444,12 @@ function updateStudent(event) {
         body: JSON.stringify(data)
     })
     .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+    .then(result => {
+        if (result.success) {
+            alert('Student updated successfully!');
             window.location.href = `/students/{{ student.id }}`;
         } else {
-            alert('Error updating student');
+            alert('Error updating student: ' + result.message);
         }
     })
     .catch(error => {
@@ -478,37 +457,5 @@ function updateStudent(event) {
         alert('Error updating student');
     });
 }
-
-// Show/hide spouse and in-laws sections based on marital status
-document.getElementById('maritalStatus').addEventListener('change', function() {
-    const spouseSection = document.getElementById('spouse_section');
-    const inlawsSection = document.getElementById('inlaws_section');
-    if (this.value === 'married') {
-        spouseSection.style.display = 'block';
-        inlawsSection.style.display = 'block';
-    } else {
-        spouseSection.style.display = 'none';
-        inlawsSection.style.display = 'none';
-    }
-});
-
-// Show/hide scholarship request section based on financial aid status
-document.getElementById('financialAidStatus').addEventListener('change', function() {
-    const scholarshipRequestSection = document.getElementById('scholarshipRequestSection');
-    if (this.value === 'Not Full Tuition') {
-        scholarshipRequestSection.style.display = 'block';
-    } else {
-        scholarshipRequestSection.style.display = 'none';
-        // Clear the values when hiding
-        document.getElementById('amountCanPay').value = '';
-        document.getElementById('scholarshipAmount').value = '';
-    }
-});
-
-// Trigger the change event on page load to set initial state
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('maritalStatus').dispatchEvent(new Event('change'));
-    document.getElementById('financialAidStatus').dispatchEvent(new Event('change'));
-});
 </script>
-{% endblock %}
+{% endblock %} 

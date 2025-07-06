@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ secure_link.form_title }} - Upload</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .upload-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .upload-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .upload-body {
+            padding: 2rem;
+        }
+        
+        .file-drop-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-drop-area:hover {
+            border-color: #764ba2;
+            background: #e3f2fd;
+            transform: scale(1.02);
+        }
+        
+        .file-drop-area.dragover {
+            border-color: #4caf50;
+            background: #e8f5e8;
+        }
+        
+        .file-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .file-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        
+        .progress-container {
+            display: none;
+            margin-top: 1rem;
+        }
+        
+        .selected-file {
+            display: none;
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .btn-upload {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 0.8rem 2rem;
+            font-weight: 600;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-upload:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .security-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .expire-warning {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h2><i class="fas fa-file-upload"></i> {{ secure_link.form_title }}</h2>
+                        <p class="mb-0">Student: {{ secure_link.student.student_name }} | Division: {{ secure_link.division }}</p>
+                    </div>
+                    
+                    <div class="card-body">
+                        <!-- Description -->
+                        {% if secure_link.form_description %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> {{ secure_link.form_description }}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Download Pre-filled Form -->
+                        {% if secure_link.pre_filled_pdf_path %}
+                        <div class="text-center mb-4">
+                            <a href="/download-form/{{ secure_link.token }}" class="btn btn-outline-primary btn-lg">
+                                <i class="fas fa-download"></i> Download Pre-filled Form
+                            </a>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Upload Form -->
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-4">
+                                <label for="fileInput" class="form-label">Select File to Upload</label>
+                                <input type="file" class="form-control" id="fileInput" name="file" 
+                                       accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
+                                <div class="form-text">
+                                    Accepted formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB)
+                                </div>
+                            </div>
+                            
+                            {% if secure_link.allow_multiple_files %}
+                            <!-- Document Category Selection for Financial Aid -->
+                            <div class="mb-4">
+                                <label for="documentCategory" class="form-label">Document Type</label>
+                                <select class="form-select" id="documentCategory" name="document_category" required>
+                                    <option value="">Select document type...</option>
+                                    <option value="main_form">Financial Aid Application</option>
+                                    <option value="tax_return">Tax Return</option>
+                                    <option value="w2">W-2 Form</option>
+                                    <option value="bank_statement">Bank Statement</option>
+                                    <option value="pay_stub">Pay Stub</option>
+                                    <option value="other">Other Supporting Document</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="documentDescription" class="form-label">Document Description (Optional)</label>
+                                <input type="text" class="form-control" id="documentDescription" name="document_description" 
+                                       placeholder="e.g., 2023 Tax Return, January Bank Statement">
+                                <div class="form-text">
+                                    Help us identify this document (optional but recommended)
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn">
+                                    <i class="fas fa-upload"></i> Upload Document
+                                </button>
+                            </div>
+                        </form>
+                        
+                        {% if secure_link.allow_multiple_files %}
+                        <!-- Uploaded Documents List -->
+                        <div id="uploadedDocuments" class="mt-4" style="display: none;">
+                            <h5><i class="fas fa-file-alt"></i> Uploaded Documents</h5>
+                            <div id="documentsList" class="list-group">
+                                <!-- Documents will be populated here -->
+                            </div>
+                            <div class="text-center mt-3">
+                                <button type="button" class="btn btn-success" onclick="uploadAnother()">
+                                    <i class="fas fa-plus"></i> Upload Another Document
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Messages -->
+                        <div id="messageContainer" class="mt-4"></div>
+                        
+                        <!-- Expiration Notice -->
+                        <div class="alert alert-warning mt-4">
+                            <strong><i class="fas fa-clock"></i> Notice:</strong>
+                            This upload link expires on {{ secure_link.expires_at.strftime('%B %d, %Y at %I:%M %p') }}.
+                        </div>
+                        
+                        <div class="security-info">
+                            <h5><i class="fas fa-shield-alt text-success"></i> Your Data is Protected</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-lock"></i> Encryption & Security</h6>
+                                    <ul class="small">
+                                        <li>All files encrypted with AES-256 encryption</li>
+                                        <li>Secure cloud or local storage with integrity verification</li>
+                                        <li>Time-limited access links (expires automatically)</li>
+                                        <li>Complete audit trail of all activities</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="fas fa-eye-slash"></i> Privacy Protection</h6>
+                                    <ul class="small">
+                                        <li>Only authorized staff can access your documents</li>
+                                        <li>Sensitive data masked in system logs</li>
+                                        <li>Files automatically purged after processing</li>
+                                        <li>No third-party access to your information</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="text-center mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-certificate"></i> This system uses bank-level security standards
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let uploadedCount = 0;
+        
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const uploadBtn = document.getElementById('uploadBtn');
+            
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            
+            try {
+                const response = await fetch('/api/secure-upload/{{ secure_link.token }}', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    uploadedCount++;
+                    
+                    {% if secure_link.allow_multiple_files %}
+                    // For multiple files, add to list and allow more uploads
+                    addUploadedDocument(formData, result);
+                    resetForm();
+                    document.getElementById('uploadedDocuments').style.display = 'block';
+                    
+                    document.getElementById('messageContainer').innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> Document uploaded successfully! You can upload additional documents or close when finished.
+                        </div>
+                    `;
+                    {% else %}
+                    // Single file upload - hide form
+                    document.getElementById('messageContainer').innerHTML = `
+                        <div class="alert alert-success">
+                            <h4><i class="fas fa-check-circle"></i> Upload Successful!</h4>
+                            <p>${result.message}</p>
+                        </div>
+                    `;
+                    document.getElementById('uploadForm').style.display = 'none';
+                    {% endif %}
+                } else {
+                    document.getElementById('messageContainer').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> ${result.error || 'Upload failed'}
+                        </div>
+                    `;
+                    resetUploadButton();
+                }
+            } catch (error) {
+                document.getElementById('messageContainer').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> An error occurred during upload.
+                    </div>
+                `;
+                resetUploadButton();
+            }
+        });
+        
+        function resetUploadButton() {
+            const uploadBtn = document.getElementById('uploadBtn');
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Document';
+        }
+        
+        function resetForm() {
+            document.getElementById('fileInput').value = '';
+            {% if secure_link.allow_multiple_files %}
+            document.getElementById('documentCategory').value = '';
+            document.getElementById('documentDescription').value = '';
+            {% endif %}
+            resetUploadButton();
+        }
+        
+        {% if secure_link.allow_multiple_files %}
+        function addUploadedDocument(formData, result) {
+            const documentsList = document.getElementById('documentsList');
+            const fileName = formData.get('file').name;
+            const category = formData.get('document_category') || 'Unknown';
+            const description = formData.get('document_description') || '';
+            
+            const documentItem = document.createElement('div');
+            documentItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+            documentItem.innerHTML = `
+                <div>
+                    <h6 class="mb-1">${fileName}</h6>
+                    <p class="mb-1 text-muted">${category.replace('_', ' ').toUpperCase()}</p>
+                    ${description ? `<small class="text-muted">${description}</small>` : ''}
+                </div>
+                <span class="badge bg-success rounded-pill">Uploaded</span>
+            `;
+            
+            documentsList.appendChild(documentItem);
+        }
+        
+        function uploadAnother() {
+            document.getElementById('messageContainer').innerHTML = '';
+            // Form is already reset, just focus on file input
+            document.getElementById('fileInput').focus();
+        }
+        {% endif %}
+    </script>
+</body>
+</html> 

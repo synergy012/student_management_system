@@ -1,0 +1,627 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Dashboard{% endblock %}
+
+{% block content %}
+<div class="attendance-dashboard page-enter">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="display-6 fw-bold">
+                <i class="fas fa-calendar-check text-success me-3"></i>
+                Attendance Dashboard
+            </h1>
+            <p class="text-muted mb-0">Record and track student attendance</p>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-primary">
+                <i class="fas fa-file-export me-2"></i>
+                Generate Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Period Selection -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Select Period & Date</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Date</label>
+                    <input type="date" id="attendanceDate" class="form-control" value="{{ today }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Division</label>
+                    <select id="divisionSelect" class="form-select">
+                        <option value="">All Divisions</option>
+                        <option value="YZA">YZA</option>
+                        <option value="KOLLEL">Kollel</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Period</label>
+                    <select id="periodSelect" class="form-select">
+                        <option value="">Select Period</option>
+                        {% for period in attendance_periods %}
+                        <option value="{{ period.id }}">{{ period.name }} - {{ period.division }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-primary w-100" onclick="loadAttendance()">Load</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Session Info -->
+    <div id="sessionInfo" class="card mb-4" style="display: none;">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="mb-1" id="sessionTitle">Morning Period - YZA Division</h5>
+                    <p class="text-muted mb-0" id="sessionDetails">Date: Today | Time: 9:00 AM - 12:00 PM</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="attendance-stats">
+                        <span class="badge bg-success me-2">
+                            <i class="fas fa-check"></i> Present: <span id="presentCount">0</span>
+                        </span>
+                        <span class="badge bg-danger me-2">
+                            <i class="fas fa-times"></i> Absent: <span id="absentCount">0</span>
+                        </span>
+                        <span class="badge bg-warning">
+                            <i class="fas fa-clock"></i> Late: <span id="lateCount">0</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div id="quickActions" class="mb-4" style="display: none;">
+        <div class="btn-group">
+            <button class="btn btn-outline-success" onclick="markAllPresent()">
+                <i class="fas fa-check-double me-2"></i>
+                Mark All Present
+            </button>
+            <button class="btn btn-outline-warning" onclick="markSelectedLate()">
+                <i class="fas fa-clock me-2"></i>
+                Mark Selected Late
+            </button>
+            <button class="btn btn-outline-danger" onclick="markSelectedAbsent()">
+                <i class="fas fa-times me-2"></i>
+                Mark Selected Absent
+            </button>
+            <button class="btn btn-outline-primary" onclick="saveAttendance()">
+                <i class="fas fa-save me-2"></i>
+                Save Changes
+            </button>
+        </div>
+    </div>
+
+    <!-- Students Grid -->
+    <div id="studentsContainer">
+        <div class="text-center py-5">
+            <i class="fas fa-calendar-check fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">Select a period to start taking attendance</h5>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-sticky-note text-warning me-2"></i>
+                    Attendance Notes
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="notesStudentId">
+                <div class="mb-3">
+                    <label class="form-label">Student</label>
+                    <div id="notesStudentName" class="form-control-plaintext fw-bold"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="attendanceNotes" class="form-label">Notes</label>
+                    <textarea class="form-control" id="attendanceNotes" rows="4" 
+                              placeholder="Add any notes about this student's attendance..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveNotes()">Save Notes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+.student-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 2px solid #e5e7eb;
+    min-height: 120px;
+}
+
+.student-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.student-card.present {
+    border-color: #10b981;
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+}
+
+.student-card.absent {
+    border-color: #ef4444;
+    background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+}
+
+.student-card.late {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.student-card.excused {
+    border-color: #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+.student-card.sick {
+    border-color: #8b5cf6;
+    background: linear-gradient(135deg, #f5f3ff 0%, #e0e7ff 100%);
+}
+
+.student-avatar {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.attendance-status-buttons {
+    gap: 0.25rem;
+}
+
+.attendance-status-buttons .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 0.25rem;
+}
+
+.student-card.selected {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    border-color: #3b82f6;
+}
+
+.attendance-stats .badge {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.quick-select-info {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1px solid #0ea5e9;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+@keyframes pulse-attendance {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.student-card.status-changed {
+    animation: pulse-attendance 0.5s ease-in-out;
+}
+</style>
+
+<script>
+let currentAttendanceData = {};
+let selectedStudents = new Set();
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize period select based on division
+    document.getElementById('divisionSelect').addEventListener('change', filterPeriods);
+    
+    // Auto-select current period if available
+    const currentPeriod = document.querySelector('#periodSelect option[selected]');
+    if (currentPeriod) {
+        loadAttendance();
+    }
+});
+
+function filterPeriods() {
+    const division = document.getElementById('divisionSelect').value;
+    const periodSelect = document.getElementById('periodSelect');
+    const options = periodSelect.querySelectorAll('option');
+    
+    options.forEach(option => {
+        if (option.value === '') {
+            option.style.display = '';
+            return;
+        }
+        
+        const optionDivision = option.dataset.division;
+        if (!division || optionDivision === division) {
+            option.style.display = '';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+    
+    // Reset selection if current selection is hidden
+    const selectedOption = periodSelect.options[periodSelect.selectedIndex];
+    if (selectedOption && selectedOption.style.display === 'none') {
+        periodSelect.value = '';
+    }
+}
+
+async function loadAttendance() {
+    const date = document.getElementById('attendanceDate').value;
+    const periodId = document.getElementById('periodSelect').value;
+    
+    if (!date || !periodId) {
+        window.toast.warning('Please select both date and period');
+        return;
+    }
+    
+    // Show loading
+    document.getElementById('loadingState').innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h5 class="text-muted mt-3">Loading attendance data...</h5>
+        </div>
+    `;
+    
+    try {
+        const response = await fetchWithLoading(`/api/attendance/periods/${periodId}/students?date=${date}`);
+        
+        if (response.success) {
+            displayStudents(response.students, response.period_info);
+            updateSessionInfo(response.period_info, date);
+        } else {
+            window.toast.error(response.message || 'Failed to load attendance data');
+        }
+    } catch (error) {
+        window.toast.error('Error loading attendance: ' + error.message);
+    }
+}
+
+function displayStudents(students, periodInfo) {
+    const container = document.getElementById('studentsGrid');
+    const loadingState = document.getElementById('loadingState');
+    const noStudents = document.getElementById('noStudents');
+    const sessionInfo = document.getElementById('sessionInfo');
+    const quickActions = document.getElementById('quickActions');
+    
+    if (!students || students.length === 0) {
+        container.style.display = 'none';
+        loadingState.style.display = 'none';
+        noStudents.style.display = 'block';
+        sessionInfo.style.display = 'none';
+        quickActions.style.display = 'none';
+        return;
+    }
+    
+    container.innerHTML = students.map(student => `
+        <div class="col-md-4 col-lg-3">
+            <div class="card student-card ${student.attendance_status || ''}" 
+                 data-student-id="${student.id}"
+                 onclick="toggleStudentSelection(${student.id})">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="student-avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3">
+                            ${student.first_name[0]}${student.last_name[0]}
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">${student.first_name} ${student.last_name}</h6>
+                            <small class="text-muted">${student.division}</small>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" 
+                                   onchange="toggleStudentSelection(${student.id})"
+                                   onclick="event.stopPropagation()">
+                        </div>
+                    </div>
+                    
+                    <div class="attendance-status-buttons d-flex flex-wrap">
+                        <button class="btn btn-sm ${student.attendance_status === 'present' ? 'btn-success' : 'btn-outline-success'}" 
+                                onclick="markAttendance(${student.id}, 'present', event)">
+                            <i class="fas fa-check"></i> Present
+                        </button>
+                        <button class="btn btn-sm ${student.attendance_status === 'absent' ? 'btn-danger' : 'btn-outline-danger'}" 
+                                onclick="markAttendance(${student.id}, 'absent', event)">
+                            <i class="fas fa-times"></i> Absent
+                        </button>
+                        <button class="btn btn-sm ${student.attendance_status === 'late' ? 'btn-warning' : 'btn-outline-warning'}" 
+                                onclick="markAttendance(${student.id}, 'late', event)">
+                            <i class="fas fa-clock"></i> Late
+                        </button>
+                    </div>
+                    
+                    <div class="mt-2">
+                        <button class="btn btn-sm ${student.attendance_status === 'excused' ? 'btn-info' : 'btn-outline-info'}" 
+                                onclick="markAttendance(${student.id}, 'excused', event)">
+                            <i class="fas fa-user-check"></i> Excused
+                        </button>
+                        <button class="btn btn-sm ${student.attendance_status === 'sick' ? 'btn-secondary' : 'btn-outline-secondary'}" 
+                                onclick="markAttendance(${student.id}, 'sick', event)">
+                            <i class="fas fa-thermometer-half"></i> Sick
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" 
+                                onclick="showNotesModal(${student.id}, '${student.first_name} ${student.last_name}', event)">
+                            <i class="fas fa-sticky-note"></i>
+                        </button>
+                    </div>
+                    
+                    ${student.notes ? `<div class="mt-2"><small class="text-muted"><i class="fas fa-sticky-note"></i> ${student.notes}</small></div>` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    // Store attendance data
+    currentAttendanceData = {};
+    students.forEach(student => {
+        currentAttendanceData[student.id] = {
+            status: student.attendance_status || null,
+            notes: student.notes || '',
+            name: `${student.first_name} ${student.last_name}`
+        };
+    });
+    
+    container.style.display = '';
+    loadingState.style.display = 'none';
+    noStudents.style.display = 'none';
+    sessionInfo.style.display = '';
+    quickActions.style.display = '';
+    
+    updateAttendanceStats();
+}
+
+function updateSessionInfo(periodInfo, date) {
+    document.getElementById('sessionTitle').textContent = `${periodInfo.name} - ${periodInfo.division} Division`;
+    document.getElementById('sessionDetails').textContent = `Date: ${formatDate(date)} | Time: ${periodInfo.time_display}`;
+}
+
+function markAttendance(studentId, status, event) {
+    event.stopPropagation();
+    
+    const card = document.querySelector(`[data-student-id="${studentId}"]`);
+    const oldStatus = currentAttendanceData[studentId]?.status;
+    
+    // Remove old status classes
+    card.classList.remove('present', 'absent', 'late', 'excused', 'sick');
+    
+    // Add new status class
+    card.classList.add(status);
+    card.classList.add('status-changed');
+    
+    // Update attendance data
+    currentAttendanceData[studentId] = {
+        ...currentAttendanceData[studentId],
+        status: status
+    };
+    
+    // Update button states
+    const buttons = card.querySelectorAll('.attendance-status-buttons .btn, .mt-2 .btn');
+    buttons.forEach(btn => {
+        btn.classList.remove('btn-success', 'btn-danger', 'btn-warning', 'btn-info', 'btn-secondary');
+        btn.classList.add(btn.textContent.toLowerCase().includes(status) ? 
+            `btn-${getStatusColor(status)}` : `btn-outline-${getStatusColor(getButtonStatus(btn))}`);
+    });
+    
+    updateAttendanceStats();
+    
+    // Remove animation class after animation completes
+    setTimeout(() => {
+        card.classList.remove('status-changed');
+    }, 500);
+    
+    window.toast.info(`Marked ${currentAttendanceData[studentId].name} as ${status}`);
+}
+
+function getStatusColor(status) {
+    const colors = {
+        present: 'success',
+        absent: 'danger',
+        late: 'warning',
+        excused: 'info',
+        sick: 'secondary'
+    };
+    return colors[status] || 'primary';
+}
+
+function getButtonStatus(button) {
+    if (button.textContent.includes('Present')) return 'present';
+    if (button.textContent.includes('Absent')) return 'absent';
+    if (button.textContent.includes('Late')) return 'late';
+    if (button.textContent.includes('Excused')) return 'excused';
+    if (button.textContent.includes('Sick')) return 'sick';
+    return 'primary';
+}
+
+function updateAttendanceStats() {
+    const stats = {
+        present: 0,
+        absent: 0,
+        late: 0,
+        excused: 0,
+        sick: 0
+    };
+    
+    Object.values(currentAttendanceData).forEach(data => {
+        if (data.status && stats.hasOwnProperty(data.status)) {
+            stats[data.status]++;
+        }
+    });
+    
+    document.getElementById('presentCount').textContent = stats.present;
+    document.getElementById('absentCount').textContent = stats.absent;
+    document.getElementById('lateCount').textContent = stats.late;
+}
+
+function toggleStudentSelection(studentId) {
+    const checkbox = document.querySelector(`[data-student-id="${studentId}"] .form-check-input`);
+    const card = document.querySelector(`[data-student-id="${studentId}"]`);
+    
+    if (selectedStudents.has(studentId)) {
+        selectedStudents.delete(studentId);
+        checkbox.checked = false;
+        card.classList.remove('selected');
+    } else {
+        selectedStudents.add(studentId);
+        checkbox.checked = true;
+        card.classList.add('selected');
+    }
+}
+
+function markAllPresent() {
+    Object.keys(currentAttendanceData).forEach(studentId => {
+        markAttendance(parseInt(studentId), 'present', { stopPropagation: () => {} });
+    });
+    window.toast.success('Marked all students as present');
+}
+
+function markSelectedLate() {
+    if (selectedStudents.size === 0) {
+        window.toast.warning('Please select students first');
+        return;
+    }
+    
+    selectedStudents.forEach(studentId => {
+        markAttendance(studentId, 'late', { stopPropagation: () => {} });
+    });
+    
+    window.toast.success(`Marked ${selectedStudents.size} students as late`);
+    clearSelection();
+}
+
+function markSelectedAbsent() {
+    if (selectedStudents.size === 0) {
+        window.toast.warning('Please select students first');
+        return;
+    }
+    
+    selectedStudents.forEach(studentId => {
+        markAttendance(studentId, 'absent', { stopPropagation: () => {} });
+    });
+    
+    window.toast.success(`Marked ${selectedStudents.size} students as absent`);
+    clearSelection();
+}
+
+function clearSelection() {
+    selectedStudents.forEach(studentId => {
+        const checkbox = document.querySelector(`[data-student-id="${studentId}"] .form-check-input`);
+        const card = document.querySelector(`[data-student-id="${studentId}"]`);
+        checkbox.checked = false;
+        card.classList.remove('selected');
+    });
+    selectedStudents.clear();
+}
+
+async function saveAttendance() {
+    const date = document.getElementById('attendanceDate').value;
+    const periodId = document.getElementById('periodSelect').value;
+    
+    const attendanceRecords = Object.entries(currentAttendanceData).map(([studentId, data]) => ({
+        student_id: parseInt(studentId),
+        attendance_status: data.status,
+        notes: data.notes
+    })).filter(record => record.attendance_status);
+    
+    if (attendanceRecords.length === 0) {
+        window.toast.warning('No attendance records to save');
+        return;
+    }
+    
+    try {
+        const response = await fetchWithLoading('/api/attendance/record', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                date: date,
+                period_id: parseInt(periodId),
+                attendance_records: attendanceRecords
+            })
+        });
+        
+        if (response.success) {
+            window.toast.success(`Saved attendance for ${attendanceRecords.length} students`);
+        } else {
+            window.toast.error(response.message || 'Failed to save attendance');
+        }
+    } catch (error) {
+        window.toast.error('Error saving attendance: ' + error.message);
+    }
+}
+
+function showNotesModal(studentId, studentName, event) {
+    event.stopPropagation();
+    
+    document.getElementById('notesStudentId').value = studentId;
+    document.getElementById('notesStudentName').textContent = studentName;
+    document.getElementById('attendanceNotes').value = currentAttendanceData[studentId]?.notes || '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('notesModal'));
+    modal.show();
+}
+
+function saveNotes() {
+    const studentId = document.getElementById('notesStudentId').value;
+    const notes = document.getElementById('attendanceNotes').value;
+    
+    currentAttendanceData[studentId] = {
+        ...currentAttendanceData[studentId],
+        notes: notes
+    };
+    
+    // Update the display
+    const card = document.querySelector(`[data-student-id="${studentId}"]`);
+    let notesDisplay = card.querySelector('.mt-2 + div');
+    
+    if (notes) {
+        if (!notesDisplay) {
+            notesDisplay = document.createElement('div');
+            notesDisplay.className = 'mt-2';
+            card.querySelector('.card-body').appendChild(notesDisplay);
+        }
+        notesDisplay.innerHTML = `<small class="text-muted"><i class="fas fa-sticky-note"></i> ${notes}</small>`;
+    } else if (notesDisplay) {
+        notesDisplay.remove();
+    }
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('notesModal'));
+    modal.hide();
+    
+    window.toast.success('Notes saved');
+}
+
+function formatDate(dateString) {
+    return new Date(dateString).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+</script>
+{% endblock %} 

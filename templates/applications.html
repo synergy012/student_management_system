@@ -21,7 +21,7 @@
     <!-- Search Box -->
     <div class="row mb-4">
         <div class="col-md-8">
-            <form method="GET" action="{{ url_for('main.applications') }}" class="search-container">
+            <form method="GET" action="{{ url_for('applications.applications_list') }}" class="search-container">
                 <!-- Preserve existing filters -->
                 {% if request.args.get('status') %}
                 <input type="hidden" name="status" value="{{ request.args.get('status') }}">
@@ -45,7 +45,7 @@
                         <i class="fas fa-search"></i> <span>Search</span>
                     </button>
                     {% if search_query %}
-                    <a href="{{ url_for('main.applications', status=request.args.get('status'), division=request.args.get('division')) }}" 
+                    <a href="{{ url_for('applications.applications_list', status=request.args.get('status'), division=request.args.get('division')) }}" 
                        class="btn btn-outline-secondary">
                         <i class="fas fa-times"></i> <span>Clear</span>
                     </a>
@@ -67,15 +67,15 @@
     <div class="mb-3">
         <div class="d-flex align-items-center">
             <span class="text-muted me-3"><i class="fas fa-filter"></i> <strong>Division:</strong></span>
-            <a href="{{ url_for('main.applications', status=request.args.get('status'), search=search_query if search_query else None) }}" 
+            <a href="{{ url_for('applications.applications_list', status=request.args.get('status'), search=search_query if search_query else None) }}" 
                class="badge bg-{{ 'primary' if not request.args.get('division') else 'secondary' }} text-decoration-none me-2">
                 All Divisions ({{ division_stats.all }})
             </a>
-            <a href="{{ url_for('main.applications', division='YZA', status=request.args.get('status'), search=search_query if search_query else None) }}" 
+            <a href="{{ url_for('applications.applications_list', division='YZA', status=request.args.get('status'), search=search_query if search_query else None) }}" 
                class="badge bg-{{ 'primary' if request.args.get('division') == 'YZA' else 'secondary' }} text-decoration-none me-2">
                 YZA ({{ division_stats.yza }})
             </a>
-            <a href="{{ url_for('main.applications', division='YOH', status=request.args.get('status'), search=search_query if search_query else None) }}" 
+            <a href="{{ url_for('applications.applications_list', division='YOH', status=request.args.get('status'), search=search_query if search_query else None) }}" 
                class="badge bg-{{ 'info' if request.args.get('division') == 'YOH' else 'secondary' }} text-decoration-none me-2">
                 YOH ({{ division_stats.yoh }})
             </a>
@@ -86,19 +86,19 @@
     <div class="mb-4">
         <div class="d-flex align-items-center">
             <span class="text-muted me-3"><i class="fas fa-filter"></i> <strong>Status:</strong></span>
-            <a href="{{ url_for('main.applications', division=request.args.get('division'), search=search_query if search_query else None) }}" 
+            <a href="{{ url_for('applications.applications_list', division=request.args.get('division'), search=search_query if search_query else None) }}" 
                class="badge bg-{{ 'primary' if not request.args.get('status') else 'secondary' }} text-decoration-none me-2">
                 All ({{ stats.all }})
             </a>
-            <a href="{{ url_for('main.applications', status='pending', division=request.args.get('division'), search=search_query if search_query else None) }}" 
+            <a href="{{ url_for('applications.applications_list', status='pending', division=request.args.get('division'), search=search_query if search_query else None) }}" 
                class="badge bg-{{ 'warning' if request.args.get('status') == 'pending' else 'secondary' }} text-decoration-none me-2">
                 Pending ({{ stats.pending }})
             </a>
-            <a href="{{ url_for('main.applications', status='accepted', division=request.args.get('division'), search=search_query if search_query else None) }}" 
+            <a href="{{ url_for('applications.applications_list', status='accepted', division=request.args.get('division'), search=search_query if search_query else None) }}" 
                class="badge bg-{{ 'success' if request.args.get('status') == 'accepted' else 'secondary' }} text-decoration-none me-2">
                 Accepted ({{ stats.accepted }})
             </a>
-            <a href="{{ url_for('main.applications', status='rejected', division=request.args.get('division'), search=search_query if search_query else None) }}" 
+            <a href="{{ url_for('applications.applications_list', status='rejected', division=request.args.get('division'), search=search_query if search_query else None) }}" 
                class="badge bg-{{ 'danger' if request.args.get('status') == 'rejected' else 'secondary' }} text-decoration-none me-2">
                 Rejected ({{ stats.rejected }})
             </a>
@@ -195,10 +195,29 @@
                                                             <p><strong>Phone:</strong> {{ application.phone_number or 'N/A' }}</p>
                                                             <p><strong>Email:</strong> {{ application.email or 'N/A' }}</p>
                                                             <p><strong>Social Security Number:</strong> {{ application.social_security_number or 'N/A' }}</p>
+                                                            {% if application.division == 'YZA' %}
                                                             <p><strong>Marital Status:</strong> {{ application.marital_status or 'N/A' }}</p>
                                                             <p><strong>Spouse Name:</strong> {{ application.spouse_name or 'N/A' }}</p>
+                                                            {% endif %}
                                                             <p><strong>Citizenship:</strong> {{ application.citizenship or 'N/A' }}</p>
                                                             <p><strong>High School Graduate:</strong> {{ application.high_school_graduate or 'N/A' }}</p>
+                                                            
+                                                            {% if application.division == 'YOH' and application.division_specific_data %}
+                                                            <!-- YOH-specific personal fields -->
+                                                            <hr class="my-3">
+                                                            <h6 class="text-info">Additional Information (YOH)</h6>
+                                                            {% if application.division_specific_data is string %}
+                                                                {% set yoh_data = application.division_specific_data | from_json %}
+                                                            {% else %}
+                                                                {% set yoh_data = application.division_specific_data %}
+                                                            {% endif %}
+                                                            {% if yoh_data and 'country_of_birth' in yoh_data %}
+                                                            <p><strong>Country of Birth:</strong> {{ yoh_data.country_of_birth or 'N/A' }}</p>
+                                                            {% endif %}
+                                                            {% if yoh_data and 'home_phone' in yoh_data %}
+                                                            <p><strong>Home Phone:</strong> {{ yoh_data.home_phone or 'N/A' }}</p>
+                                                            {% endif %}
+                                                            {% endif %}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -257,6 +276,26 @@
                                                             <p><strong>Phone:</strong> {{ application.father_phone or 'N/A' }}</p>
                                                             <p><strong>Email:</strong> {{ application.father_email or 'N/A' }}</p>
                                                             <p><strong>Occupation:</strong> {{ application.father_occupation or 'N/A' }}</p>
+                                                            
+                                                            {% if application.division == 'YOH' and application.division_specific_data %}
+                                                            {% if application.division_specific_data is string %}
+                                                                {% set yoh_data = application.division_specific_data | from_json %}
+                                                            {% else %}
+                                                                {% set yoh_data = application.division_specific_data %}
+                                                            {% endif %}
+                                                            {% if yoh_data and 'father_home_phone' in yoh_data %}
+                                                            <p><strong>Father's Home Phone:</strong> {{ yoh_data.father_home_phone or 'N/A' }}</p>
+                                                            {% endif %}
+                                                            {% if yoh_data and 'father_date_of_birth' in yoh_data %}
+                                                            <p><strong>Father's Date of Birth:</strong> {{ yoh_data.father_date_of_birth or 'N/A' }}</p>
+                                                            {% endif %}
+                                                            {% if yoh_data and 'father_country_of_birth' in yoh_data %}
+                                                            <p><strong>Father's Country of Birth:</strong> {{ yoh_data.father_country_of_birth or 'N/A' }}</p>
+                                                            {% endif %}
+                                                            {% if yoh_data and 'father_employer' in yoh_data %}
+                                                            <p><strong>Father's Employer:</strong> {{ yoh_data.father_employer or 'N/A' }}</p>
+                                                            {% endif %}
+                                                            {% endif %}
                                                         </div>
                                                         <div class="col-md-6">
                                                             <h6>Mother</h6>
@@ -265,13 +304,34 @@
                                                             <p><strong>Phone:</strong> {{ application.mother_phone or 'N/A' }}</p>
                                                             <p><strong>Email:</strong> {{ application.mother_email or 'N/A' }}</p>
                                                             <p><strong>Occupation:</strong> {{ application.mother_occupation or 'N/A' }}</p>
+                                                            
+                                                            {% if application.division == 'YOH' and application.division_specific_data %}
+                                                            {% if application.division_specific_data is string %}
+                                                                {% set yoh_data = application.division_specific_data | from_json %}
+                                                            {% else %}
+                                                                {% set yoh_data = application.division_specific_data %}
+                                                            {% endif %}
+                                                            {% if yoh_data and 'mother_home_phone' in yoh_data %}
+                                                            <p><strong>Mother's Home Phone:</strong> {{ yoh_data.mother_home_phone or 'N/A' }}</p>
+                                                            {% endif %}
+                                                            {% if yoh_data and 'mother_date_of_birth' in yoh_data %}
+                                                            <p><strong>Mother's Date of Birth:</strong> {{ yoh_data.mother_date_of_birth or 'N/A' }}</p>
+                                                            {% endif %}
+                                                            {% if yoh_data and 'mother_country_of_birth' in yoh_data %}
+                                                            <p><strong>Mother's Country of Birth:</strong> {{ yoh_data.mother_country_of_birth or 'N/A' }}</p>
+                                                            {% endif %}
+                                                            {% if yoh_data and 'mother_employer' in yoh_data %}
+                                                            <p><strong>Mother's Employer:</strong> {{ yoh_data.mother_employer or 'N/A' }}</p>
+                                                            {% endif %}
+                                                            {% endif %}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- In-laws Information -->
+                                        <!-- In-laws Information (YZA only) -->
+                                        {% if application.division == 'YZA' %}
                                         <div class="accordion-item">
                                             <h2 class="accordion-header">
                                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
@@ -296,8 +356,10 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        {% endif %}
 
-                                        <!-- Grandparents Information -->
+                                        <!-- Grandparents Information (YZA only) -->
+                                        {% if application.division == 'YZA' %}
                                         <div class="accordion-item">
                                             <h2 class="accordion-header">
                                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
@@ -331,6 +393,7 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        {% endif %}
 
                                         <!-- Education Information -->
                                         <div class="accordion-item">
@@ -344,6 +407,7 @@
                                                  data-bs-parent="#applicationDetails{{ application.id }}">
                                                 <div class="accordion-body">
                                                     <div class="row">
+                                                        {% if application.division == 'YZA' %}
                                                         <div class="col-md-6">
                                                             <h6>College Information</h6>
                                                             <p><strong>Currently Attending College:</strong> {{ application.college_attending or 'N/A' }}</p>
@@ -351,47 +415,64 @@
                                                             <p><strong>Major:</strong> {{ application.college_major or 'N/A' }}</p>
                                                             <p><strong>Expected Graduation:</strong> {{ application.college_expected_graduation or 'N/A' }}</p>
                                                         </div>
-                                                        <div class="col-md-6">
+                                                        {% endif %}
+                                                        <div class="col-md-{{ '6' if application.division == 'YZA' else '12' }}">
                                                             <h6>High School Information</h6>
                                                             {% if application.high_school_info %}
-                                                                {% for school in application.high_school_info %}
-                                                                <div class="mb-3 p-2 border rounded">
-                                                                    {% if school is string %}
-                                                                    <p><strong>School:</strong> {{ school }}</p>
+                                                                {% if application.high_school_info is string %}
+                                                                    {% if application.high_school_info.startswith('"') and application.high_school_info.endswith('"') %}
+                                                                        <p><strong>School:</strong> {{ application.high_school_info[1:-1] }}</p>
                                                                     {% else %}
-                                                                    <p><strong>School:</strong> {{ school.name or 'N/A' }}</p>
-                                                                    {% if school.location %}
-                                                                    <p><strong>Location:</strong> {{ school.location }}</p>
+                                                                        <p><strong>School:</strong> {{ application.high_school_info }}</p>
                                                                     {% endif %}
-                                                                    <p><strong>Dates of Attendance:</strong> {{ school.years or 'N/A' }}</p>
-                                                                    {% if school.graduation_date %}
-                                                                    <p><strong>Graduation Date:</strong> {{ school.graduation_date }}</p>
-                                                                    {% endif %}
-                                                                    {% endif %}
-                                                                </div>
-                                                                {% endfor %}
+                                                                {% else %}
+                                                                    {% for school in application.high_school_info %}
+                                                                    <div class="mb-3 p-2 border rounded">
+                                                                        {% if school is string %}
+                                                                        <p><strong>School:</strong> {{ school }}</p>
+                                                                        {% else %}
+                                                                        <p><strong>School:</strong> {{ school.name or 'N/A' }}</p>
+                                                                        {% if school.location %}
+                                                                        <p><strong>Location:</strong> {{ school.location }}</p>
+                                                                        {% endif %}
+                                                                        <p><strong>Dates of Attendance:</strong> {{ school.years or 'N/A' }}</p>
+                                                                        {% if school.graduation_date %}
+                                                                        <p><strong>Graduation Date:</strong> {{ school.graduation_date }}</p>
+                                                                        {% endif %}
+                                                                        {% endif %}
+                                                                    </div>
+                                                                    {% endfor %}
+                                                                {% endif %}
                                                             {% else %}
                                                                 <p>No high school information available</p>
                                                             {% endif %}
                                                             
                                                             <h6 class="mt-3">Seminary Information</h6>
                                                             {% if application.seminary_info %}
-                                                                {% for school in application.seminary_info %}
-                                                                <div class="mb-3 p-2 border rounded">
-                                                                    {% if school is string %}
-                                                                    <p><strong>School:</strong> {{ school }}</p>
+                                                                {% if application.seminary_info is string %}
+                                                                    {% if application.seminary_info.startswith('"') and application.seminary_info.endswith('"') %}
+                                                                        <p><strong>School:</strong> {{ application.seminary_info[1:-1] }}</p>
                                                                     {% else %}
-                                                                    <p><strong>School:</strong> {{ school.name or 'N/A' }}</p>
-                                                                    {% if school.location %}
-                                                                    <p><strong>Location:</strong> {{ school.location }}</p>
+                                                                        <p><strong>School:</strong> {{ application.seminary_info }}</p>
                                                                     {% endif %}
-                                                                    <p><strong>Dates of Attendance:</strong> {{ school.years or 'N/A' }}</p>
-                                                                    {% if school.degree %}
-                                                                    <p><strong>Degree Awarded:</strong> {{ school.degree }}</p>
-                                                                    {% endif %}
-                                                                    {% endif %}
-                                                                </div>
-                                                                {% endfor %}
+                                                                {% else %}
+                                                                    {% for school in application.seminary_info %}
+                                                                    <div class="mb-3 p-2 border rounded">
+                                                                        {% if school is string %}
+                                                                        <p><strong>School:</strong> {{ school }}</p>
+                                                                        {% else %}
+                                                                        <p><strong>School:</strong> {{ school.name or 'N/A' }}</p>
+                                                                        {% if school.location %}
+                                                                        <p><strong>Location:</strong> {{ school.location }}</p>
+                                                                        {% endif %}
+                                                                        <p><strong>Dates of Attendance:</strong> {{ school.years or 'N/A' }}</p>
+                                                                        {% if school.degree %}
+                                                                        <p><strong>Degree Awarded:</strong> {{ school.degree }}</p>
+                                                                        {% endif %}
+                                                                        {% endif %}
+                                                                    </div>
+                                                                    {% endfor %}
+                                                                {% endif %}
                                                             {% else %}
                                                                 <p>No seminary information available</p>
                                                             {% endif %}
@@ -416,18 +497,40 @@
                                                         <div class="col-md-6">
                                                             <p><strong>Last Rebbe:</strong> {{ application.last_rebbe_name or 'N/A' }}</p>
                                                             <p><strong>Rebbe Phone:</strong> {{ application.last_rebbe_phone or 'N/A' }}</p>
+                                                            {% if application.division == 'YZA' %}
                                                             <p><strong>Gemora Sedorim Daily:</strong> {{ application.gemora_sedorim_daily_count or 'N/A' }}</p>
+                                                            {% endif %}
                                                         </div>
                                                         <div class="col-md-6">
+                                                            {% if application.division == 'YZA' %}
                                                             <p><strong>Sedorim Length:</strong> {{ application.gemora_sedorim_length or 'N/A' }}</p>
+                                                            {% endif %}
                                                             <p><strong>Learning Evaluation:</strong> {{ application.learning_evaluation or 'N/A' }}</p>
+                                                            
+                                                            {% if application.division == 'YOH' and application.division_specific_data %}
+                                                            {% if application.division_specific_data is string %}
+                                                                {% set yoh_data = application.division_specific_data | from_json %}
+                                                            {% else %}
+                                                                {% set yoh_data = application.division_specific_data %}
+                                                            {% endif %}
+                                                            {% if yoh_data and 'post_secondary_attendance' in yoh_data %}
+                                                            <p><strong>Post-Secondary Attendance:</strong> {{ yoh_data.post_secondary_attendance or 'N/A' }}</p>
+                                                            {% endif %}
+                                                            {% if yoh_data and 'high_school_list' in yoh_data %}
+                                                            <p><strong>High School Details:</strong> {{ yoh_data.high_school_list or 'N/A' }}</p>
+                                                            {% endif %}
+                                                            {% if yoh_data and 'postsecondary_list' in yoh_data %}
+                                                            <p><strong>Post-Secondary Details:</strong> {{ yoh_data.postsecondary_list or 'N/A' }}</p>
+                                                            {% endif %}
+                                                            {% endif %}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- Medical Information -->
+                                        <!-- Medical Information (YZA only) -->
+                                        {% if application.division == 'YZA' %}
                                         <div class="accordion-item">
                                             <h2 class="accordion-header">
                                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
@@ -444,6 +547,7 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        {% endif %}
 
                                         <!-- Financial Information -->
                                         <div class="accordion-item">
@@ -467,7 +571,8 @@
                                             </div>
                                         </div>
 
-                                        <!-- Dormitory & Meals Option -->
+                                        <!-- Dormitory & Meals Option (YZA only) -->
+                                        {% if application.division == 'YZA' %}
                                         <div class="accordion-item">
                                             <h2 class="accordion-header">
                                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
@@ -489,6 +594,7 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        {% endif %}
 
                                         <!-- History & Background -->
                                         <div class="accordion-item">
@@ -525,6 +631,22 @@
                                                     
                                                     {% if not application.past_jobs and not application.summer_activities and not application.additional_info %}
                                                     <p>No additional history or background information provided.</p>
+                                                    {% endif %}
+                                                    
+                                                    {% if application.division == 'YOH' and application.division_specific_data %}
+                                                    <hr class="my-3">
+                                                    <h6 class="text-info">YOH Additional Information</h6>
+                                                    {% if application.division_specific_data is string %}
+                                                        {% set yoh_data = application.division_specific_data | from_json %}
+                                                    {% else %}
+                                                        {% set yoh_data = application.division_specific_data %}
+                                                    {% endif %}
+                                                    {% if yoh_data and 'referral_source' in yoh_data %}
+                                                    <p><strong>Referral Source:</strong> {{ yoh_data.referral_source or 'N/A' }}</p>
+                                                    {% endif %}
+                                                    {% if yoh_data and 'summer_activities' in yoh_data %}
+                                                    <p><strong>Summer Activities:</strong> {{ yoh_data.summer_activities or 'N/A' }}</p>
+                                                    {% endif %}
                                                     {% endif %}
                                                 </div>
                                             </div>
@@ -573,13 +695,13 @@
                                                                         {% if attachment.download_status == 'downloaded' and attachment.local_filename %}
                                                                         <div class="btn-group" role="group">
                                                                             {% if attachment.is_viewable %}
-                                                                            <a href="{{ url_for('main.view_attachment', filename=attachment.local_filename) }}" 
+                                                                            <a href="{{ url_for('files.view_attachment', filename=attachment.local_filename) }}" 
                                                                                class="btn btn-sm btn-success" target="_blank"
                                                                                title="View {{ attachment.original_filename }} in browser">
                                                                                 <i class="fas fa-eye"></i> View
                                                                             </a>
                                                                             {% endif %}
-                                                                            <a href="{{ url_for('main.serve_attachment', filename=attachment.local_filename) }}" 
+                                                                            <a href="{{ url_for('files.serve_attachment', filename=attachment.local_filename) }}" 
                                                                                class="btn btn-sm btn-primary" target="_blank"
                                                                                title="Download {{ attachment.original_filename }}">
                                                                                 <i class="fas fa-download"></i> Download
@@ -636,6 +758,8 @@
                                                 </div>
                                             </div>
                                         </div>
+
+
                                     
                                 </div>
                                 </div>
@@ -806,22 +930,233 @@ function logAcceptAction(message, data = null) {
 }
 
 function updateStatus(applicationId, status) {
+    // If accepting, show email confirmation dialog first
+    if (status === 'accepted') {
+        showAcceptanceEmailDialog(applicationId);
+        return;
+    }
+    
+    // For non-acceptance status updates (reject), proceed directly
+    processStatusUpdate(applicationId, status);
+}
+
+function showAcceptanceEmailDialog(applicationId) {
+    // Create and show the acceptance email dialog
+    const modalHtml = `
+        <div class="modal fade" id="acceptanceEmailModal" tabindex="-1" aria-labelledby="acceptanceEmailModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="acceptanceEmailModalLabel">
+                            <i class="fas fa-check-circle me-2"></i>Accept Application & Send Email
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Application will be accepted.</strong> Would you like to send an acceptance email to the student?
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0"><i class="fas fa-cog me-2"></i>Email Options</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="radio" name="emailOption" id="sendEmailNow" value="send" checked>
+                                            <label class="form-check-label" for="sendEmailNow">
+                                                <i class="fas fa-paper-plane text-success me-2"></i>Send acceptance email now
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="radio" name="emailOption" id="sendEmailLater" value="later">
+                                            <label class="form-check-label" for="sendEmailLater">
+                                                <i class="fas fa-clock text-warning me-2"></i>Accept now, send email later
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="emailOption" id="noEmail" value="none">
+                                            <label class="form-check-label" for="noEmail">
+                                                <i class="fas fa-times text-danger me-2"></i>Accept without sending email
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0"><i class="fas fa-envelope me-2"></i>Email Preview</h6>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="loadEmailPreview('${applicationId}')">
+                                            <i class="fas fa-refresh me-1"></i>Refresh Preview
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="emailPreviewContainer">
+                                            <div class="text-center text-muted">
+                                                <i class="fas fa-spinner fa-spin me-2"></i>Loading email preview...
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Editable Email Content (shown when "send now" is selected) -->
+                        <div id="editableEmailSection" class="mt-4" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0"><i class="fas fa-edit me-2"></i>Customize Email Content</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label for="emailSubject" class="form-label">Subject Line</label>
+                                        <input type="text" class="form-control" id="emailSubject" placeholder="Loading...">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="emailBody" class="form-label">Email Body</label>
+                                        <textarea class="form-control" id="emailBody" rows="12" placeholder="Loading email content..."></textarea>
+                                    </div>
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <strong>Note:</strong> You can edit the email content above. Changes will only apply to this specific email.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="processAcceptanceWithEmail('${applicationId}')">
+                            <i class="fas fa-check me-2"></i>Accept Application
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if present
+    const existingModal = document.getElementById('acceptanceEmailModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('acceptanceEmailModal'));
+    modal.show();
+    
+    // Load email preview
+    loadEmailPreview(applicationId);
+    
+    // Add event listeners for radio buttons
+    document.querySelectorAll('input[name="emailOption"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const editableSection = document.getElementById('editableEmailSection');
+            if (this.value === 'send') {
+                editableSection.style.display = 'block';
+                loadEditableEmailContent(applicationId);
+            } else {
+                editableSection.style.display = 'none';
+            }
+        });
+    });
+    
+    // Trigger initial load of editable content
+    loadEditableEmailContent(applicationId);
+}
+
+function loadEmailPreview(applicationId) {
+    const container = document.getElementById('emailPreviewContainer');
+    container.innerHTML = '<div class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading preview...</div>';
+    
+    // First, we need to get the student ID from the accepted application
+    fetch(`/api/applications/${applicationId}/preview-acceptance-email`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                container.innerHTML = `
+                    <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto; background-color: #f8f9fa;">
+                        <div class="mb-2">
+                            <strong>Subject:</strong> ${data.subject || 'Acceptance Letter'}
+                        </div>
+                        <hr>
+                        <div style="font-family: Arial, sans-serif;">
+                            ${data.preview || 'Email preview not available'}
+                        </div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Preview will be available after acceptance. Standard template will be used.
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            container.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Unable to load preview. Standard template will be used.
+                </div>
+            `;
+        });
+}
+
+function loadEditableEmailContent(applicationId) {
+    // Load the email template content for editing
+    fetch(`/api/applications/${applicationId}/email-template`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('emailSubject').value = data.subject || 'Acceptance Letter';
+                document.getElementById('emailBody').value = data.body || 'Loading...';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading email template:', error);
+        });
+}
+
+function processAcceptanceWithEmail(applicationId) {
+    const emailOption = document.querySelector('input[name="emailOption"]:checked').value;
+    const modal = bootstrap.Modal.getInstance(document.getElementById('acceptanceEmailModal'));
+    
+    let emailData = null;
+    if (emailOption === 'send') {
+        emailData = {
+            subject: document.getElementById('emailSubject').value,
+            body: document.getElementById('emailBody').value
+        };
+    }
+    
+    // Close modal
+    modal.hide();
+    
+    // Process the acceptance with email options
+    processStatusUpdate(applicationId, 'accepted', emailOption, emailData);
+}
+
+function processStatusUpdate(applicationId, status, emailOption = null, emailData = null) {
     // === COMPREHENSIVE ACCEPT BUTTON LOGGING ===
     const startTime = performance.now();
     
-    logAcceptAction(`🎯 ACCEPT BUTTON CLICKED!`, {
+    logAcceptAction(`🎯 PROCESSING STATUS UPDATE!`, {
         applicationId: applicationId,
         requestedStatus: status,
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        url: window.location.href
-    });
-    
-    logAcceptAction(`📤 Step 1: Preparing to send POST request`, {
-        endpoint: `/api/applications/${applicationId}/status`,
-        method: 'POST',
-        contentType: 'application/json',
-        payload: { status: status }
+        emailOption: emailOption,
+        hasCustomEmailData: !!emailData,
+        timestamp: new Date().toISOString()
     });
     
     // Disable the button to prevent double-clicks
@@ -831,81 +1166,57 @@ function updateStatus(applicationId, status) {
         btn.innerHTML = btn.innerHTML.includes('Accept') ? 'Processing...' : btn.innerHTML;
     });
     
-    logAcceptAction(`🔒 Step 2: Disabled accept buttons to prevent double-click`);
+    const requestBody = { 
+        status: status,
+        emailOption: emailOption,
+        emailData: emailData
+    };
     
     fetch(`/api/applications/${applicationId}/status`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ status: status })
+        body: JSON.stringify(requestBody)
     })
     .then(response => {
-        const responseTime = performance.now() - startTime;
-        
-        logAcceptAction(`📨 Step 3: Received server response`, {
-            status: response.status,
-            statusText: response.statusText,
-            ok: response.ok,
-            responseTimeMs: Math.round(responseTime),
-            headers: Object.fromEntries(response.headers.entries())
-        });
-        
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-        
         return response.json();
     })
     .then(data => {
-        const totalTime = performance.now() - startTime;
-        
-        logAcceptAction(`✅ Step 4: Successfully parsed JSON response`, {
+        logAcceptAction(`✅ Status update successful!`, {
             responseData: data,
-            totalTimeMs: Math.round(totalTime)
+            totalTimeMs: Math.round(performance.now() - startTime)
         });
         
         if (data.success) {
-            logAcceptAction(`🎉 Step 5: Accept operation successful!`, {
-                studentId: data.student_id || 'N/A',
-                redirectUrl: data.redirect_url || 'No redirect',
-                message: data.message || 'No message'
-            });
+            // Show success message with email status
+            let message = `Application ${status} successfully!`;
+            if (emailOption === 'send' && data.email_sent) {
+                message += ' Acceptance email sent to student.';
+            } else if (emailOption === 'later') {
+                message += ' You can send the acceptance email later from the student details page.';
+            }
+            
+            alert(message);
             
             if (data.redirect_url) {
-                logAcceptAction(`🔄 Step 6: Redirecting to student page`, {
-                    redirectUrl: data.redirect_url
-                });
                 window.location.href = data.redirect_url;
             } else {
-                logAcceptAction(`🔄 Step 6: Reloading current page`);
                 window.location.reload();
             }
         } else {
-            logAcceptAction(`❌ Step 5: Accept operation failed`, {
-                error: data.message || 'Unknown error',
-                errorCode: data.error_code || 'N/A'
-            });
-            alert(`Error updating application status: ${data.message || 'Unknown error'}`);
-            
-            // Re-enable buttons on error
-            buttons.forEach(btn => {
-                btn.disabled = false;
-                btn.innerHTML = btn.innerHTML.replace('Processing...', 'Accept');
-            });
+            throw new Error(data.message || 'Unknown error');
         }
     })
     .catch(error => {
-        const totalTime = performance.now() - startTime;
-        
-        logAcceptAction(`💥 ACCEPT OPERATION FAILED`, {
+        logAcceptAction(`💥 STATUS UPDATE FAILED`, {
             error: error.message,
-            errorStack: error.stack,
-            totalTimeMs: Math.round(totalTime),
-            networkError: error.name === 'TypeError'
+            totalTimeMs: Math.round(performance.now() - startTime)
         });
         
-        console.error('Accept Error Details:', error);
         alert(`Error updating application status: ${error.message}`);
         
         // Re-enable buttons on error

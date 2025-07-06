@@ -7,7 +7,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Student Details</h1>
         <div>
-            <a href="{{ url_for('main.edit_student', student_id=student.id) }}" class="btn btn-primary">
+            <a href="{{ url_for('students.edit_student', student_id=student.id) }}" class="btn btn-primary">
                 <i class="fas fa-edit"></i> Edit
             </a>
             <button class="btn btn-danger" onclick="deleteStudent('{{ student.id }}')">
@@ -36,6 +36,15 @@
                     <p><strong>Status:</strong> 
                         <span class="badge bg-{{ student.status_color }}">{{ student.status }}</span>
                     </p>
+                    <p><strong>Matriculation:</strong> 
+                        <span class="badge bg-{{ student.matriculation_status_badge_color }}">
+                            {{ student.computed_matriculation_status }}
+                            {% if student.matriculation_override %}<i class="fas fa-edit ms-1" title="Manual Override"></i>{% endif %}
+                        </span>
+                        {% if student.high_school_graduation_date %}
+                        <small class="text-muted d-block">HS Grad: {{ student.high_school_graduation_date.strftime('%m/%Y') }}</small>
+                        {% endif %}
+                    </p>
                     <p><strong>Marital Status:</strong> {{ student.marital_status }}</p>
                     {% if student.division %}<p><strong>Division:</strong> {{ student.division }}</p>{% endif %}
                     {% if student.accepted_date %}<p><strong>Accepted Date:</strong> {{ student.accepted_date }}</p>{% endif %}
@@ -53,10 +62,383 @@
                     {{ student.alt_address.country }}</p>
                     {% endif %}
                     
-                    <h6>Financial Aid</h6>
-                    <p><strong>Status:</strong> {{ student.financial_aid.status }}</p>
+                    <h6>Basic Financial Info</h6>
+                    <p><strong>Status:</strong> {{ student.financial_aid.payment_status }}</p>
                     <p><strong>Amount Can Pay:</strong> ${{ student.financial_aid.amount_can_pay }}</p>
-                    <p><strong>Scholarship Amount:</strong> ${{ student.financial_aid.scholarship_amount }}</p>
+                    <p><strong>Scholarship Amount:</strong> ${{ student.financial_aid.scholarship_requested }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Management Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-dollar-sign me-2"></i>Financial Management
+            </h5>
+            <button class="btn btn-sm btn-light" onclick="editFinancialInfo('{{ student.id }}')">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- Financial Aid Type and Application -->
+                <div class="col-md-6">
+                    <h6><i class="fas fa-graduation-cap text-success me-2"></i>Financial Aid Type</h6>
+                    <p><strong>Type:</strong> 
+                        <span class="badge {% if student.financial_aid.financial_aid_type == 'Full Tuition' %}bg-primary{% else %}bg-warning{% endif %}">
+                            {{ student.financial_aid.financial_aid_type }}
+                        </span>
+                    </p>
+                    
+                    <h6 class="mt-3"><i class="fas fa-file-alt text-info me-2"></i>Financial Aid Application</h6>
+                    <div class="row">
+                        <div class="col-6">
+                            <p class="mb-1"><strong>Sent:</strong> 
+                                <span class="badge {% if student.financial_aid.financial_aid_app_sent %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {% if student.financial_aid.financial_aid_app_sent %}Yes{% else %}No{% endif %}
+                                </span>
+                            </p>
+                            {% if student.financial_aid_app_sent_date %}
+                            <p class="small text-muted">{{ student.financial_aid_app_sent_date.strftime('%m/%d/%Y') }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-6">
+                            <p class="mb-1"><strong>Received:</strong> 
+                                <span class="badge {% if student.financial_aid.financial_aid_app_received %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {% if student.financial_aid.financial_aid_app_received %}Yes{% else %}No{% endif %}
+                                </span>
+                            </p>
+                            {% if student.financial_aid_app_received_date %}
+                            <p class="small text-muted">{{ student.financial_aid_app_received_date.strftime('%m/%d/%Y') }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-2">
+                        {% if not student.financial_aid.financial_aid_app_sent %}
+                        <button class="btn btn-sm btn-primary me-2" onclick="sendFinancialAidApp('{{ student.id }}')">
+                            <i class="fas fa-paper-plane"></i> Send Application
+                        </button>
+                        {% else %}
+                        <button class="btn btn-sm btn-outline-primary me-2" onclick="resendFinancialAidApp('{{ student.id }}')">
+                            <i class="fas fa-redo"></i> Resend Application
+                        </button>
+                        {% endif %}
+                        
+                        {% if student.financial_aid.financial_aid_app_sent and not student.financial_aid.financial_aid_app_received %}
+                        <button class="btn btn-sm btn-success" onclick="markFinancialAidReceived('{{ student.id }}')">
+                            <i class="fas fa-check"></i> Mark Received
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Tuition Determination -->
+                <div class="col-md-6">
+                    <h6><i class="fas fa-calculator text-warning me-2"></i>Tuition Determination</h6>
+                    <p><strong>Amount:</strong> 
+                        {% if student.financial_aid.tuition_determination > 0 %}
+                            <span class="badge bg-success fs-6">${{ "%.0f"|format(student.financial_aid.tuition_determination) }}</span>
+                        {% else %}
+                            <span class="text-muted">Not determined</span>
+                        {% endif %}
+                    </p>
+                    {% if student.financial_aid.tuition_determination_notes %}
+                    <p><strong>Notes:</strong> {{ student.financial_aid.tuition_determination_notes }}</p>
+                    {% endif %}
+                    
+                    <h6 class="mt-3"><i class="fas fa-file-contract text-primary me-2"></i>Tuition Contract</h6>
+                    <div class="row">
+                        <div class="col-4">
+                            <p class="mb-1 small"><strong>Generated:</strong></p>
+                            <span class="badge {% if student.financial_aid.tuition_contract_generated %}bg-success{% else %}bg-secondary{% endif %}">
+                                {% if student.financial_aid.tuition_contract_generated %}Yes{% else %}No{% endif %}
+                            </span>
+                        </div>
+                        <div class="col-4">
+                            <p class="mb-1 small"><strong>Sent:</strong></p>
+                            <span class="badge {% if student.financial_aid.tuition_contract_sent %}bg-success{% else %}bg-secondary{% endif %}">
+                                {% if student.financial_aid.tuition_contract_sent %}Yes{% else %}No{% endif %}
+                            </span>
+                        </div>
+                        <div class="col-4">
+                            <p class="mb-1 small"><strong>Signed:</strong></p>
+                            <span class="badge {% if student.financial_aid.tuition_contract_signed %}bg-success{% else %}bg-secondary{% endif %}">
+                                {% if student.financial_aid.tuition_contract_signed %}Yes{% else %}No{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- OpenSign E-Signature Status -->
+                    {% if student.financial_aid.opensign_document_id %}
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <p><strong>E-Signature Status:</strong></p>
+                            <span id="opensign-status" class="badge 
+                                {% if student.financial_aid.opensign_document_status == 'completed' %}bg-success
+                                {% elif student.financial_aid.opensign_document_status == 'pending' %}bg-warning
+                                {% elif student.financial_aid.opensign_document_status == 'declined' %}bg-danger
+                                {% elif student.financial_aid.opensign_document_status == 'expired' %}bg-secondary
+                                {% else %}bg-info{% endif %}">
+                                {{ student.financial_aid.opensign_document_status|title if student.financial_aid.opensign_document_status else 'Unknown' }}
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Document ID:</strong></p>
+                            <small class="text-muted">{{ student.financial_aid.opensign_document_id[:20] }}...</small>
+                        </div>
+                    </div>
+                    
+                    {% if student.financial_aid.opensign_signed_url %}
+                    <div class="row mt-1">
+                        <div class="col-md-12">
+                            <a href="{{ student.financial_aid.opensign_signed_url }}" target="_blank" class="btn btn-sm btn-success me-2">
+                                <i class="fas fa-file-signature"></i> View Signed Contract
+                            </a>
+                            {% if student.financial_aid.opensign_certificate_url %}
+                            <a href="{{ student.financial_aid.opensign_certificate_url }}" target="_blank" class="btn btn-sm btn-info me-2">
+                                <i class="fas fa-certificate"></i> View Certificate
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                    
+                    <!-- Uploaded Contract (Print & Upload Method) -->
+                    {% if student.financial_aid.uploaded_contract_id %}
+                    <div class="row mt-2">
+                        <div class="col-md-12">
+                            <div class="alert alert-success py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong><i class="fas fa-check-circle"></i> Contract Received via Upload</strong>
+                                        <div class="small text-muted">
+                                            Uploaded: {{ student.financial_aid.uploaded_contract_date.strftime('%B %d, %Y at %I:%M %p') }}
+                                            <br>File: {{ student.financial_aid.uploaded_contract_filename }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <a href="{{ url_for('students.view_uploaded_contract', student_id=student.id) }}" 
+                                           target="_blank" class="btn btn-sm btn-success">
+                                            <i class="fas fa-file-pdf"></i> View Signed Contract
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Quick Tuition History Summary -->
+                    {% set tuition_history = student.get_tuition_history() %}
+                    {% if tuition_history %}
+                    <div class="small text-muted mb-2">
+                        <strong>Tuition History:</strong>
+                        {% for record in tuition_history[:3] %}
+                            <span class="badge bg-{{ record.academic_year.status_color }} me-1">{{ record.academic_year.year_label }}</span>
+                        {% endfor %}
+                        {% if tuition_history|length > 3 %}
+                            <span class="text-muted">+{{ tuition_history|length - 3 }} more</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-2">
+                        {% if student.financial_aid.tuition_determination > 0 %}
+                            {% if not student.financial_aid.tuition_contract_generated %}
+                            <button class="btn btn-sm btn-primary me-2" onclick="generateTuitionContract('{{ student.id }}')">
+                                <i class="fas fa-file-signature"></i> Send for E-Signature
+                            </button>
+                            {% else %}
+                                {% if student.financial_aid.tuition_contract_pdf_path %}
+                                <button class="btn btn-sm btn-outline-primary me-2" onclick="downloadTuitionContract('{{ student.id }}')">
+                                    <i class="fas fa-download"></i> Download PDF
+                                </button>
+                                {% endif %}
+                                
+                                {% if student.financial_aid.opensign_document_id %}
+                                    {% if student.financial_aid.opensign_document_status == 'pending' %}
+                                    <button class="btn btn-sm btn-outline-warning me-2" onclick="resendOpenSignContract('{{ student.id }}')">
+                                        <i class="fas fa-redo"></i> Resend Request
+                                    </button>
+                                    {% endif %}
+                                    <button class="btn btn-sm btn-outline-info me-2" onclick="checkOpenSignStatus('{{ student.id }}')">
+                                        <i class="fas fa-sync"></i> Check Status
+                                    </button>
+                                {% endif %}
+                            {% endif %}
+                        {% else %}
+                        <p class="small text-muted">Set tuition amount to generate contract</p>
+                        {% endif %}
+                        
+                        <!-- Link to full financial management page -->
+                        <a href="{{ url_for('financial.student_financial', student_id=student.id) }}" class="btn btn-sm btn-success">
+                            <i class="fas fa-history"></i> Manage Tuition & Years
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- FAFSA Information -->
+            <hr class="my-4">
+            <div class="row">
+                <div class="col-md-12">
+                    <h6><i class="fas fa-university text-info me-2"></i>FAFSA Information</h6>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>Eligibility:</strong></p>
+                    <span class="badge {% if student.financial_aid.fafsa_eligible == 'Eligible' %}bg-success{% elif student.financial_aid.fafsa_eligible == 'Not Eligible' %}bg-danger{% else %}bg-secondary{% endif %}">
+                        {{ student.financial_aid.fafsa_eligible }}
+                    </span>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>Required:</strong></p>
+                    <span class="badge {% if student.financial_aid.fafsa_required %}bg-warning{% else %}bg-secondary{% endif %}">
+                        {% if student.financial_aid.fafsa_required %}Yes{% else %}No{% endif %}
+                    </span>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>Applied:</strong></p>
+                    <span class="badge {% if student.financial_aid.fafsa_applied %}bg-success{% else %}bg-secondary{% endif %}">
+                        {% if student.financial_aid.fafsa_applied %}Yes{% else %}No{% endif %}
+                    </span>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>Status:</strong></p>
+                    <span class="badge {% if student.financial_aid.fafsa_status == 'Accepted' %}bg-success{% elif student.financial_aid.fafsa_status == 'Rejected' %}bg-danger{% else %}bg-warning{% endif %}">
+                        {{ student.financial_aid.fafsa_status }}
+                    </span>
+                </div>
+            </div>
+            
+            {% if student.financial_aid.fafsa_amount_awarded > 0 %}
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <p><strong>FAFSA Amount Awarded:</strong> <span class="badge bg-success fs-6">${{ "%.0f"|format(student.financial_aid.fafsa_amount_awarded) }}</span></p>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if student.financial_aid.fafsa_notes %}
+            <div class="row mt-2">
+                <div class="col-md-12">
+                    <p><strong>FAFSA Notes:</strong> {{ student.financial_aid.fafsa_notes }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Matriculation Status Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-graduation-cap me-2"></i>Matriculation Status
+            </h5>
+            <button class="btn btn-sm btn-light" onclick="editMatriculationInfo('{{ student.id }}')">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6><i class="fas fa-user-graduate text-success me-2"></i>Current Status</h6>
+                    <p><strong>Matriculation Status:</strong>
+                        <span class="badge bg-{{ student.matriculation_status_badge_color }} fs-6">
+                            {{ student.computed_matriculation_status }}
+                            {% if student.matriculation_override %}
+                            <i class="fas fa-edit ms-1" title="Manual Override"></i>
+                            {% endif %}
+                        </span>
+                    </p>
+                    
+                    {% if student.matriculation_override %}
+                    <div class="alert alert-warning py-2 small">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Status has been manually overridden
+                    </div>
+                    {% endif %}
+                    
+                    {% if student.matriculation_notes %}
+                    <p><strong>Notes:</strong> {{ student.matriculation_notes }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6">
+                    <h6><i class="fas fa-calendar text-primary me-2"></i>Graduation Timeline</h6>
+                    
+                    <div class="mb-2">
+                        <strong>High School Graduation:</strong>
+                        {% if student.high_school_graduation_date %}
+                        <span class="badge bg-success">{{ student.high_school_graduation_date.strftime('%B %Y') }}</span>
+                        {% else %}
+                        <span class="text-muted">Not specified</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-2">
+                        <strong>Program Graduation:</strong>
+                        {% if student.program_graduation_date %}
+                        <span class="badge bg-success">{{ student.program_graduation_date.strftime('%B %Y') }}</span>
+                        {% else %}
+                        <span class="text-muted">Not graduated</span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Matriculation Logic Explanation -->
+                    <div class="small text-muted mt-3">
+                        <strong>Logic:</strong>
+                        <ul class="mb-0" style="padding-left: 1rem;">
+                            <li><strong>Matriculating:</strong> Graduated HS + Not graduated program</li>
+                            <li><strong>Non-Matriculating:</strong> Not graduated HS OR already graduated program</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acceptance Email Status -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-envelope me-2"></i>Acceptance Email
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <p class="mb-2">
+                        <strong>Status:</strong> 
+                        <span id="email-status" class="badge {% if student.acceptance_email_sent %}bg-success{% else %}bg-warning{% endif %}">
+                            {% if student.acceptance_email_sent %}
+                                Sent
+                            {% else %}
+                                Not Sent
+                            {% endif %}
+                        </span>
+                    </p>
+                    {% if student.acceptance_email_sent_date %}
+                    <p class="mb-1 small text-muted">
+                        <strong>Sent on:</strong> {{ student.acceptance_email_sent_date.strftime('%B %d, %Y at %I:%M %p') }}
+                    </p>
+                    {% endif %}
+                    {% if student.acceptance_email_sent_by %}
+                    <p class="mb-0 small text-muted">
+                        <strong>Sent by:</strong> {{ student.acceptance_email_sent_by }}
+                    </p>
+                    {% endif %}
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-sm btn-outline-primary me-2" onclick="previewAcceptanceEmail('{{ student.id }}')">
+                        <i class="fas fa-eye"></i> Preview
+                    </button>
+                    <button class="btn btn-sm btn-primary" onclick="sendAcceptanceEmail('{{ student.id }}', {% if student.acceptance_email_sent %}true{% else %}false{% endif %})">
+                        <i class="fas fa-paper-plane"></i> {% if student.acceptance_email_sent %}Resend{% else %}Send{% endif %} Email
+                    </button>
                 </div>
             </div>
         </div>
@@ -355,14 +737,14 @@
                         <div class="btn-group btn-group-sm" role="group">
                             {% if attachment.download_status == 'downloaded' and attachment.local_filename %}
                                 {% if attachment.is_viewable %}
-                                <a href="{{ url_for('main.view_attachment', filename=attachment.local_filename) }}"
+                                <a href="{{ url_for('files.view_attachment', filename=attachment.local_filename) }}"
                                    class="btn btn-outline-primary btn-sm"
                                    target="_blank"
                                    title="View {{ attachment.original_filename }} in browser">
                                     <i class="fas fa-eye"></i> View
                                 </a>
                                 {% endif %}
-                                <a href="{{ url_for('main.serve_attachment', filename=attachment.local_filename) }}"
+                                <a href="{{ url_for('files.serve_attachment', filename=attachment.local_filename) }}"
                                    class="btn btn-outline-secondary btn-sm"
                                    download="{{ attachment.original_filename }}"
                                    title="Download {{ attachment.original_filename }}">
@@ -418,6 +800,28 @@
     {% endif %}
 </div>
 
+<!-- Email Preview Modal -->
+<div class="modal fade" id="emailPreviewModal" tabindex="-1" aria-labelledby="emailPreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="emailPreviewModalLabel">Acceptance Email Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="emailPreviewContent">
+                <div class="text-center p-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function deleteStudent(studentId) {
     if (confirm('Are you sure you want to delete this student?')) {
@@ -436,6 +840,685 @@ function deleteStudent(studentId) {
             console.error('Error:', error);
             alert('Error deleting student');
         });
+    }
+}
+
+function previewAcceptanceEmail(studentId) {
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('emailPreviewModal'));
+    modal.show();
+    
+    // Fetch the preview
+    fetch(`/api/students/${studentId}/preview-acceptance-email`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('emailPreviewContent').innerHTML = data.preview;
+            } else {
+                document.getElementById('emailPreviewContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Error loading preview: ${data.message}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('emailPreviewContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Error loading preview
+                </div>
+            `;
+        });
+}
+
+function sendAcceptanceEmail(studentId, isResend) {
+    // Use the new email confirmation dialog
+    showEmailConfirmation({
+        studentId: studentId,
+        emailType: 'acceptance',
+        division: '{{ student.division }}',
+        onConfirm: function(data) {
+            // Show loading state
+            const button = event.target.closest('button');
+            const originalContent = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Sending...';
+            
+            fetch(`/students/api/${studentId}/send-acceptance-email`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    recipients: data.recipients
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // Show success message with recipients
+                    alert(`Acceptance email sent successfully!\nRecipients: ${data.recipients.join(', ')}`);
+                    
+                    // Update the UI to reflect email sent status
+                    const emailStatus = document.getElementById('email-status');
+                    emailStatus.textContent = 'Sent';
+                    emailStatus.classList.remove('bg-warning');
+                    emailStatus.classList.add('bg-success');
+                    
+                    // Update button text
+                    button.innerHTML = '<i class="fas fa-paper-plane"></i> Resend Email';
+                    
+                    // Reload page to show updated timestamp and sent by info
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    alert(`Error sending email: ${result.error}`);
+                    // Restore button
+                    button.disabled = false;
+                    button.innerHTML = originalContent;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error sending email. Please check the console for details.');
+                // Restore button
+                button.disabled = false;
+                button.innerHTML = originalContent;
+            });
+        }
+    });
+}
+
+// Financial Management Functions
+function editFinancialInfo(studentId) {
+    window.location.href = `/students/${studentId}/financial`;
+}
+
+function sendFinancialAidApp(studentId) {
+    // Use email confirmation dialog for financial aid form
+    window.emailConfirmationDialog.show({
+        studentId: studentId,
+        emailType: 'financial_aid',
+        division: '{{ student.division }}',
+        onConfirm: (data) => {
+            // Send financial aid form with selected recipients
+            fetch(`/api/students/${studentId}/send-financial-aid-form`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    recipients: data.recipients
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert(`Financial aid form sent successfully!\nRecipients: ${data.recipients.join(', ')}`);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    alert(`Error sending financial aid form: ${result.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error sending financial aid form. Please check the console for details.');
+            });
+        }
+    });
+}
+
+function resendFinancialAidApp(studentId) {
+    // Use email confirmation dialog for resending financial aid form
+    window.emailConfirmationDialog.show({
+        studentId: studentId,
+        emailType: 'financial_aid',
+        division: '{{ student.division }}',
+        onConfirm: (data) => {
+            // Resend financial aid form with selected recipients
+            fetch(`/api/students/${studentId}/resend-financial-aid-form`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    recipients: data.recipients
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert(`Financial aid form resent successfully!\nRecipients: ${data.recipients.join(', ')}`);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    alert(`Error resending financial aid form: ${result.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error resending financial aid form. Please check the console for details.');
+            });
+        }
+    });
+}
+
+function markFinancialAidReceived(studentId) {
+    if (confirm('Mark financial aid application as received?')) {
+        updateFinancialStatus(studentId, 'mark_financial_aid_received');
+    }
+}
+
+function generateTuitionContract(studentId) {
+    // Use email confirmation dialog for tuition contract
+    window.emailConfirmationDialog.show({
+        studentId: studentId,
+        emailType: 'tuition_contract',
+        division: '{{ student.division }}',
+        onConfirm: (data) => {
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending for Signature...';
+            
+            // Send tuition contract with selected recipients
+            fetch(`/api/students/${studentId}/send-tuition-contract`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    recipients: data.recipients
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    if (result.fallback) {
+                        alert('Contract generated as PDF (OpenSign unavailable). Check your OpenSign API configuration.');
+                    } else {
+                        alert(`Tuition contract sent successfully!\nRecipients: ${data.recipients.join(', ')}\nDocument ID: ${result.document_id}`);
+                    }
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    alert(`Error sending tuition contract: ${result.error}`);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error sending tuition contract. Please check the console for details.');
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+    });
+}
+
+function downloadTuitionContract(studentId) {
+    window.open(`/api/students/${studentId}/tuition-contract/download`, '_blank');
+}
+
+function sendTuitionContract(studentId) {
+    if (confirm('Send tuition contract to student?')) {
+        updateFinancialStatus(studentId, 'send_tuition_contract');
+    }
+}
+
+function resendTuitionContract(studentId) {
+    if (confirm('Resend tuition contract to student?')) {
+        updateFinancialStatus(studentId, 'resend_tuition_contract');
+    }
+}
+
+// OpenSign Integration Functions
+function checkOpenSignStatus(studentId) {
+    console.log('Checking OpenSign status for student:', studentId);
+    
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+    
+    fetch(`/api/financial/check-opensign-status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ student_id: studentId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`OpenSign Status: ${data.status}\n${data.message || ''}`);
+            // Refresh contract status immediately
+            refreshContractStatus();
+        } else {
+            alert('Error checking OpenSign status: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error checking OpenSign status');
+    })
+    .finally(() => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function resendOpenSignContract(studentId) {
+    if (confirm('Resend signature request via OpenSign?')) {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resending...';
+        
+        fetch(`/api/students/${studentId}/resend-contract`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Signature request resent successfully!');
+            } else {
+                alert('Error resending request: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error resending contract');
+        })
+        .finally(() => {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+}
+
+function updateFinancialStatus(studentId, action) {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    fetch(`/api/students/${studentId}/financial-action`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action: action })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Action completed successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error processing request');
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+// Matriculation Management Functions
+function editMatriculationInfo(studentId) {
+    // Create a modal for editing matriculation information
+    const modalHtml = `
+        <div class="modal fade" id="matriculationModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Matriculation Information</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="matriculationForm">
+                            <div class="mb-3">
+                                <label for="matriculation_status" class="form-label">Matriculation Status</label>
+                                <select class="form-select" id="matriculation_status" name="matriculation_status">
+                                    <option value="Auto">Auto (Based on graduation dates)</option>
+                                    <option value="Matriculating">Matriculating (Override)</option>
+                                    <option value="Non-Matriculating">Non-Matriculating (Override)</option>
+                                </select>
+                                <div class="form-text">Choose 'Auto' to compute based on graduation dates, or manually override.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="high_school_graduation_date" class="form-label">High School Graduation Date</label>
+                                <input type="date" class="form-control" id="high_school_graduation_date" name="high_school_graduation_date">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="program_graduation_date" class="form-label">Program Graduation Date</label>
+                                <input type="date" class="form-control" id="program_graduation_date" name="program_graduation_date">
+                                <div class="form-text">Leave empty if not yet graduated from the program.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="matriculation_notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="matriculation_notes" name="matriculation_notes" rows="3" placeholder="Additional notes about matriculation status..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-info me-2" onclick="recomputeMatriculation('${studentId}')">Recompute Auto</button>
+                        <button type="button" class="btn btn-primary" onclick="saveMatriculationInfo('${studentId}')">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('matriculationModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Load current matriculation data
+    fetch(`/api/students/${studentId}/matriculation`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const info = data.matriculation_info;
+            
+            // Populate form
+            document.getElementById('matriculation_status').value = info.is_override ? 
+                info.status : 'Auto';
+            
+            if (info.high_school_graduation) {
+                document.getElementById('high_school_graduation_date').value = info.high_school_graduation;
+            }
+            
+            if (info.program_graduation) {
+                document.getElementById('program_graduation_date').value = info.program_graduation;
+            }
+            
+            document.getElementById('matriculation_notes').value = info.notes || '';
+        }
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('matriculationModal'));
+        modal.show();
+    })
+    .catch(error => {
+        console.error('Error loading matriculation info:', error);
+        alert('Error loading matriculation information');
+    });
+}
+
+function saveMatriculationInfo(studentId) {
+    const form = document.getElementById('matriculationForm');
+    const formData = new FormData(form);
+    
+    const data = {
+        matriculation_status: formData.get('matriculation_status'),
+        high_school_graduation_date: formData.get('high_school_graduation_date'),
+        program_graduation_date: formData.get('program_graduation_date'),
+        matriculation_notes: formData.get('matriculation_notes')
+    };
+    
+    fetch(`/api/students/${studentId}/matriculation`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Matriculation information updated successfully!');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('matriculationModal'));
+            modal.hide();
+            
+            // Reload page to show updated information
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating matriculation information');
+    });
+}
+
+function recomputeMatriculation(studentId) {
+    if (confirm('This will reset any manual overrides and recompute matriculation status based on graduation dates. Continue?')) {
+        fetch(`/api/students/${studentId}/recompute-matriculation`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Matriculation status recomputed: ${data.new_status}`);
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('matriculationModal'));
+                modal.hide();
+                
+                // Reload page
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error recomputing matriculation status');
+        });
+    }
+}
+
+// Contract Status Management Functions
+async function checkContractStatus(studentId) {
+    try {
+        const response = await fetch('/api/financial/check-contract-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ student_id: studentId })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to check contract status');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error checking contract status:', error);
+        throw error;
+    }
+}
+
+function updateContractStatusUI(contractStatus, contractData = {}) {
+    console.log('Updating contract status UI:', contractStatus, contractData);
+    
+    // Update Generated badge
+    const generatedBadge = document.querySelector('[data-contract-generated]');
+    if (generatedBadge) {
+        const isGenerated = ['Generated', 'Sent', 'Signed'].includes(contractStatus);
+        generatedBadge.className = `badge ${isGenerated ? 'bg-success' : 'bg-secondary'}`;
+        generatedBadge.textContent = isGenerated ? 'Yes' : 'No';
+    }
+    
+    // Update Sent badge
+    const sentBadge = document.querySelector('[data-contract-sent]');
+    if (sentBadge) {
+        const isSent = ['Sent', 'Signed'].includes(contractStatus);
+        sentBadge.className = `badge ${isSent ? 'bg-success' : 'bg-secondary'}`;
+        sentBadge.textContent = isSent ? 'Yes' : 'No';
+    }
+    
+    // Update Signed badge
+    const signedBadge = document.querySelector('[data-contract-signed]');
+    if (signedBadge) {
+        const isSigned = contractStatus === 'Signed';
+        signedBadge.className = `badge ${isSigned ? 'bg-success' : 'bg-secondary'}`;
+        signedBadge.textContent = isSigned ? 'Yes' : 'No';
+    }
+    
+    // Update OpenSign status if present
+    const opensignStatus = document.getElementById('opensign-status');
+    if (opensignStatus && contractData.opensign_status) {
+        let badgeClass = 'bg-info';
+        switch(contractData.opensign_status) {
+            case 'completed': badgeClass = 'bg-success'; break;
+            case 'pending': badgeClass = 'bg-warning'; break;
+            case 'declined': badgeClass = 'bg-danger'; break;
+            case 'expired': badgeClass = 'bg-secondary'; break;
+        }
+        opensignStatus.className = `badge ${badgeClass}`;
+        opensignStatus.textContent = contractData.opensign_status ? contractData.opensign_status.charAt(0).toUpperCase() + contractData.opensign_status.slice(1) : 'Unknown';
+    }
+    
+    // Show/hide View Signed Contract button
+    updateViewSignedContractButton(contractStatus, contractData);
+}
+
+function updateViewSignedContractButton(contractStatus, contractData) {
+    const studentId = '{{ student.id }}';
+    
+    // Remove existing view signed contract buttons
+    const existingButtons = document.querySelectorAll('[data-view-signed-contract]');
+    existingButtons.forEach(btn => btn.remove());
+    
+    // Show View Signed Contract button if contract is signed
+    if (contractStatus === 'Signed') {
+        const contractSection = document.querySelector('.contract-status-section');
+        if (!contractSection) return;
+        
+        let buttonContainer = contractSection.querySelector('.view-signed-container');
+        if (!buttonContainer) {
+            buttonContainer = document.createElement('div');
+            buttonContainer.className = 'row mt-2 view-signed-container';
+            contractSection.appendChild(buttonContainer);
+        }
+        
+        let buttonHtml = '';
+        
+        // Digital signature - OpenSign URL
+        if (contractData.opensign_signed_url) {
+            buttonHtml += `
+                <div class="col-md-12">
+                    <a href="${contractData.opensign_signed_url}" target="_blank" class="btn btn-sm btn-success me-2" data-view-signed-contract>
+                        <i class="fas fa-file-signature"></i> View Signed Contract (Digital)
+                    </a>
+                    ${contractData.opensign_certificate_url ? `
+                        <a href="${contractData.opensign_certificate_url}" target="_blank" class="btn btn-sm btn-info me-2">
+                            <i class="fas fa-certificate"></i> View Certificate
+                        </a>
+                    ` : ''}
+                </div>
+            `;
+        }
+        
+        // Print upload - Uploaded contract
+        if (contractData.uploaded_contract_id) {
+            buttonHtml += `
+                <div class="col-md-12 mt-2">
+                    <div class="alert alert-success py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong><i class="fas fa-check-circle"></i> Contract Received via Upload</strong>
+                                <div class="small text-muted">
+                                    ${contractData.uploaded_contract_date ? 'Uploaded: ' + contractData.uploaded_contract_date : ''}
+                                    ${contractData.uploaded_contract_filename ? '<br>File: ' + contractData.uploaded_contract_filename : ''}
+                                </div>
+                            </div>
+                            <div>
+                                <a href="/students/${studentId}/view-uploaded-contract" 
+                                   target="_blank" class="btn btn-sm btn-success" data-view-signed-contract>
+                                    <i class="fas fa-file-pdf"></i> View Signed Contract (Upload)
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (buttonHtml) {
+            buttonContainer.innerHTML = buttonHtml;
+        }
+    }
+}
+
+// Initialize contract status checking on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const studentId = '{{ student.id }}';
+    
+    // Add data attributes to badges for easier updating
+    const contractRows = document.querySelectorAll('.col-4');
+    contractRows.forEach(col => {
+        const label = col.querySelector('strong');
+        const badge = col.querySelector('span.badge');
+        if (label && badge) {
+            if (label.textContent.includes('Generated')) {
+                badge.setAttribute('data-contract-generated', 'true');
+            } else if (label.textContent.includes('Sent')) {
+                badge.setAttribute('data-contract-sent', 'true');
+            } else if (label.textContent.includes('Signed')) {
+                badge.setAttribute('data-contract-signed', 'true');
+            }
+        }
+    });
+    
+    // Add contract status section class for easier targeting
+    const contractHeaders = document.querySelectorAll('h6');
+    contractHeaders.forEach(header => {
+        if (header.textContent.includes('Tuition Contract')) {
+            header.closest('div').classList.add('contract-status-section');
+        }
+    });
+    
+    // Check contract status immediately
+    refreshContractStatus();
+    
+    // Set up periodic refresh every 30 seconds
+    setInterval(refreshContractStatus, 30000);
+});
+
+async function refreshContractStatus() {
+    const studentId = '{{ student.id }}';
+    try {
+        const result = await checkContractStatus(studentId);
+        if (result && result.contract_status) {
+            console.log('Contract status updated:', result.contract_status);
+            updateContractStatusUI(result.contract_status, result);
+        }
+    } catch (error) {
+        console.error('Error refreshing contract status:', error);
     }
 }
 </script>

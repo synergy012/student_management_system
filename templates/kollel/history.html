@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Kollel History - {{ kollel_student.student.student_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-history text-primary"></i>
+                        Stipend History
+                    </h1>
+                    <p class="text-muted mb-0">{{ kollel_student.student.student_name }}</p>
+                </div>
+                <a href="{{ url_for('kollel.kollel_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Total Paid</h6>
+                    <h4 class="card-title text-success">${{ "%.2f"|format(total_paid) }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Total Pending</h6>
+                    <h4 class="card-title text-warning">${{ "%.2f"|format(total_pending) }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Base Stipend</h6>
+                    <h4 class="card-title">${{ "%.0f"|format(kollel_student.base_stipend_amount) }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Status</h6>
+                    <h4 class="card-title">
+                        {% if kollel_student.is_kollel_elyon %}
+                            <span class="badge bg-warning text-dark">Kollel Elyon</span>
+                        {% else %}
+                            <span class="badge bg-info">Regular</span>
+                        {% endif %}
+                    </h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table text-info"></i>
+                        Monthly Stipend Records
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Month/Year</th>
+                                    <th>Base</th>
+                                    <th>Credits</th>
+                                    <th>Incentive</th>
+                                    <th>Bonuses</th>
+                                    <th>Deductions</th>
+                                    <th>Final Amount</th>
+                                    <th>Status</th>
+                                    <th>Payment Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for stipend in stipends %}
+                                <tr>
+                                    <td>{{ stipend.month_year_display }}</td>
+                                    <td>${{ "%.0f"|format(stipend.base_stipend_amount) }}</td>
+                                    <td>{{ "%.2f"|format(stipend.total_credits) }}</td>
+                                    <td>${{ "%.0f"|format(stipend.incentive_amount) }}</td>
+                                    <td>
+                                        ${{ "%.0f"|format(stipend.kollel_elyon_bonus + stipend.retufin_pay + 
+                                            stipend.mussar_chabura_pay + stipend.iyun_chabura_pay) }}
+                                    </td>
+                                    <td class="text-danger">
+                                        -${{ "%.0f"|format(stipend.missed_time_deduction + stipend.other_deductions) }}
+                                    </td>
+                                    <td class="fw-bold">${{ "%.2f"|format(stipend.final_amount) }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ stipend.payment_status_color }}">
+                                            {{ stipend.payment_status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if stipend.payment_date %}
+                                            {{ stipend.payment_date.strftime('%m/%d/%Y') }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}Kollel Break Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-calendar-times text-warning"></i>
+                        Kollel Break Management
+                    </h1>
+                    <p class="text-muted mb-0">Manage break periods and pro-rated credit calculations</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('kollel.kollel_dashboard') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    <button class="btn btn-success" onclick="addBreakPeriod()">
+                        <i class="fas fa-plus"></i> Add Break Period
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            {% if academic_years %}
+                {% for academic_year in academic_years %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calendar-alt text-info"></i>
+                                Academic Year {{ academic_year.year_label }}
+                            </h5>
+                            <button class="btn btn-sm btn-outline-success" onclick="addBreakForYear({{ academic_year.id }})">
+                                <i class="fas fa-plus"></i> Add Break
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% set year_breaks = break_configs.get(academic_year.id, []) %}
+                        {% if year_breaks %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Break Name</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Duration</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for break_period in year_breaks %}
+                                    <tr>
+                                        <td><strong>{{ break_period.name }}</strong></td>
+                                        <td>{{ break_period.start_date.strftime('%B %d, %Y') }}</td>
+                                        <td>{{ break_period.end_date.strftime('%B %d, %Y') }}</td>
+                                        <td>
+                                            {% set duration = (break_period.end_date - break_period.start_date).days + 1 %}
+                                            {{ duration }} days
+                                        </td>
+                                        <td>
+                                            {% if break_period.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Apply Break Credits Section -->
+                        <div class="mt-4">
+                            <h6 class="fw-bold mb-3">
+                                <i class="fas fa-calculator text-success"></i>
+                                Apply Break Credits
+                            </h6>
+                            <p class="text-muted small mb-3">
+                                Apply break credits for months with active break periods using the formula: 
+                                (Actual Credits from last 5 periods) ÷ (Non-break days in last 5 periods) × (Break days in current month)
+                            </p>
+                            <div class="row">
+                                {% set months = ['September', 'October', 'November', 'December', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August'] %}
+                                {% for i in range(12) %}
+                                    {% set month_num = (8 + i) % 12 + 1 %}
+                                    {% if month_num <= 8 %}
+                                        {% set display_year = academic_year.start_year + 1 %}
+                                    {% else %}
+                                        {% set display_year = academic_year.start_year %}
+                                    {% endif %}
+                                    <div class="col-md-3 mb-2">
+                                        <button class="btn btn-sm btn-outline-primary w-100" 
+                                                onclick="applyBreakCredits({{ month_num }}, {{ academic_year.start_year }})">
+                                            {{ months[i] }} {{ display_year }}
+                                        </button>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Break Periods Defined</h5>
+                            <p class="text-muted">Add break periods to enable pro-rated credit calculations for this academic year.</p>
+                            <button class="btn btn-primary" onclick="addBreakForYear({{ academic_year.id }})">
+                                <i class="fas fa-plus"></i> Add Break Period
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                    <h5 class="text-muted">No Academic Years Found</h5>
+                    <p class="text-muted">Please create academic years first to manage break periods.</p>
+                    <a href="{{ url_for('academic.academic_dashboard') }}" class="btn btn-primary">
+                        <i class="fas fa-calendar-plus"></i> Manage Academic Years
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add Break Modal -->
+<div class="modal fade" id="breakModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Break Period</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="breakForm">
+                    <input type="hidden" id="academicYearId" name="academic_year_id">
+                    
+                    <div class="mb-3">
+                        <label for="breakName" class="form-label">Break Name</label>
+                        <input type="text" class="form-control" id="breakName" name="name" required
+                               placeholder="e.g., Winter Break, Pesach Break">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="startDate" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="startDate" name="start_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="endDate" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="endDate" name="end_date" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveBreak()">Save Break Period</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Break Credits Calculation Results Modal -->
+<div class="modal fade" id="calculationResultsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Break Credits Calculation Results</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="calculationDetails">
+                    <!-- Results will be inserted here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addBreakForYear(academicYearId) {
+    document.getElementById('breakForm').reset();
+    document.getElementById('academicYearId').value = academicYearId;
+    const modal = new bootstrap.Modal(document.getElementById('breakModal'));
+    modal.show();
+}
+
+function addBreakPeriod() {
+    {% if academic_years %}
+    const firstAcademicYear = {{ academic_years[0].id }};
+    addBreakForYear(firstAcademicYear);
+    {% else %}
+    alert('Please create an academic year first');
+    {% endif %}
+}
+
+function saveBreak() {
+    const form = document.getElementById('breakForm');
+    const formData = new FormData(form);
+    
+    // Validate dates
+    const startDate = new Date(formData.get('start_date'));
+    const endDate = new Date(formData.get('end_date'));
+    
+    if (endDate <= startDate) {
+        alert('End date must be after start date');
+        return;
+    }
+    
+    const data = {
+        academic_year_id: parseInt(formData.get('academic_year_id')),
+        break_name: formData.get('name'),
+        start_date: formData.get('start_date'),
+        end_date: formData.get('end_date')
+    };
+    
+    fetch('/kollel/breaks/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert(result.message);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('breakModal'));
+            modal.hide();
+            location.reload();
+        } else {
+            alert('Error: ' + result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving break period');
+    });
+}
+
+function applyBreakCredits(month, schoolYear) {
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthName = monthNames[month - 1];
+    
+    if (!confirm(`Are you sure you want to apply break credits for ${monthName}? This will calculate and update pro-rated credits for all students based on their last 5 pay periods.`)) {
+        return;
+    }
+    
+    fetch(`/kollel/apply-breaks/${month}/${schoolYear}`, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showCalculationResults(data);
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while applying break credits');
+    });
+}
+
+function showCalculationResults(data) {
+    const detailsDiv = document.getElementById('calculationDetails');
+    
+    let html = `
+        <div class="alert alert-success">
+            <strong>Success!</strong> ${data.message}
+        </div>
+        <div class="mb-3">
+            <strong>Break days in this month:</strong> ${data.break_days_this_month}
+        </div>
+    `;
+    
+    if (data.calculation_details && data.calculation_details.length > 0) {
+        html += `
+            <div class="alert alert-info">
+                <strong>Formula Used:</strong> <code>(Actual Credits from last 5 periods) ÷ (Non-break days in last 5 periods) × (Break days in current month)</code>
+                <br><strong>Note:</strong> Partial credits are not paid but are shown for potential special exceptions.
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Periods Used</th>
+                            <th>Total Actual Credits</th>
+                            <th>Total Non-Break Days</th>
+                            <th>Daily Rate</th>
+                            <th>Calculated Credits</th>
+                            <th>Credits Paid</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        data.calculation_details.forEach(detail => {
+            html += `
+                <tr>
+                    <td>${detail.student_name}</td>
+                    <td>${detail.past_periods}</td>
+                    <td>${detail.total_actual_credits.toFixed(2)}</td>
+                    <td>${detail.total_non_break_days}</td>
+                    <td>${detail.daily_rate.toFixed(4)}</td>
+                    <td>${detail.calculated_credits.toFixed(2)}</td>
+                    <td class="fw-bold">${detail.paid_credits.toFixed(0)}</td>
+                </tr>
+            `;
+        });
+        
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="alert alert-warning">
+                <strong>No students processed.</strong> This could mean:
+                <ul class="mb-0">
+                    <li>No students have stipend records for this month</li>
+                    <li>All students have manual credit overrides</li>
+                    <li>No students have sufficient payment history</li>
+                </ul>
+            </div>
+        `;
+    }
+    
+    detailsDiv.innerHTML = html;
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('calculationResultsModal'));
+    modal.show();
+}
+
+// Set minimum date to prevent past dates
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('startDate').setAttribute('min', today);
+    
+    // Update end date minimum when start date changes
+    document.getElementById('startDate').addEventListener('change', function() {
+        document.getElementById('endDate').setAttribute('min', this.value);
+    });
+});
+</script>
+
+{% endblock %}

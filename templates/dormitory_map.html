@@ -1,0 +1,1101 @@
+{% extends "base.html" %}
+
+{% block title %}Dormitory Map - Student Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-map"></i> Dormitory Visual Map
+                    </h1>
+                    <p class="text-muted mb-0">Interactive map for managing bed assignments</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('dormitories.dormitory_dashboard') }}" class="btn btn-secondary me-2">
+                        <i class="fas fa-list"></i> Dashboard View
+                    </a>
+                    <button class="btn btn-info me-2" onclick="toggleStudentPanel()">
+                        <i class="fas fa-users"></i> Available Students
+                    </button>
+                    <button class="btn btn-success" onclick="refreshMap()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Map Area -->
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-building"></i> Campus Map
+                        </h5>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-primary active" onclick="setMapView('overview')">
+                                Overview
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="setMapView('detailed')">
+                                Detailed
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="dormitoryMap" class="position-relative overflow-auto" 
+                         style="height: 600px; background: linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%, #f8f9fa), 
+                                linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%, #f8f9fa); 
+                                background-size: 20px 20px; background-position: 0 0, 10px 10px;">
+                        
+                        <!-- Dormitories will be rendered here -->
+                        {% for dormitory in dormitories %}
+                        <div class="dormitory-container" 
+                             data-dormitory-id="{{ dormitory.id }}"
+                             style="position: absolute; 
+                                    left: {{ dormitory.map_position_x }}px; 
+                                    top: {{ dormitory.map_position_y }}px;">
+                            
+                            <!-- Dormitory Block -->
+                            <div class="dormitory-block" 
+                                 style="background-color: {{ dormitory.map_color }}; 
+                                        border: 3px solid {{ dormitory.map_color }}; 
+                                        border-radius: 8px; 
+                                        min-width: 200px; 
+                                        min-height: 150px; 
+                                        color: white; 
+                                        cursor: pointer;"
+                                 onclick="selectDormitory({{ dormitory.id }})"
+                                 onmouseover="showDormitoryTooltip(this, {{ dormitory.id }})"
+                                 onmouseout="hideTooltip()">
+                                
+                                <!-- Dormitory Header -->
+                                <div class="p-3 border-bottom border-light">
+                                    <h6 class="mb-1 fw-bold">{{ dormitory.display_name or dormitory.name }}</h6>
+                                    <small class="opacity-75">
+                                        {{ dormitory.total_rooms }} rooms, {{ dormitory.total_beds }} beds
+                                    </small>
+                                </div>
+                                
+                                <!-- Occupancy Indicator -->
+                                <div class="p-2">
+                                    <div class="progress mb-2" style="height: 8px; background-color: rgba(255,255,255,0.3);">
+                                        <div class="progress-bar bg-light" 
+                                             style="width: {{ dormitory.occupancy_rate }}%"></div>
+                                    </div>
+                                    <small class="opacity-75">
+                                        {{ dormitory.occupied_beds }}/{{ dormitory.total_beds }} occupied 
+                                        ({{ dormitory.occupancy_rate }}%)
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Room Details (shown when dormitory is selected) -->
+                            <div id="rooms-{{ dormitory.id }}" class="rooms-container mt-2" style="display: none;">
+                                <!-- Rooms will be loaded dynamically -->
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        <!-- Map Legend -->
+                        <div class="position-absolute bottom-0 start-0 m-3">
+                            <div class="card border-0 shadow-sm" style="background: rgba(255,255,255,0.95);">
+                                <div class="card-body p-2">
+                                    <h6 class="card-title mb-2 small">Legend</h6>
+                                    <div class="small">
+                                        <div class="mb-1">
+                                            <span class="badge bg-success me-1">●</span> Available Bed
+                                        </div>
+                                        <div class="mb-1">
+                                            <span class="badge bg-danger me-1">●</span> Occupied Bed
+                                        </div>
+                                        <div class="mb-1">
+                                            <span class="badge bg-warning me-1">●</span> Needs Attention
+                                        </div>
+                                        <div class="mb-1">
+                                            <span class="badge bg-secondary me-1">●</span> Unavailable
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Side Panel -->
+        <div class="col-lg-3">
+            <!-- Navigation Tabs for Side Panel -->
+            <ul class="nav nav-tabs mb-3" id="sidePanelTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="available-students-tab" data-bs-toggle="tab" 
+                            data-bs-target="#available-students" type="button" role="tab">
+                        <i class="fas fa-users"></i> Students
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="unassigned-beds-tab" data-bs-toggle="tab" 
+                            data-bs-target="#unassigned-beds" type="button" role="tab">
+                        <i class="fas fa-bed"></i> Open Beds
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="students-without-beds-tab" data-bs-toggle="tab" 
+                            data-bs-target="#students-without-beds" type="button" role="tab">
+                        <i class="fas fa-user-times"></i> Need Beds
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content mb-3">
+                <!-- Available Students Panel -->
+                <div class="tab-pane fade show active" id="available-students" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-users"></i> Available Students
+                                <span id="availableStudentsCount" class="badge bg-primary ms-2">0</span>
+                            </h6>
+                        </div>
+                        <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+                            <div id="availableStudentsList">
+                                <div class="text-center py-3">
+                                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                                    <small class="d-block mt-2 text-muted">Loading students...</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unassigned Beds Panel -->
+                <div class="tab-pane fade" id="unassigned-beds" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-bed"></i> Available Beds
+                                <span id="unassignedBedsCount" class="badge bg-success ms-2">0</span>
+                            </h6>
+                        </div>
+                        <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+                            <div id="unassignedBedsList">
+                                <div class="text-center py-3">
+                                    <div class="spinner-border spinner-border-sm text-success"></div>
+                                    <small class="d-block mt-2 text-muted">Loading beds...</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Students Without Beds Panel -->
+                <div class="tab-pane fade" id="students-without-beds" role="tabpanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-user-times"></i> Students Needing Beds
+                                <span id="studentsWithoutBedsCount" class="badge bg-warning ms-2">0</span>
+                            </h6>
+                        </div>
+                        <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+                            <div id="studentsWithoutBedsList">
+                                <div class="text-center py-3">
+                                    <div class="spinner-border spinner-border-sm text-warning"></div>
+                                    <small class="d-block mt-2 text-muted">Loading students...</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selected Item Details -->
+            <div id="detailsPanel" class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Details
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="selectionDetails">
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-mouse-pointer fa-2x mb-2"></i>
+                            <p class="mb-0">Click on a dormitory, room, or bed to view details</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bed Assignment Modal -->
+<div class="modal fade" id="bedAssignmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assign Student to Bed</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bedAssignmentForm">
+                    <input type="hidden" id="assignBedId" name="bed_id">
+                    <div class="mb-3">
+                        <label for="assignStudentId" class="form-label">Select Student</label>
+                        <select class="form-control" id="assignStudentId" name="student_id" required>
+                            <option value="">Choose a student...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="assignStartDate" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="assignStartDate" name="start_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="assignNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="assignNotes" name="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="assignBed()">
+                    <i class="fas fa-check"></i> Assign Bed
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tooltip -->
+<div id="mapTooltip" class="position-absolute bg-dark text-white p-2 rounded shadow-sm small" 
+     style="display: none; z-index: 1000; pointer-events: none; max-width: 250px;">
+</div>
+
+<script>
+let selectedDormitoryId = null;
+let selectedRoomId = null;
+let selectedBedId = null;
+let availableStudents = [];
+let mapView = 'overview';
+
+// Initialize the map
+document.addEventListener('DOMContentLoaded', function() {
+    loadAvailableStudents();
+    loadUnassignedBeds();
+    loadStudentsWithoutBeds();
+    setTodayDate();
+});
+
+function setTodayDate() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('assignStartDate').value = today;
+}
+
+function loadAvailableStudents() {
+    fetch('/api/students/available-for-assignment')
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            availableStudents = result.available_students;
+            displayAvailableStudents();
+            populateStudentDropdown();
+            document.getElementById('availableStudentsCount').textContent = result.count;
+        } else {
+            console.error('Error loading students:', result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading students:', error);
+    });
+}
+
+function loadUnassignedBeds() {
+    fetch('/api/beds/unassigned')
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            displayUnassignedBeds(result.unassigned_beds);
+            document.getElementById('unassignedBedsCount').textContent = result.count;
+        } else {
+            console.error('Error loading unassigned beds:', result.message);
+            displayUnassignedBedsError();
+        }
+    })
+    .catch(error => {
+        console.error('Error loading unassigned beds:', error);
+        displayUnassignedBedsError();
+    });
+}
+
+function loadStudentsWithoutBeds() {
+    fetch('/api/students/dormitory-without-beds')
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            displayStudentsWithoutBeds(result.students_without_beds);
+            document.getElementById('studentsWithoutBedsCount').textContent = result.count;
+        } else {
+            console.error('Error loading students without beds:', result.message);
+            displayStudentsWithoutBedsError();
+        }
+    })
+    .catch(error => {
+        console.error('Error loading students without beds:', error);
+        displayStudentsWithoutBedsError();
+    });
+}
+
+function displayAvailableStudents() {
+    const container = document.getElementById('availableStudentsList');
+    
+    if (availableStudents.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-3 text-muted">
+                <i class="fas fa-users-slash"></i>
+                <p class="mb-0 mt-2">All students have been assigned beds</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = availableStudents.map(student => `
+        <div class="list-group-item list-group-item-action draggable-student border-0" 
+             draggable="true" 
+             data-student-id="${student.id}"
+             ondragstart="handleStudentDragStart(event)"
+             onclick="showStudentDetails('${student.id}', '${student.name}', '${student.division}')">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong class="d-block">${student.name}</strong>
+                    <small class="text-muted">${student.division}</small>
+                </div>
+                <span class="badge bg-primary">${student.division}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function populateStudentDropdown() {
+    const select = document.getElementById('assignStudentId');
+    select.innerHTML = '<option value="">Choose a student...</option>' + 
+        availableStudents.map(student => 
+            `<option value="${student.id}">${student.name} (${student.division})</option>`
+        ).join('');
+}
+
+function selectDormitory(dormitoryId) {
+    selectedDormitoryId = dormitoryId;
+    selectedRoomId = null;
+    selectedBedId = null;
+    
+    // Hide all room containers
+    document.querySelectorAll('.rooms-container').forEach(container => {
+        container.style.display = 'none';
+    });
+    
+    // Show selected dormitory's rooms
+    loadDormitoryRooms(dormitoryId);
+    
+    // Update details panel
+    fetch(`/api/dormitories/${dormitoryId}`)
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            displayDormitoryDetails(result.dormitory);
+        }
+    });
+}
+
+function loadDormitoryRooms(dormitoryId) {
+    const roomsContainer = document.getElementById(`rooms-${dormitoryId}`);
+    roomsContainer.style.display = 'block';
+    roomsContainer.innerHTML = '<div class="text-center py-2"><div class="spinner-border spinner-border-sm"></div></div>';
+    
+    fetch(`/api/dormitories/${dormitoryId}/rooms`)
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            displayRooms(result.rooms, dormitoryId);
+        }
+    });
+}
+
+function displayRooms(rooms, dormitoryId) {
+    const container = document.getElementById(`rooms-${dormitoryId}`);
+    
+    container.innerHTML = rooms.map(room => `
+        <div class="room-block border border-2 rounded mb-2 p-2 bg-white" 
+             style="cursor: pointer; min-width: 120px;"
+             onclick="selectRoom(${room.id})"
+             onmouseover="showRoomTooltip(this, ${room.id})"
+             onmouseout="hideTooltip()">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <strong class="small">${room.room_number}</strong>
+                <span class="badge bg-${room.status_color} small">${room.occupied_beds}/${room.bed_count}</span>
+            </div>
+            <div id="beds-${room.id}" class="beds-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(30px, 1fr)); gap: 2px;">
+                <!-- Beds will be loaded when room is selected -->
+            </div>
+        </div>
+    `).join('');
+}
+
+function selectRoom(roomId) {
+    selectedRoomId = roomId;
+    selectedBedId = null;
+    
+    loadRoomBeds(roomId);
+    
+    fetch(`/api/rooms/${roomId}`)
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            displayRoomDetails(result.room);
+        }
+    });
+}
+
+function loadRoomBeds(roomId) {
+    fetch(`/api/rooms/${roomId}`)
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            displayBeds(result.beds, roomId);
+        }
+    });
+}
+
+function displayBeds(beds, roomId) {
+    const container = document.getElementById(`beds-${roomId}`);
+    
+    container.innerHTML = beds.map(bed => `
+        <div class="bed-indicator position-relative" 
+             style="width: 25px; height: 25px; border-radius: 3px; cursor: pointer;"
+             data-bed-id="${bed.id}"
+             onclick="selectBed(${bed.id})"
+             onmouseover="showBedTooltip(this, ${bed.id})"
+             onmouseout="hideTooltip()"
+             ondrop="handleBedDrop(event, ${bed.id})"
+             ondragover="handleBedDragOver(event)"
+             title="${bed.status_text}">
+            <div class="w-100 h-100 bg-${bed.status_color} rounded d-flex align-items-center justify-content-center">
+                <small class="text-white fw-bold" style="font-size: 8px;">${bed.bed_number}</small>
+            </div>
+        </div>
+    `).join('');
+}
+
+function selectBed(bedId) {
+    selectedBedId = bedId;
+    
+    fetch(`/api/beds/${bedId}`)
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            displayBedDetails(result.bed);
+        }
+    });
+}
+
+function displayDormitoryDetails(dormitory) {
+    document.getElementById('selectionDetails').innerHTML = `
+        <h6><i class="fas fa-building"></i> ${dormitory.display_name}</h6>
+        <hr>
+        <div class="row text-center mb-3">
+            <div class="col-4">
+                <strong class="d-block h5 text-primary">${dormitory.total_rooms}</strong>
+                <small class="text-muted">Rooms</small>
+            </div>
+            <div class="col-4">
+                <strong class="d-block h5 text-info">${dormitory.total_beds}</strong>
+                <small class="text-muted">Beds</small>
+            </div>
+            <div class="col-4">
+                <strong class="d-block h5 text-success">${dormitory.available_beds}</strong>
+                <small class="text-muted">Available</small>
+            </div>
+        </div>
+        <div class="progress mb-2">
+            <div class="progress-bar bg-${dormitory.status_color}" style="width: ${dormitory.occupancy_rate}%"></div>
+        </div>
+        <p class="small text-muted mb-0">Occupancy: ${dormitory.occupancy_rate}%</p>
+        ${dormitory.description ? `<p class="small mt-2">${dormitory.description}</p>` : ''}
+    `;
+}
+
+function displayRoomDetails(room) {
+    document.getElementById('selectionDetails').innerHTML = `
+        <h6><i class="fas fa-door-open"></i> ${room.full_room_name}</h6>
+        <hr>
+        <div class="mb-3">
+            <span class="badge bg-${room.status_color}">${room.room_type}</span>
+            ${room.floor ? `<span class="badge bg-secondary ms-1">Floor ${room.floor}</span>` : ''}
+        </div>
+        <div class="row text-center mb-3">
+            <div class="col-6">
+                <strong class="d-block h5 text-primary">${room.bed_count}</strong>
+                <small class="text-muted">Total Beds</small>
+            </div>
+            <div class="col-6">
+                <strong class="d-block h5 text-success">${room.available_beds}</strong>
+                <small class="text-muted">Available</small>
+            </div>
+        </div>
+        <div class="small">
+            ${room.has_private_bathroom ? '<i class="fas fa-check text-success"></i> Private Bathroom<br>' : ''}
+            ${room.has_air_conditioning ? '<i class="fas fa-check text-success"></i> Air Conditioning<br>' : ''}
+            ${room.has_heating ? '<i class="fas fa-check text-success"></i> Heating<br>' : ''}
+        </div>
+        ${room.current_occupants.length > 0 ? `
+            <hr>
+            <h6 class="small">Current Occupants:</h6>
+            <ul class="small mb-0">
+                ${room.current_occupants.map(name => `<li>${name}</li>`).join('')}
+            </ul>
+        ` : ''}
+    `;
+}
+
+function displayBedDetails(bed) {
+    document.getElementById('selectionDetails').innerHTML = `
+        <h6><i class="fas fa-bed"></i> ${bed.full_bed_name}</h6>
+        <hr>
+        <div class="mb-3">
+            <span class="badge bg-${bed.status_color}">${bed.status_text}</span>
+            <span class="badge bg-secondary ms-1">${bed.bed_type}</span>
+        </div>
+        ${bed.current_occupant ? `
+            <div class="alert alert-info small">
+                <strong>Current Occupant:</strong><br>
+                ${bed.current_occupant.name} (${bed.current_occupant.division})<br>
+                <small>Since: ${bed.current_occupant.start_date}</small>
+            </div>
+            <button class="btn btn-sm btn-warning w-100 mb-2" onclick="unassignBed(${bed.id})">
+                <i class="fas fa-user-times"></i> Unassign Student
+            </button>
+        ` : `
+            <button class="btn btn-sm btn-primary w-100 mb-2" 
+                    onclick="showBedAssignmentModal(${bed.id})" 
+                    ${bed.allows_assignments ? '' : 'disabled'}>
+                <i class="fas fa-user-plus"></i> Assign Student
+            </button>
+        `}
+        <div class="small mt-2">
+            ${bed.has_desk ? '<i class="fas fa-check text-success"></i> Desk<br>' : ''}
+            ${bed.has_dresser ? '<i class="fas fa-check text-success"></i> Dresser<br>' : ''}
+            ${bed.has_closet ? '<i class="fas fa-check text-success"></i> Closet<br>' : ''}
+        </div>
+        ${bed.notes ? `<p class="small text-muted mt-2">${bed.notes}</p>` : ''}
+    `;
+}
+
+// Drag and Drop functionality
+function handleStudentDragStart(event) {
+    event.dataTransfer.setData('text/plain', event.target.dataset.studentId);
+    event.dataTransfer.effectAllowed = 'move';
+}
+
+function handleBedDrop(event, bedId) {
+    event.preventDefault();
+    const studentId = event.dataTransfer.getData('text/plain');
+    
+    if (studentId) {
+        // Show assignment modal with pre-filled bed
+        const modal = new bootstrap.Modal(document.getElementById('assignmentModal'));
+        
+        // Set the bed ID in the modal
+        window.currentBedId = bedId;
+        
+        // Pre-select the student in the dropdown
+        const studentSelect = document.getElementById('studentSelect');
+        studentSelect.value = studentId;
+        
+        // Show the modal
+        modal.show();
+    }
+}
+
+function handleBedDragOver(event) {
+    event.preventDefault();
+    event.currentTarget.style.backgroundColor = '#f8f9fa';
+}
+
+function handleBedDragLeave(event) {
+    event.currentTarget.style.backgroundColor = '';
+}
+
+// Add these event listeners to the bed items
+function attachBedEventListeners() {
+    document.querySelectorAll('#unassignedBedsList .list-group-item').forEach(item => {
+        item.addEventListener('dragleave', handleBedDragLeave);
+    });
+}
+
+function refreshAllPanels() {
+    loadAvailableStudents();
+    loadUnassignedBeds();
+    loadStudentsWithoutBeds();
+}
+
+// Update the assignment success callback to refresh panels
+function onAssignmentSuccess() {
+    refreshAllPanels();
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('assignmentModal'));
+    if (modal) {
+        modal.hide();
+    }
+    
+    // Show success message
+    showNotification('Assignment successful!', 'success');
+}
+
+// Update the unassignment success callback to refresh panels
+function onUnassignmentSuccess() {
+    refreshAllPanels();
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('unassignmentModal'));
+    if (modal) {
+        modal.hide();
+    }
+    
+    // Show success message
+    showNotification('Bed unassigned successfully!', 'success');
+}
+
+// Modal functions
+function showBedAssignmentModal(bedId) {
+    document.getElementById('assignBedId').value = bedId;
+    new bootstrap.Modal(document.getElementById('bedAssignmentModal')).show();
+}
+
+function assignBed() {
+    const form = document.getElementById('bedAssignmentForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    const bedId = data.bed_id;
+    
+    fetch(`/api/beds/${bedId}/assign`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', result.message);
+            bootstrap.Modal.getInstance(document.getElementById('bedAssignmentModal')).hide();
+            refreshMap();
+        } else {
+            showAlert('danger', result.message);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error assigning bed: ' + error.message);
+    });
+}
+
+function unassignBed(bedId) {
+    if (confirm('Are you sure you want to unassign this bed?')) {
+        const today = new Date().toISOString().split('T')[0];
+        
+        fetch(`/api/beds/${bedId}/unassign`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                end_date: today,
+                reason: 'Manual unassignment'
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showAlert('success', result.message);
+                refreshMap();
+            } else {
+                showAlert('danger', result.message);
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Error unassigning bed: ' + error.message);
+        });
+    }
+}
+
+// Tooltip functions
+function showDormitoryTooltip(element, dormitoryId) {
+    // Implementation for dormitory tooltip
+}
+
+function showRoomTooltip(element, roomId) {
+    // Implementation for room tooltip
+}
+
+function showBedTooltip(element, bedId) {
+    // Implementation for bed tooltip
+}
+
+function hideTooltip() {
+    document.getElementById('mapTooltip').style.display = 'none';
+}
+
+// Utility functions
+function toggleStudentPanel() {
+    const panel = document.getElementById('studentsPanel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function setMapView(view) {
+    mapView = view;
+    document.querySelectorAll('#dormitoryMap .btn-group .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Implement view switching logic
+}
+
+function refreshMap() {
+    location.reload();
+}
+
+function showAlert(type, message) {
+    const alertContainer = document.createElement('div');
+    alertContainer.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertContainer.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+    alertContainer.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertContainer);
+    
+    setTimeout(() => {
+        if (alertContainer.parentNode) {
+            alertContainer.parentNode.removeChild(alertContainer);
+        }
+    }, 5000);
+}
+
+function displayUnassignedBeds(beds) {
+    const container = document.getElementById('unassignedBedsList');
+    
+    if (beds.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-3 text-muted">
+                <i class="fas fa-bed"></i>
+                <p class="mb-0 mt-2">No available beds</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = beds.map(bed => `
+        <div class="list-group-item list-group-item-action border-0" 
+             onclick="highlightBedOnMap(${bed.bed_id})"
+             ondrop="handleBedDrop(event, ${bed.bed_id})"
+             ondragover="handleBedDragOver(event)"
+             style="cursor: pointer;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center">
+                        <span class="badge me-2" style="background-color: ${bed.dormitory_color}">●</span>
+                        <strong class="small">${bed.full_bed_name}</strong>
+                    </div>
+                    <div class="small text-muted mt-1">
+                        <div>${bed.dormitory_name} - Room ${bed.room_number}</div>
+                        <div class="d-flex gap-2 mt-1">
+                            ${bed.has_desk ? '<i class="fas fa-check text-success" title="Has desk"></i>' : ''}
+                            ${bed.has_dresser ? '<i class="fas fa-check text-success" title="Has dresser"></i>' : ''}
+                            ${bed.has_closet ? '<i class="fas fa-check text-success" title="Has closet"></i>' : ''}
+                            ${bed.room_amenities.has_private_bathroom ? '<i class="fas fa-bath text-info" title="Private bathroom"></i>' : ''}
+                            ${bed.room_amenities.has_air_conditioning ? '<i class="fas fa-snowflake text-primary" title="AC"></i>' : ''}
+                        </div>
+                    </div>
+                </div>
+                <span class="badge bg-${bed.condition === 'Good' ? 'success' : 'warning'} small">
+                    ${bed.condition}
+                </span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function displayStudentsWithoutBeds(students) {
+    const container = document.getElementById('studentsWithoutBedsList');
+    
+    if (students.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-3 text-muted">
+                <i class="fas fa-check-circle text-success"></i>
+                <p class="mb-0 mt-2">All dormitory students have beds assigned</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = students.map(student => `
+        <div class="list-group-item list-group-item-action draggable-student border-0" 
+             draggable="true" 
+             data-student-id="${student.id}"
+             ondragstart="handleStudentDragStart(event)"
+             onclick="showStudentDetails('${student.id}', '${student.name}', '${student.division}')">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <strong class="d-block">${student.name}</strong>
+                    <small class="text-muted">${student.division}</small>
+                    ${student.dormitory_meals_option ? `
+                        <div class="small text-info mt-1">
+                            <i class="fas fa-utensils"></i> ${student.dormitory_meals_option}
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-warning">${student.division}</span>
+                    ${student.phone_number ? `
+                        <div class="small text-muted mt-1">
+                            <i class="fas fa-phone"></i> ${student.phone_number}
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function displayUnassignedBedsError() {
+    document.getElementById('unassignedBedsList').innerHTML = `
+        <div class="text-center py-3 text-danger">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p class="mb-0 mt-2">Error loading available beds</p>
+        </div>
+    `;
+}
+
+function displayStudentsWithoutBedsError() {
+    document.getElementById('studentsWithoutBedsList').innerHTML = `
+        <div class="text-center py-3 text-danger">
+            <i class="fas fa-exclamation-triangle"></i>
+            <p class="mb-0 mt-2">Error loading students without beds</p>
+        </div>
+    `;
+}
+
+function showStudentDetails(studentId, studentName, division) {
+    fetch(`/api/students/${studentId}/bed-assignment`)
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            const student = result.student;
+            const currentAssignment = result.current_assignment;
+            const history = result.assignment_history;
+            
+            document.getElementById('selectionDetails').innerHTML = `
+                <h6><i class="fas fa-user"></i> ${student.name}</h6>
+                <hr>
+                <div class="mb-3">
+                    <span class="badge bg-primary">${student.division}</span>
+                </div>
+                
+                ${currentAssignment ? `
+                    <div class="alert alert-info small">
+                        <strong>Current Assignment:</strong><br>
+                        ${currentAssignment.bed_name}<br>
+                        <small>Since: ${currentAssignment.start_date}</small>
+                    </div>
+                ` : `
+                    <div class="alert alert-warning small">
+                        <strong>No Current Bed Assignment</strong><br>
+                        This student needs to be assigned a bed.
+                    </div>
+                `}
+                
+                ${history.length > 1 ? `
+                    <hr>
+                    <h6 class="small">Assignment History:</h6>
+                    <div class="small">
+                        ${history.slice(0, 3).map(assignment => `
+                            <div class="border-bottom py-1">
+                                ${assignment.bed_name}<br>
+                                <small class="text-muted">
+                                    ${assignment.start_date} - ${assignment.end_date || 'Current'}
+                                </small>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading student details:', error);
+    });
+}
+
+function highlightBedOnMap(bedId) {
+    // Remove existing highlights
+    document.querySelectorAll('.bed-indicator').forEach(bed => {
+        bed.style.boxShadow = '';
+        bed.style.transform = '';
+    });
+    
+    // Highlight the selected bed
+    const bedElement = document.querySelector(`[data-bed-id="${bedId}"]`);
+    if (bedElement) {
+        bedElement.style.boxShadow = '0 0 10px #007bff';
+        bedElement.style.transform = 'scale(1.2)';
+        bedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Also select the bed to show details
+        selectBed(bedId);
+    }
+}
+
+document.getElementById('assignmentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const bedId = window.currentBedId;
+    const studentId = document.getElementById('studentSelect').value;
+    const startDate = document.getElementById('assignStartDate').value;
+    const notes = document.getElementById('assignNotes').value;
+    
+    if (!bedId || !studentId) {
+        showAlert('danger', 'Please select both a bed and a student');
+        return;
+    }
+    
+    fetch(`/api/beds/${bedId}/assign`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            student_id: studentId,
+            start_date: startDate,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', result.message);
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('assignmentModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Refresh all panels and map
+            refreshAllPanels();
+            refreshMap();
+            
+            // Reset form
+            document.getElementById('assignmentForm').reset();
+            setTodayDate();
+        } else {
+            showAlert('danger', result.message);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error assigning bed: ' + error.message);
+    });
+});
+
+document.getElementById('unassignmentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const bedId = window.currentBedId;
+    const endDate = document.getElementById('unassignEndDate').value;
+    const reason = document.getElementById('unassignReason').value;
+    
+    if (!bedId) {
+        showAlert('danger', 'No bed selected for unassignment');
+        return;
+    }
+    
+    fetch(`/api/beds/${bedId}/unassign`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            end_date: endDate,
+            reason: reason
+        })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', result.message);
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('unassignmentModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Refresh all panels and map
+            refreshAllPanels();
+            refreshMap();
+            
+            // Reset form
+            document.getElementById('unassignmentForm').reset();
+            setTodayDate();
+        } else {
+            showAlert('danger', result.message);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error unassigning bed: ' + error.message);
+    });
+});
+</script>
+
+<style>
+.dormitory-block:hover {
+    transform: scale(1.02);
+    transition: transform 0.2s;
+}
+
+.room-block:hover {
+    background-color: #f8f9fa !important;
+    border-color: #007bff !important;
+}
+
+.bed-indicator:hover {
+    transform: scale(1.1);
+    transition: transform 0.2s;
+}
+
+.draggable-student {
+    cursor: grab;
+}
+
+.draggable-student:hover {
+    background-color: #f8f9fa;
+}
+
+.draggable-student:active {
+    cursor: grabbing;
+}
+
+#dormitoryMap {
+    user-select: none;
+}
+</style>
+{% endblock %} 

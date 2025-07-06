@@ -10,7 +10,7 @@
         <div class="d-flex gap-2">
             <!-- Create Student button - only show if user has edit_students permission -->
             {% if current_user.is_authenticated and current_user.has_permission('edit_students') %}
-            <a href="{{ url_for('main.create_student') }}" class="btn btn-success">
+            <a href="{{ url_for('students.create_student') }}" class="btn btn-success">
                 <i class="fas fa-plus"></i> Create Student
             </a>
             {% endif %}
@@ -27,6 +27,30 @@
         </div>
     </div>
     
+    <!-- Division Filter Tabs - Notebook Style -->
+    <div class="mb-4">
+        <div class="notebook-tabs">
+            <a class="notebook-tab {{ 'active' if current_filter == 'all' else '' }}" 
+               href="{{ url_for('students.view_students', division='all') }}">
+                <span class="tab-icon">📚</span>
+                All Students 
+                <span class="tab-count">{{ total_count }}</span>
+            </a>
+            <a class="notebook-tab {{ 'active' if current_filter == 'yza' else '' }}" 
+               href="{{ url_for('students.view_students', division='yza') }}">
+                <span class="tab-icon">🎓</span>
+                YZA 
+                <span class="tab-count">{{ yza_count }}</span>
+            </a>
+            <a class="notebook-tab {{ 'active' if current_filter == 'yoh' else '' }}" 
+               href="{{ url_for('students.view_students', division='yoh') }}">
+                <span class="tab-icon">📖</span>
+                YOH 
+                <span class="tab-count">{{ yoh_count }}</span>
+            </a>
+        </div>
+    </div>
+    
     <!-- List view -->
     <div id="listView" class="view-container">
         <div class="table-responsive">
@@ -35,6 +59,7 @@
                     <tr>
                         <th>Name</th>
                         <th>Hebrew Name</th>
+                        <th>Division</th>
                         <th>Phone</th>
                         <th>Status</th>
                         <th>Financial Aid</th>
@@ -45,11 +70,16 @@
                     {% for student in students %}
                     <tr>
                         <td>
-                            <a href="{{ url_for('main.student_details', student_id=student.id) }}">
+                            <a href="{{ url_for('students.student_details', student_id=student.id) }}">
                                 {{ student.full_name }}
                             </a>
                         </td>
                         <td>{{ student.hebrew_name }}</td>
+                        <td>
+                            <span class="badge {{ 'badge-primary' if student.division == 'YZA' else 'badge-info' }}">
+                                {{ student.division }}
+                            </span>
+                        </td>
                         <td>{{ student.phone_number }}</td>
                         <td>
                             <span class="badge badge-{{ student.status_color }}">
@@ -64,10 +94,10 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{{ url_for('main.student_details', student_id=student.id) }}" class="btn btn-info btn-sm">
+                            <a href="{{ url_for('students.student_details', student_id=student.id) }}" class="btn btn-info btn-sm">
                                 View
                             </a>
-                            <a href="{{ url_for('main.edit_student', student_id=student.id) }}" class="btn btn-primary btn-sm">
+                            <a href="{{ url_for('students.edit_student', student_id=student.id) }}" class="btn btn-primary btn-sm">
                                 Edit
                             </a>
                             {% if current_user.is_authenticated and current_user.has_permission('process_applications') %}
@@ -94,12 +124,16 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">
-                            <a href="{{ url_for('main.student_details', student_id=student.id) }}" class="text-decoration-none">
+                            <a href="{{ url_for('students.student_details', student_id=student.id) }}" class="text-decoration-none">
                                 {{ student.full_name }}
                             </a>
                         </h5>
                         <h6 class="card-subtitle mb-2 text-muted">{{ student.hebrew_name }}</h6>
                         <p class="card-text">
+                            <strong>Division:</strong> 
+                            <span class="badge {{ 'badge-primary' if student.division == 'YZA' else 'badge-info' }}">
+                                {{ student.division }}
+                            </span><br>
                             <strong>Phone:</strong> {{ student.phone_number }}<br>
                             <strong>Status:</strong> 
                             <span class="badge badge-{{ student.status_color }}">
@@ -113,10 +147,10 @@
                             {% endif %}
                         </p>
                         <div class="btn-group">
-                            <a href="{{ url_for('main.student_details', student_id=student.id) }}" class="btn btn-info btn-sm">
+                            <a href="{{ url_for('students.student_details', student_id=student.id) }}" class="btn btn-info btn-sm">
                                 View
                             </a>
-                            <a href="{{ url_for('main.edit_student', student_id=student.id) }}" class="btn btn-primary btn-sm">
+                            <a href="{{ url_for('students.edit_student', student_id=student.id) }}" class="btn btn-primary btn-sm">
                                 Edit
                             </a>
                             {% if current_user.is_authenticated and current_user.has_permission('process_applications') %}
@@ -140,12 +174,106 @@
 .view-container {
     transition: opacity 0.3s ease-in-out;
 }
+
+/* Notebook-style tabs */
+.notebook-tabs {
+    display: flex;
+    margin-bottom: 0;
+    border-bottom: 3px solid #e9ecef;
+    position: relative;
+}
+
+.notebook-tab {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px 8px 20px;
+    margin-right: 2px;
+    background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px solid #dee2e6;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    color: #495057;
+    text-decoration: none;
+    font-weight: 500;
+    position: relative;
+    top: 0;
+    transition: all 0.2s ease;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+    min-width: 140px;
+    justify-content: center;
+}
+
+.notebook-tab:hover {
+    background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+    color: #495057;
+    text-decoration: none;
+    top: -2px;
+    box-shadow: 0 -4px 8px rgba(0,0,0,0.15);
+}
+
+.notebook-tab.active {
+    background: linear-gradient(to bottom, #ffffff 0%, #ffffff 100%);
+    border-color: #007bff;
+    color: #007bff;
+    top: -3px;
+    z-index: 10;
+    box-shadow: 0 -6px 12px rgba(0,123,255,0.2);
+    border-bottom: 3px solid #ffffff;
+    margin-bottom: -3px;
+}
+
+.tab-icon {
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.tab-count {
+    margin-left: 8px;
+    background: #6c757d;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    min-width: 20px;
+    text-align: center;
+}
+
+.notebook-tab.active .tab-count {
+    background: #007bff;
+}
+
+.notebook-tab:nth-child(2) .tab-count {
+    background: #28a745;
+}
+
+.notebook-tab:nth-child(2).active .tab-count {
+    background: #28a745;
+}
+
+.notebook-tab:nth-child(3) .tab-count {
+    background: #17a2b8;
+}
+
+.notebook-tab:nth-child(3).active .tab-count {
+    background: #17a2b8;
+}
+
+/* Content area styling to connect with tabs */
+.table-responsive, #tileView {
+    background: white;
+    border: 2px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
 </style>
 
 <script>
 function deleteStudent(studentId) {
     if (confirm('Are you sure you want to delete this student?')) {
-        fetch(`/api/students/${studentId}`, {
+        fetch(`/students/api/${studentId}`, {
             method: 'DELETE'
         })
         .then(response => response.json())
@@ -175,7 +303,7 @@ function unacceptStudent(studentId, studentName) {
             }
         });
         
-        fetch(`/api/students/${studentId}/unaccept`, {
+        fetch(`/students/api/${studentId}/unaccept`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -1,0 +1,2942 @@
+{% extends "base.html" %}
+
+{% block title %}Financial Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-dollar-sign text-success"></i>
+                        Financial Management
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Academic Year: 
+                        <select class="form-select form-select-sm d-inline-block ms-1" style="width: auto;" 
+                                id="financialAcademicYearSelector" onchange="changeFinancialAcademicYear()">
+                            {% for year in available_academic_years %}
+                            <option value="{{ year.id }}" {% if selected_academic_year and year.id == selected_academic_year.id %}selected{% endif %}>
+                                {{ year.year_label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </p>
+                </div>
+                <div class="btn-group">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-university"></i> Division Management
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header">YZA - Yeshiva Zichron Aryeh</h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('financial.division_financial_aid', division='YZA') }}">
+                                <i class="fas fa-hands-helping"></i> Financial Aid Applications
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('financial.division_tuition_contracts', division='YZA') }}">
+                                <i class="fas fa-file-contract"></i> Tuition Contracts
+                            </a></li>
+                            {% if current_user.has_permission('manage_users') %}
+                            <li><a class="dropdown-item" href="{{ url_for('financial.division_financial_config', division='YZA') }}">
+                                <i class="fas fa-cog"></i> Division Settings
+                            </a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">YOH - Yeshiva Ohel Hatorah</h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('financial.division_financial_aid', division='YOH') }}">
+                                <i class="fas fa-hands-helping"></i> Financial Aid Applications
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('financial.division_tuition_contracts', division='YOH') }}">
+                                <i class="fas fa-file-contract"></i> Tuition Contracts
+                            </a></li>
+                            {% if current_user.has_permission('manage_users') %}
+                            <li><a class="dropdown-item" href="{{ url_for('financial.division_financial_config', division='YOH') }}">
+                                <i class="fas fa-cog"></i> Division Settings
+                            </a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">KOLLEL</h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('financial.division_financial_aid', division='KOLLEL') }}">
+                                <i class="fas fa-hands-helping"></i> Financial Aid Applications
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('financial.division_tuition_contracts', division='KOLLEL') }}">
+                                <i class="fas fa-file-contract"></i> Tuition Contracts
+                            </a></li>
+                            {% if current_user.has_permission('manage_users') %}
+                            <li><a class="dropdown-item" href="{{ url_for('financial.division_financial_config', division='KOLLEL') }}">
+                                <i class="fas fa-cog"></i> Division Settings
+                            </a></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    <button class="btn btn-outline-primary" onclick="showTuitionSettings()">
+                        <i class="fas fa-cog"></i> Tuition Settings
+                    </button>
+                    <button class="btn btn-outline-success" onclick="showFinancialReports()">
+                        <i class="fas fa-chart-bar"></i> Reports
+                    </button>
+                    <button class="btn btn-outline-info" onclick="showBulkActions()">
+                        <i class="fas fa-tasks"></i> Bulk Actions
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Students</h6>
+                            <h3 class="mb-0">{{ total_students }}</h3>
+                        </div>
+                        <div class="text-primary">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">FA Forms Pending</h6>
+                            <h3 class="mb-0">{{ fa_forms_pending }}</h3>
+                        </div>
+                        <div class="text-warning">
+                            <i class="fas fa-file-invoice-dollar fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Contracts Pending</h6>
+                            <h3 class="mb-0">{{ contracts_pending }}</h3>
+                        </div>
+                        <div class="text-info">
+                            <i class="fas fa-file-contract fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Full Tuition</h6>
+                            <h3 class="mb-0">{{ full_tuition_count }}</h3>
+                        </div>
+                        <div class="text-success">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Division</label>
+                    <select class="form-select" id="divisionFilter" onchange="applyFilters()">
+                        <option value="">All Divisions</option>
+                        <option value="YZA">YZA</option>
+                        <option value="YOH">YOH</option>
+                        <option value="KOLLEL">Kollel</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="statusFilter" onchange="applyFilters()">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="pending">Pending Actions</option>
+                        <option value="complete">Complete</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tuition Type</label>
+                    <select class="form-select" id="tuitionTypeFilter" onchange="applyFilters()">
+                        <option value="">All Types</option>
+                        <option value="full">Full Tuition</option>
+                        <option value="reduced">Reduced Tuition</option>
+                        <option value="scholarship">Full Scholarship</option>
+                        <option value="not-set">Not Set</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="form-control" id="searchFilter" placeholder="Student name..." onkeyup="applyFilters()">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students Financial Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Student Financial Status</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Tuition</th>
+                            <th>Type</th>
+                            <th>FA Form</th>
+                            <th>Contract</th>
+                            <th>Admire</th>
+                            <th>FAFSA</th>
+                            <th>Documents</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in financial_records %}
+                        {% set display_type = record.tuition_type %}
+                        {% set actual_tuition = record.final_tuition_amount if record.final_tuition_amount else record.tuition_amount %}
+                        {% set tuition_filter_type = 'not-set' %}
+                        
+                        {# Determine tuition type for filtering #}
+                        {% if display_type == 'Full Tuition' or display_type == 'Full' %}
+                            {% set tuition_filter_type = 'full' %}
+                        {% elif display_type == 'Reduced Tuition' or display_type == 'Reduced' %}
+                            {% set tuition_filter_type = 'reduced' %}
+                        {% elif display_type == 'Full Scholarship' %}
+                            {% set tuition_filter_type = 'scholarship' %}
+                        {% elif display_type and display_type != 'None' and display_type != '' %}
+                            {% set tuition_filter_type = 'other' %}
+                        {% elif actual_tuition or record.has_tuition_components %}
+                            {# Auto-determine type based on financial data #}
+                            {% if record.has_tuition_components %}
+                                {% set component_amounts = [] %}
+                                {% set discount_flags = [] %}
+                                {% for component in record.tuition_components %}
+                                    {% set comp_amount = component.amount|float if component.amount else 0 %}
+                                    {% set _ = component_amounts.append(comp_amount) %}
+                                    {% if component.discount_percentage and component.discount_percentage > 0 %}
+                                        {% set _ = discount_flags.append(true) %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% set component_total = component_amounts|sum %}
+                                {% set has_component_discounts = discount_flags|length > 0 %}
+                                {% if component_total <= 100 %}
+                                    {% set tuition_filter_type = 'scholarship' %}
+                                {% elif has_component_discounts %}
+                                    {% set tuition_filter_type = 'reduced' %}
+                                {% else %}
+                                    {% set tuition_filter_type = 'full' %}
+                                {% endif %}
+                            {% else %}
+                                {% if actual_tuition <= 100 %}
+                                    {% set tuition_filter_type = 'scholarship' %}
+                                {% elif (record.discount_percentage and record.discount_percentage > 0) or (record.final_tuition_amount and record.tuition_amount and record.final_tuition_amount < record.tuition_amount) %}
+                                    {% set tuition_filter_type = 'reduced' %}
+                                {% else %}
+                                    {% set tuition_filter_type = 'full' %}
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
+                        
+                        <tr class="financial-row" data-student-id="{{ record.student.id }}" data-division="{{ record.student.division }}" data-tuition-type="{{ tuition_filter_type }}">
+                            <td>
+                                <div>
+                                    <strong class="student-name">{{ record.student.student_name }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ record.student.division }} | 
+                                        {% if record.student.status == 'Active' %}
+                                            <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ record.student.status }}</span>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    {% if (record.tuition_amount and record.tuition_amount > 0) or (record.final_tuition_amount and record.final_tuition_amount > 0) or record.tuition_type or (record.has_tuition_components and record.tuition_amount and record.tuition_amount > 0) %}
+                                        <strong>${{ "%.2f"|format(record.final_tuition_amount if record.final_tuition_amount else record.tuition_amount) }}</strong>
+                                        {% if record.final_tuition_amount and record.final_tuition_amount != record.tuition_amount %}
+                                            <br><small class="text-muted"><span class="badge bg-secondary">Adjusted</span></small>
+                                        {% endif %}
+                                        <div class="mt-1">
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-success" onclick="setTuition('{{ record.student.id }}')" title="Revise Tuition">
+                                                    <i class="fas fa-edit"></i> Revise
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <span class="visually-hidden">Toggle Dropdown</span>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" href="#" onclick="viewTuitionHistory('{{ record.student.id }}')">
+                                                        <i class="fas fa-history"></i> View History
+                                                    </a></li>
+                                                    <li><a class="dropdown-item" href="#" onclick="adjustTuition('{{ record.student.id }}')">
+                                                        <i class="fas fa-calculator"></i> Quick Adjust
+                                                    </a></li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item text-danger" href="#" onclick="resetTuition('{{ record.student.id }}')">
+                                                        <i class="fas fa-undo"></i> Reset Tuition
+                                                    </a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-outline-primary" onclick="setTuition('{{ record.student.id }}')">
+                                            <i class="fas fa-plus"></i> Set Tuition
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-center">
+                                    {% set display_type = record.tuition_type %}
+                                    {% set actual_tuition = record.final_tuition_amount if record.final_tuition_amount else record.tuition_amount %}
+                                    
+
+                                    
+                                    {# First check if tuition_type is explicitly set #}
+                                    {% if display_type == 'Full Tuition' %}
+                                        <span class="badge bg-primary">Full Tuition</span>
+                                    {% elif display_type == 'Reduced Tuition' %}
+                                        <span class="badge bg-warning">Reduced Tuition</span>
+                                    {% elif display_type == 'Full Scholarship' %}
+                                        <span class="badge bg-success">Full Scholarship</span>
+                                    {% elif display_type == 'Full' %}
+                                        <span class="badge bg-primary">Full Tuition</span>
+                                    {% elif display_type == 'Reduced' %}
+                                        <span class="badge bg-warning">Reduced Tuition</span>
+                                    {% elif display_type and display_type != 'None' and display_type != '' %}
+                                        <span class="badge bg-info">{{ display_type }}</span>
+                                    
+                                    {# If no explicit type, determine based on financial data #}
+                                    {% elif actual_tuition or record.has_tuition_components %}
+                                        {# For component-based tuition, get the actual calculated amount #}
+                                        {% if record.has_tuition_components %}
+                                            {% set component_amounts = [] %}
+                                            {% set discount_flags = [] %}
+                                            
+                                            {% for component in record.tuition_components %}
+                                                {% set comp_amount = component.amount|float if component.amount else 0 %}
+                                                {% set _ = component_amounts.append(comp_amount) %}
+                                                {% if component.discount_percentage and component.discount_percentage > 0 %}
+                                                    {% set _ = discount_flags.append(true) %}
+                                                {% endif %}
+                                            {% endfor %}
+                                            
+                                            {% set component_total = component_amounts|sum %}
+                                            {% set has_component_discounts = discount_flags|length > 0 %}
+                                            
+                                            {# Check if it's a scholarship (very low total tuition) #}
+                                            {% if component_total <= 100 %}
+                                                <span class="badge bg-success">Full Scholarship</span>
+                                            {# Check if any component has discounts applied #}
+                                            {% elif has_component_discounts %}
+                                                <span class="badge bg-warning">Reduced Tuition</span>
+                                            {% else %}
+                                                <span class="badge bg-primary">Full Tuition</span>
+                                            {% endif %}
+                                        {% else %}
+                                            {# Non-component tuition logic #}
+                                            {% if actual_tuition <= 100 %}
+                                                <span class="badge bg-success">Full Scholarship</span>
+                                            {% elif (record.discount_percentage and record.discount_percentage > 0) or (record.final_tuition_amount and record.tuition_amount and record.final_tuition_amount < record.tuition_amount) %}
+                                                <span class="badge bg-warning">Reduced Tuition</span>
+                                            {% else %}
+                                                <span class="badge bg-primary">Full Tuition</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">Not Set</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-center">
+                                    {% if record.financial_aid_form_received %}
+                                        <i class="fas fa-check-circle text-success fa-lg" title="Received {{ record.financial_aid_form_received_date.strftime('%m/%d/%Y') if record.financial_aid_form_received_date }}"></i>
+                                    {% elif record.financial_aid_form_sent %}
+                                        <i class="fas fa-paper-plane text-warning fa-lg" title="Sent {{ record.financial_aid_form_sent_date.strftime('%m/%d/%Y') if record.financial_aid_form_sent_date }}"></i>
+                                        <br>
+                                        <button class="btn btn-sm btn-link p-0" onclick="markFAReceived('{{ record.id }}')">
+                                            <small>Mark Received</small>
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-outline-warning" onclick="sendFAForm('{{ record.student.id }}')">
+                                            <i class="fas fa-envelope"></i> Send
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-center">
+                                    {% if record.enrollment_contract_received or record.enhanced_contract_signed %}
+                                        <i class="fas fa-check-circle text-success fa-lg" title="Received {{ (record.enrollment_contract_received_date or record.enhanced_contract_signed_date).strftime('%m/%d/%Y') if (record.enrollment_contract_received_date or record.enhanced_contract_signed_date) }}"></i>
+                                    {% elif record.enrollment_contract_sent or record.enhanced_contract_sent %}
+                                        <i class="fas fa-paper-plane text-info fa-lg" title="Sent {{ (record.enrollment_contract_sent_date or record.enhanced_contract_sent_date).strftime('%m/%d/%Y') if (record.enrollment_contract_sent_date or record.enhanced_contract_sent_date) }}"></i>
+                                        <br>
+                                        <button class="btn btn-sm btn-link p-0" onclick="markContractReceived('{{ record.id }}')">
+                                            <small>Mark Received</small>
+                                        </button>
+                                    {% elif record.enhanced_contract_generated %}
+                                        <button class="btn btn-sm btn-outline-success" onclick="generateContract('{{ record.student.id }}')">
+                                            <i class="fas fa-paper-plane"></i> Send
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-outline-info" onclick="generateContract('{{ record.student.id }}')">
+                                            <i class="fas fa-file-contract"></i> Generate
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-center">
+                                    {% if record.admire_charges_setup %}
+                                        <i class="fas fa-check-circle text-success fa-lg" title="Setup {{ record.admire_charges_setup_date.strftime('%m/%d/%Y') if record.admire_charges_setup_date }}"></i>
+                                        {% if record.admire_account_number %}
+                                            <br><small class="text-muted">#{{ record.admire_account_number }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="markAdmireSetup('{{ record.id }}')">
+                                            <i class="fas fa-check"></i> Mark Setup
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                {% if record.fafsa_required %}
+                                    <div class="text-center">
+                                        {% if record.fafsa_status == 'Approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                            {% if record.pell_grant_amount %}
+                                                <br><small>${{ "%.2f"|format(record.pell_grant_amount) }}</small>
+                                            {% endif %}
+                                        {% elif record.fafsa_status == 'Submitted' %}
+                                            <span class="badge bg-info">Submitted</span>
+                                        {% elif record.fafsa_status == 'In Progress' %}
+                                            <span class="badge bg-warning">In Progress</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Not Started</span>
+                                        {% endif %}
+                                        <br>
+                                        <button class="btn btn-sm btn-link p-0" onclick="updateFAFSAStatus('{{ record.id }}')">
+                                            <small>Update</small>
+                                        </button>
+                                    </div>
+                                {% else %}
+                                    <small class="text-muted">N/A</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="text-center">
+                                    {% if record.document_count > 0 %}
+                                        <button class="btn btn-sm btn-outline-primary" onclick="viewDocuments('{{ record.id }}')">
+                                            <i class="fas fa-folder-open"></i> {{ record.document_count }}
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="uploadDocument('{{ record.id }}')">
+                                            <i class="fas fa-upload"></i> Upload
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick="viewFinancialDetails('{{ record.student.id }}')" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-warning" onclick="editFinancialRecord('{{ record.id }}')" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    {% if record.student.status != 'Inactive' %}
+                                        <button class="btn btn-outline-danger" onclick="unenrollStudent('{{ record.student.id }}')" title="Unenroll">
+                                            <i class="fas fa-user-times"></i>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Set Tuition Modal - Enhanced with Components -->
+<div class="modal fade" id="setTuitionModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Set Tuition Components</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- FAFSA Requirement Section -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">FAFSA Requirement for Academic Year</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="fafsaRequired">
+                                    <label class="form-check-label" for="fafsaRequired">
+                                        <strong>Student must complete FAFSA for this academic year</strong>
+                                    </label>
+                                </div>
+                                <small class="text-muted">Check this box if the student is required to complete FAFSA for financial aid eligibility this year.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Load Defaults Button -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <button type="button" class="btn btn-outline-secondary" onclick="loadApplicationDefaults()">
+                            <i class="fas fa-download"></i> Load Application Defaults
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tuition Components Section -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <h6><i class="fas fa-list"></i> Tuition Components</h6>
+                        <div id="tuitionComponentsList">
+                            <!-- Components will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Proration Section -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-calendar-alt"></i> Proration
+                                    <small class="text-muted ms-2">Reduces amounts based on partial enrollment period</small>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Proration %</label>
+                                        <input type="number" class="form-control" id="prorationPercentage" 
+                                               min="0" max="100" value="100" onchange="applyProration()" 
+                                               placeholder="100">
+                                        <small class="text-muted">Reduces Amount column values</small>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <label class="form-label">Reason</label>
+                                        <input type="text" class="form-control" id="prorationReason" 
+                                               placeholder="e.g., Mid-year start, Early withdrawal">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">&nbsp;</label>
+                                        <div>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="resetProration()">
+                                                <i class="fas fa-undo"></i> Reset
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-12">
+                                        <small class="text-info">
+                                            <i class="fas fa-info-circle"></i> 
+                                            <strong>Proration vs Discount:</strong> Proration reduces base amounts (for partial enrollment). 
+                                            Discounts are applied after proration for financial aid.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Global Discount Section -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-percentage"></i> Global Discount
+                                    <small class="text-muted ms-2">Applies percentage discount to all enabled components</small>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Discount %</label>
+                                        <input type="number" class="form-control" id="globalDiscount" 
+                                               min="0" max="100" value="0" onchange="applyGlobalDiscount()" 
+                                               placeholder="0">
+                                        <small class="text-muted">Applied to Amount column values</small>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <label class="form-label">Reason</label>
+                                        <input type="text" class="form-control" id="globalDiscountReason" 
+                                               placeholder="Enter reason for discount (optional)">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">&nbsp;</label>
+                                        <div>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="clearGlobalDiscount()">
+                                                <i class="fas fa-times"></i> Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Totals Section -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">Totals</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <strong>Subtotal: <span id="subtotalAmount">$0.00</span></strong>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Total Discount: <span id="totalDiscountAmount">$0.00</span></strong>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong class="text-success">Final Total: <span id="finalTotalAmount">$0.00</span></strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="saveTuitionComponents()">
+                    <i class="fas fa-save"></i> Save Tuition Components
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tuition History Modal -->
+<div class="modal fade" id="tuitionHistoryModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Student Tuition History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="tuitionHistoryContent">
+                    <!-- History content will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FAFSA Status Modal -->
+<div class="modal fade" id="fafsaStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update FAFSA Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="fafsaStatusForm">
+                    <input type="hidden" id="fafsaRecordId">
+                    <div class="mb-3">
+                        <label class="form-label">FAFSA Status</label>
+                        <select class="form-select" id="fafsaStatus">
+                            <option value="Not Started">Not Started</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Submitted">Submitted</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Denied">Denied</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Submission Date</label>
+                        <input type="date" class="form-control" id="fafsaSubmissionDate">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Pell Grant Eligible</label>
+                        <select class="form-select" id="pellGrantEligible">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="pellGrantSection" style="display: none;">
+                        <label class="form-label">Pell Grant Amount</label>
+                        <input type="number" class="form-control" id="pellGrantAmount" step="0.01">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveFAFSAStatus()">Save Status</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Document Upload Modal -->
+<div class="modal fade" id="documentUploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Financial Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="documentUploadForm" enctype="multipart/form-data">
+                    <input type="hidden" id="uploadRecordId">
+                    <div class="mb-3">
+                        <label class="form-label">Document Type</label>
+                        <select class="form-select" id="documentType">
+                            <option value="financial_aid_form">Financial Aid Form</option>
+                            <option value="enrollment_contract">Enrollment Contract</option>
+                            <option value="fafsa_document">FAFSA Document</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Select File</label>
+                        <input type="file" class="form-control" id="documentFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
+                        <small class="text-muted">Accepted formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="documentDescription" rows="2"></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-lock"></i> Documents are encrypted and stored securely
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="uploadDocumentSubmit()">Upload Document</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contract Terms Modal -->
+<div class="modal fade" id="contractTermsModal" tabindex="-1" aria-labelledby="contractTermsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="contractTermsModalLabel">
+                    <i class="fas fa-file-contract"></i> Contract Terms Setup
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Student Info -->
+                <div class="alert alert-info">
+                    <strong>Student:</strong> <span id="contractStudentName">Loading...</span>
+                    <input type="hidden" id="contractStudentId">
+                </div>
+                
+                <!-- Financial Summary -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">Total Tuition</h6>
+                                <h4 class="text-primary" id="totalTuitionAmount">$0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">Registration Fee</h6>
+                                <h4 class="text-secondary" id="registrationFeeAmount">$0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Period -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold mb-3">Payment Period</h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Start Month/Year</label>
+                        <div class="row">
+                            <div class="col-8">
+                                <select class="form-select" id="paymentStartMonth" onchange="calculatePaymentTerms()">
+                                    <option value="0">January</option>
+                                    <option value="1">February</option>
+                                    <option value="2">March</option>
+                                    <option value="3">April</option>
+                                    <option value="4">May</option>
+                                    <option value="5">June</option>
+                                    <option value="6">July</option>
+                                    <option value="7">August</option>
+                                    <option value="8" selected>September</option>
+                                    <option value="9">October</option>
+                                    <option value="10">November</option>
+                                    <option value="11">December</option>
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <input type="number" class="form-control" id="paymentStartYear" value="2024" min="2024" max="2030" onchange="calculatePaymentTerms()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">End Month/Year</label>
+                        <div class="row">
+                            <div class="col-8">
+                                <select class="form-select" id="paymentEndMonth" onchange="calculatePaymentTerms()">
+                                    <option value="0">January</option>
+                                    <option value="1">February</option>
+                                    <option value="2">March</option>
+                                    <option value="3">April</option>
+                                    <option value="4">May</option>
+                                    <option value="5" selected>June</option>
+                                    <option value="6">July</option>
+                                    <option value="7">August</option>
+                                    <option value="8">September</option>
+                                    <option value="9">October</option>
+                                    <option value="10">November</option>
+                                    <option value="11">December</option>
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <input type="number" class="form-control" id="paymentEndYear" value="2025" min="2024" max="2030" onchange="calculatePaymentTerms()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Registration Fee Handling -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold mb-3">Registration Fee Handling</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="registrationFeeOption" id="regFeeUpfront" value="upfront" checked onchange="calculatePaymentTerms()">
+                            <label class="form-check-label" for="regFeeUpfront">
+                                <strong>Pay Separately (Upfront)</strong> - Registration fee due at contract signing
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="registrationFeeOption" id="regFeeRolled" value="rolled" onchange="calculatePaymentTerms()">
+                            <label class="form-check-label" for="regFeeRolled">
+                                <strong>Roll into Payments</strong> - Include registration fee in monthly payments
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calculated Payment Summary -->
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title">Payment Summary</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Number of Payments:</strong><br>
+                                <span class="h5 text-primary" id="numberOfPayments">0</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Monthly Payment:</strong><br>
+                                <span class="h5 text-success" id="monthlyPaymentAmount">$0.00</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Total Amount:</strong><br>
+                                <span class="h5 text-info" id="totalPaymentAmount">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted" id="paymentSummaryNote"></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="previewContract()">
+                    <i class="fas fa-eye"></i> Preview Contract
+                </button>
+                <button type="button" class="btn btn-success" onclick="generateAndSendContract()">
+                    <i class="fas fa-paper-plane"></i> Generate & Send
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contract Preview Modal -->
+<div class="modal fade" id="contractPreviewModal" tabindex="-1" aria-labelledby="contractPreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="contractPreviewModalLabel">
+                    <i class="fas fa-file-pdf"></i> Contract Preview
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="contractPreviewContent" style="min-height: 600px;">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading preview...</span>
+                        </div>
+                        <div class="mt-3">Generating contract preview...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="backToTerms()">
+                    <i class="fas fa-arrow-left"></i> Back to Terms
+                </button>
+                <button type="button" class="btn btn-success" onclick="generateAndSendContract()">
+                    <i class="fas fa-paper-plane"></i> Generate & Send Contract
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contract Signing Method Selection Modal -->
+<div class="modal fade" id="contractSigningMethodModal" tabindex="-1" aria-labelledby="contractSigningMethodModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="contractSigningMethodModalLabel">
+                    <i class="fas fa-signature"></i> Choose Contract Signing Method
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Student: <span id="signingMethodStudentName" class="fw-bold"></span></label>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label">Select Signing Method:</label>
+                    <div class="list-group">
+                        <!-- Digital Only Option -->
+                        <label class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <div>
+                                    <input class="form-check-input me-2" type="radio" name="signingMethod" value="digital_only" id="digitalOnly">
+                                    <strong><i class="fas fa-signature text-primary"></i> Digital Signature Only</strong>
+                                </div>
+                            </div>
+                            <p class="mb-1 text-muted">Recipients sign electronically using OpenSign</p>
+                            <small class="text-success">✅ Fastest completion • ✅ Automatic tracking • ✅ Legally binding</small>
+                        </label>
+                        
+                        <!-- Print Only Option -->
+                        <label class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <div>
+                                    <input class="form-check-input me-2" type="radio" name="signingMethod" value="print_only" id="printOnly" checked>
+                                    <strong><i class="fas fa-print text-info"></i> Print & Upload Only</strong>
+                                </div>
+                            </div>
+                            <p class="mb-1 text-muted">Recipients download, print, sign by hand, and upload</p>
+                            <small class="text-info">✅ Traditional signing • ✅ No digital requirements • ✅ Secure upload portal</small>
+                        </label>
+                        
+                        <!-- Hybrid Option -->
+                        <label class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <div>
+                                    <input class="form-check-input me-2" type="radio" name="signingMethod" value="both_available" id="hybridMethod">
+                                    <strong><i class="fas fa-arrows-alt text-success"></i> Hybrid - Both Options</strong>
+                                </div>
+                            </div>
+                            <p class="mb-1 text-muted">Recipients choose between digital signature OR print & upload</p>
+                            <small class="text-success">✅ Maximum flexibility • ✅ Accommodates all preferences • ✅ Fastest completion</small>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> <strong>Recommendation:</strong> Print & Upload is the default method that works for all families. Use Hybrid to give families the choice between digital and print options.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="proceedWithSelectedSigningMethod()">
+                    <i class="fas fa-paper-plane"></i> Send Contract
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.financial-row td {
+    vertical-align: middle;
+}
+
+.financial-row:hover {
+    background-color: #f8f9fa;
+}
+
+.financial-section {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.modal-xl {
+    max-width: 95%;
+}
+
+.tuition-component-row {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.component-amount, .component-discount, .component-final {
+    min-width: 100px !important;
+}
+
+.input-group-text {
+    min-width: 35px;
+}
+
+.form-control-sm {
+    font-size: 0.875rem;
+}
+
+#tuitionModal .modal-dialog {
+    max-width: 1200px;
+}
+
+.component-checkbox {
+    transform: scale(1.2);
+}
+
+/* Enhanced contract button styling */
+.btn-xs {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    border-radius: 0.2rem;
+}
+
+.contract-btn .btn-group-vertical .btn {
+    border-radius: 0;
+    border-bottom-width: 0;
+}
+
+.contract-btn .btn-group-vertical .btn:first-child {
+    border-top-left-radius: 0.2rem;
+    border-top-right-radius: 0.2rem;
+}
+
+.contract-btn .btn-group-vertical .btn:last-child {
+    border-bottom-left-radius: 0.2rem;
+    border-bottom-right-radius: 0.2rem;
+    border-bottom-width: 1px;
+}
+
+.contract-btn .btn-group-vertical .btn:only-child {
+    border-radius: 0.2rem;
+    border-bottom-width: 1px;
+}
+
+/* Make alert smaller and more compact */
+.alert.py-1 {
+    margin-bottom: 0.25rem !important;
+}
+
+/* Ensure contract buttons take full width of their container */
+.contract-btn {
+    min-width: 80px;
+}
+</style>
+
+<script>
+// Suppress browser extension errors
+window.addEventListener('error', function(e) {
+    if (e.message && e.message.includes('message channel closed')) {
+        e.stopImmediatePropagation();
+        return false;
+    }
+});
+
+window.addEventListener('unhandledrejection', function(e) {
+    if (e.reason && e.reason.message && e.reason.message.includes('message channel closed')) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        return false;
+    }
+});
+
+let currentStudentData = null;
+let tuitionComponents = [];
+let selectedAcademicYear = {{ selected_academic_year_dict | tojson if selected_academic_year_dict else 'null' }};
+
+// Main function to set tuition for a student
+function setTuition(studentId) {
+    currentStudentData = { id: studentId };
+    
+    // Load student financial info and components
+    const academicYearParam = selectedAcademicYear ? `&academic_year_id=${selectedAcademicYear.id}` : '';
+    Promise.all([
+        fetch(`/api/students/${studentId}/financial-info`).then(r => r.json()),
+        fetch(`/api/tuition-components/by-division?student_id=${studentId}${academicYearParam}`).then(r => r.json())
+    ])
+    .then(([studentInfo, componentsData]) => {
+        currentStudentData = { ...currentStudentData, ...studentInfo };
+        tuitionComponents = componentsData.components || [];
+        
+        // Load FAFSA status for current year
+        const currentYear = new Date().getFullYear();
+        document.getElementById('fafsaRequired').checked = studentInfo.fafsa_required_this_year || false;
+        
+        // Load proration data if exists (check if any component is prorated)
+        let hasProration = false;
+        let prorationPercentage = 100;
+        let prorationReason = '';
+        
+        tuitionComponents.forEach(component => {
+            if (component.is_prorated && component.proration_percentage < 100) {
+                hasProration = true;
+                prorationPercentage = component.proration_percentage;
+                prorationReason = component.proration_reason || '';
+            }
+        });
+        
+        if (hasProration) {
+            document.getElementById('prorationPercentage').value = prorationPercentage;
+            document.getElementById('prorationReason').value = prorationReason;
+        }
+        
+        renderTuitionComponents();
+        updateTotals();
+        
+        const modal = new bootstrap.Modal(document.getElementById('setTuitionModal'));
+        modal.show();
+    })
+    .catch(error => {
+        console.error('Error loading tuition data:', error);
+        window.toast.error('Failed to load tuition information');
+    });
+}
+
+// Render tuition components
+function renderTuitionComponents() {
+    const container = document.getElementById('tuitionComponentsList');
+    let html = '';
+    
+    tuitionComponents.forEach((component, index) => {
+        const isEnabled = component.is_required || component.is_enabled;
+        const componentType = component.type || component.component_type;
+        const badgeColor = component.is_required ? 'primary' : 
+                         componentType === 'room' ? 'info' : 
+                         componentType === 'board' ? 'success' : 'secondary';
+        
+        html += `
+            <div class="tuition-component-row" data-component-id="${component.id}">
+                <div class="row align-items-center">
+                    <div class="col-md-1">
+                        <div class="form-check">
+                            <input class="form-check-input component-checkbox" type="checkbox" 
+                                   ${isEnabled ? 'checked' : ''} 
+                                   ${component.is_required ? 'disabled' : ''} 
+                                   onchange="toggleComponent(${index})">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div>
+                            <strong>${component.name}</strong>
+                            <span class="badge bg-${badgeColor} ms-1">${componentType}</span>
+                        </div>
+                        <small class="text-muted">${component.description}</small>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Amount</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control component-amount" 
+                                   value="${component.amount}" step="0.01" 
+                                   ${!isEnabled ? 'disabled' : ''} 
+                                   onchange="updateTotals()" 
+                                   style="min-width: 100px;">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Discount %</label>
+                        <input type="number" class="form-control form-control-sm component-discount" 
+                               value="${component.discount_percentage || 0}" 
+                               min="0" max="100" 
+                               ${!isEnabled ? 'disabled' : ''} 
+                               onchange="updateTotals()"
+                               style="min-width: 80px;">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Final Amount</label>
+                        <input type="text" class="form-control form-control-sm component-final" readonly 
+                               value="$${component.calculated_amount}"
+                               style="min-width: 100px;">
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                onclick="resetComponent(${index})" title="Reset to default">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Toggle component enabled/disabled
+function toggleComponent(index) {
+    const component = tuitionComponents[index];
+    const checkbox = document.querySelector(`[data-component-id="${component.id}"] .component-checkbox`);
+    const amountInput = document.querySelector(`[data-component-id="${component.id}"] .component-amount`);
+    const discountInput = document.querySelector(`[data-component-id="${component.id}"] .component-discount`);
+    
+    const isEnabled = checkbox.checked;
+    component.is_enabled = isEnabled;
+    
+    amountInput.disabled = !isEnabled;
+    discountInput.disabled = !isEnabled;
+    
+    updateTotals();
+}
+
+// Update totals calculation
+function updateTotals() {
+    let subtotal = 0;
+    let totalDiscount = 0;
+    
+    tuitionComponents.forEach((component, index) => {
+        const row = document.querySelector(`[data-component-id="${component.id}"]`);
+        const checkbox = row.querySelector('.component-checkbox');
+        const amountInput = row.querySelector('.component-amount');
+        const discountInput = row.querySelector('.component-discount');
+        const finalInput = row.querySelector('.component-final');
+        
+        if (checkbox.checked) {
+            const amount = parseFloat(amountInput.value) || 0;
+            const discount = parseFloat(discountInput.value) || 0;
+            const discountAmount = (amount * discount) / 100;
+            const finalAmount = amount - discountAmount;
+            
+            subtotal += amount;
+            totalDiscount += discountAmount;
+            
+            finalInput.value = `$${finalAmount.toFixed(2)}`;
+            component.calculated_amount = finalAmount;
+        } else {
+            finalInput.value = '$0.00';
+            component.calculated_amount = 0;
+        }
+    });
+    
+    // Apply global discount
+    const globalDiscount = parseFloat(document.getElementById('globalDiscount').value) || 0;
+    const globalDiscountAmount = (subtotal * globalDiscount) / 100;
+    totalDiscount += globalDiscountAmount;
+    
+    const finalTotal = subtotal - totalDiscount;
+    
+    document.getElementById('subtotalAmount').textContent = `$${subtotal.toFixed(2)}`;
+    document.getElementById('totalDiscountAmount').textContent = `$${totalDiscount.toFixed(2)}`;
+    document.getElementById('finalTotalAmount').textContent = `$${finalTotal.toFixed(2)}`;
+}
+
+// Apply global discount to all enabled components
+function applyGlobalDiscount() {
+    const globalDiscount = parseFloat(document.getElementById('globalDiscount').value) || 0;
+    
+    tuitionComponents.forEach((component, index) => {
+        const row = document.querySelector(`[data-component-id="${component.id}"]`);
+        const checkbox = row.querySelector('.component-checkbox');
+        const discountInput = row.querySelector('.component-discount');
+        
+        // Apply global discount to ALL enabled components (not just non-required ones)
+        if (checkbox.checked) {
+            discountInput.value = globalDiscount;
+            
+            // Update the component object to reflect the change
+            component.discount_percentage = globalDiscount;
+        }
+    });
+    
+    updateTotals();
+    window.toast.info(`Applied ${globalDiscount}% discount to all enabled components`);
+}
+
+// Clear global discount from all components
+function clearGlobalDiscount() {
+    // Clear the global discount input
+    document.getElementById('globalDiscount').value = 0;
+    document.getElementById('globalDiscountReason').value = '';
+    
+    // Remove discount from all components
+    tuitionComponents.forEach((component, index) => {
+        const row = document.querySelector(`[data-component-id="${component.id}"]`);
+        const discountInput = row.querySelector('.component-discount');
+        
+        discountInput.value = 0;
+        component.discount_percentage = 0;
+    });
+    
+    updateTotals();
+    window.toast.info('Cleared all discounts');
+}
+
+// Store original amounts for proration reset
+let originalComponentAmounts = {};
+
+// Apply proration to all enabled components (reduces amounts, not discounts)
+function applyProration() {
+    const prorationPercentage = parseFloat(document.getElementById('prorationPercentage').value) || 100;
+    
+    // Store original amounts if not already stored
+    if (Object.keys(originalComponentAmounts).length === 0) {
+        tuitionComponents.forEach(component => {
+            const row = document.querySelector(`[data-component-id="${component.id}"]`);
+            const amountInput = row.querySelector('.component-amount');
+            originalComponentAmounts[component.id] = parseFloat(amountInput.value) || component.default_amount || 0;
+        });
+    }
+    
+    tuitionComponents.forEach((component, index) => {
+        const row = document.querySelector(`[data-component-id="${component.id}"]`);
+        const checkbox = row.querySelector('.component-checkbox');
+        const amountInput = row.querySelector('.component-amount');
+        
+        // Apply proration to ALL enabled components by reducing their amounts
+        if (checkbox.checked) {
+            const originalAmount = originalComponentAmounts[component.id];
+            const proratedAmount = originalAmount * (prorationPercentage / 100);
+            amountInput.value = proratedAmount.toFixed(2);
+            
+            // Update the component object
+            component.amount = proratedAmount;
+        }
+    });
+    
+    updateTotals();
+    
+    if (prorationPercentage < 100) {
+        window.toast.info(`Applied ${prorationPercentage}% proration to all enabled components`);
+    }
+}
+
+// Reset proration back to original amounts
+function resetProration() {
+    // Reset the proration input
+    document.getElementById('prorationPercentage').value = 100;
+    document.getElementById('prorationReason').value = '';
+    
+    // Restore original amounts
+    tuitionComponents.forEach(component => {
+        const row = document.querySelector(`[data-component-id="${component.id}"]`);
+        const amountInput = row.querySelector('.component-amount');
+        
+        if (originalComponentAmounts[component.id] !== undefined) {
+            amountInput.value = originalComponentAmounts[component.id].toFixed(2);
+            component.amount = originalComponentAmounts[component.id];
+        }
+    });
+    
+    // Clear the stored original amounts for next time
+    originalComponentAmounts = {};
+    
+    updateTotals();
+    window.toast.info('Reset all amounts to original values');
+}
+
+// Load application defaults
+function loadApplicationDefaults() {
+    if (!currentStudentData?.id) return;
+    
+    fetch(`/api/students/${currentStudentData.id}/application-defaults`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Apply defaults to components
+                tuitionComponents.forEach((component, index) => {
+                    const row = document.querySelector(`[data-component-id="${component.id}"]`);
+                    const checkbox = row.querySelector('.component-checkbox');
+                    
+                    // Set component based on application preferences
+                    if (component.type === 'room' && data.application_preferences?.dormitory_meals_option?.includes('dorm')) {
+                        checkbox.checked = true;
+                        component.is_enabled = true;
+                    } else if (component.type === 'board' && data.application_preferences?.dormitory_meals_option?.includes('meal')) {
+                        checkbox.checked = true;
+                        component.is_enabled = true;
+                    }
+                    
+                    toggleComponent(index);
+                });
+                
+                // Set FAFSA requirement based on application
+                if (data.application_preferences?.financial_aid_request) {
+                    document.getElementById('fafsaRequired').checked = true;
+                }
+                
+                updateTotals();
+                window.toast.success('Application defaults loaded');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading defaults:', error);
+            window.toast.error('Failed to load application defaults');
+        });
+}
+
+// Reset component to default values
+function resetComponent(index) {
+    const component = tuitionComponents[index];
+    const row = document.querySelector(`[data-component-id="${component.id}"]`);
+    
+    row.querySelector('.component-amount').value = component.default_amount || component.amount;
+    row.querySelector('.component-discount').value = 0;
+    
+    updateTotals();
+}
+
+// Save tuition components
+function saveTuitionComponents() {
+    if (!currentStudentData?.id) {
+        window.toast.error('No student selected');
+        return;
+    }
+    
+    // Prepare component data
+    const componentData = tuitionComponents.map(component => {
+        const row = document.querySelector(`[data-component-id="${component.id}"]`);
+        const checkbox = row.querySelector('.component-checkbox');
+        const amountInput = row.querySelector('.component-amount');
+        const discountInput = row.querySelector('.component-discount');
+        
+        const amount = parseFloat(amountInput.value) || 0;
+        const discountPercentage = parseFloat(discountInput.value) || 0;
+        const finalAmount = amount * (1 - discountPercentage / 100);
+        
+        return {
+            component_id: component.id,
+            is_enabled: checkbox.checked,
+            amount: amount,
+            discount_percentage: discountPercentage,
+            final_amount: finalAmount
+        };
+    }).filter(comp => comp.is_enabled);
+    
+    console.log('Component data being saved:', componentData);
+    
+    // Automatically detect dorm/meal program participation
+    const hasDormComponent = componentData.some(comp => {
+        const component = tuitionComponents.find(tc => tc.id === comp.component_id);
+        return component && (component.type === 'room' || component.component_type === 'room');
+    });
+    const hasMealComponent = componentData.some(comp => {
+        const component = tuitionComponents.find(tc => tc.id === comp.component_id);
+        return component && (component.type === 'board' || component.component_type === 'board');
+    });
+    
+    const saveData = {
+        components: componentData,
+        global_discount_percentage: parseFloat(document.getElementById('globalDiscount').value) || 0,
+        global_discount_reason: document.getElementById('globalDiscountReason').value || '',
+        proration_percentage: parseFloat(document.getElementById('prorationPercentage').value) || 100,
+        proration_reason: document.getElementById('prorationReason').value || '',
+        fafsa_required: document.getElementById('fafsaRequired').checked,
+        // Automatically set based on components selected
+        dorm_program_this_year: hasDormComponent,
+        meal_program_this_year: hasMealComponent,
+        academic_year_id: selectedAcademicYear ? selectedAcademicYear.id : null
+    };
+    
+    console.log('Saving tuition components:', saveData);
+    
+    fetch(`/api/students/${currentStudentData.id}/tuition-components/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(saveData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        console.log('Save response:', result);
+        if (result.success) {
+            window.toast.success('Tuition components saved successfully');
+            bootstrap.Modal.getInstance(document.getElementById('setTuitionModal')).hide();
+            
+            // Update the contract status UI if contract_status is returned
+            if (result.contract_status) {
+                console.log('Updating contract status to:', result.contract_status);
+                updateContractButtonUI(currentStudentData.id, result.contract_status);
+                
+                // Show a warning if contract became outdated
+                if (result.contract_status.includes('outdated')) {
+                    window.toast.warning('Contract status updated: Regeneration required due to tuition changes');
+                }
+            }
+            
+            // Refresh the financial data for this student
+            refreshStudentFinancialData(currentStudentData.id);
+        } else {
+            console.error('Save error:', result);
+            const errorMessage = result.error || result.message || 'Unknown error occurred';
+            window.toast.error('Error saving: ' + errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving tuition:', error);
+        window.toast.error('Failed to save tuition components');
+    });
+}
+
+// Show tuition history
+function showTuitionHistory(studentId) {
+    fetch(`/api/students/${studentId}/tuition-history`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderTuitionHistory(data.history);
+                const modal = new bootstrap.Modal(document.getElementById('tuitionHistoryModal'));
+                modal.show();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading history:', error);
+            window.toast.error('Failed to load tuition history');
+        });
+}
+
+// Render tuition history
+function renderTuitionHistory(history) {
+    const container = document.getElementById('tuitionHistoryContent');
+    let html = '';
+    
+    if (!history || history.length === 0) {
+        html = '<div class="text-center text-muted py-4">No tuition history available</div>';
+    } else {
+        history.forEach(year => {
+            html += `
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="mb-0">Academic Year ${year.academic_year}</h6>
+                                <small class="text-muted">
+                                    ${year.dorm_program ? '<i class="fas fa-bed text-info"></i> Dorm' : ''}
+                                    ${year.meal_program ? '<i class="fas fa-utensils text-success ms-2"></i> Meals' : ''}
+                                    ${year.fafsa_required ? '<i class="fas fa-file-alt text-warning ms-2"></i> FAFSA Required' : ''}
+                                </small>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <h6 class="mb-0 text-success">Total: $${year.total_tuition_charged.toFixed(2)}</h6>
+                                ${year.financial_aid_amount > 0 ? `<small class="text-muted">Aid: $${year.financial_aid_amount.toFixed(2)}</small>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Component</th>
+                                        <th>Type</th>
+                                        <th class="text-end">Amount</th>
+                                        <th class="text-end">Discount</th>
+                                        <th class="text-end">Final</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    if (year.components && year.components.length > 0) {
+                        year.components.forEach(comp => {
+                            html += `
+                                <tr>
+                                    <td>${comp.name}</td>
+                                    <td><span class="badge bg-secondary">${comp.type}</span></td>
+                                    <td class="text-end">$${comp.amount.toFixed(2)}</td>
+                                    <td class="text-end">${comp.discount_percentage > 0 ? comp.discount_percentage + '%' : '-'}</td>
+                                    <td class="text-end"><strong>$${comp.final_amount.toFixed(2)}</strong></td>
+                                </tr>
+                            `;
+                        });
+                    }
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                        ${year.notes ? `<div class="mt-2"><small class="text-muted">${year.notes}</small></div>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+    }
+    
+    container.innerHTML = html;
+}
+
+// Change academic year for financial module
+function changeFinancialAcademicYear() {
+    const yearId = document.getElementById('financialAcademicYearSelector').value;
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('academic_year_id', yearId);
+    window.location.href = currentUrl.toString();
+}
+
+// View tuition history - redirect to existing function
+function viewTuitionHistory(studentId) {
+    showTuitionHistory(studentId);
+}
+
+// Quick adjust tuition - show a simple modal for percentage adjustments
+function adjustTuition(studentId) {
+    const adjustModal = document.createElement('div');
+    adjustModal.innerHTML = `
+        <div class="modal fade" id="quickAdjustModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Quick Tuition Adjustment</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Adjustment Type</label>
+                            <select class="form-select" id="adjustmentType">
+                                <option value="percentage">Percentage Discount</option>
+                                <option value="amount">Fixed Amount Discount</option>
+                                <option value="override">Override Total</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Value</label>
+                            <input type="number" class="form-control" id="adjustmentValue" placeholder="Enter value">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reason</label>
+                            <input type="text" class="form-control" id="adjustmentReason" placeholder="Reason for adjustment">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="applyQuickAdjustment('${studentId}')">Apply Adjustment</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(adjustModal);
+    const modal = new bootstrap.Modal(document.getElementById('quickAdjustModal'));
+    modal.show();
+    
+    // Clean up when modal is hidden
+    modal._element.addEventListener('hidden.bs.modal', () => {
+        document.body.removeChild(adjustModal);
+    });
+}
+
+// Apply quick adjustment
+function applyQuickAdjustment(studentId) {
+    const adjustmentType = document.getElementById('adjustmentType').value;
+    const adjustmentValue = parseFloat(document.getElementById('adjustmentValue').value) || 0;
+    const adjustmentReason = document.getElementById('adjustmentReason').value;
+    
+    if (!adjustmentValue || !adjustmentReason) {
+        window.toast.error('Please provide both value and reason for adjustment');
+        return;
+    }
+    
+    // This would make an API call to apply the adjustment
+    fetch(`/api/financial/students/${studentId}/quick-adjust`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            adjustment_type: adjustmentType,
+            adjustment_value: adjustmentValue,
+            adjustment_reason: adjustmentReason
+        })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            window.toast.success('Tuition adjustment applied successfully');
+            bootstrap.Modal.getInstance(document.getElementById('quickAdjustModal')).hide();
+            location.reload();
+        } else {
+            window.toast.error('Error applying adjustment: ' + result.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error applying adjustment:', error);
+        window.toast.error('Failed to apply tuition adjustment');
+    });
+}
+
+// Reset tuition - clear all tuition data
+function resetTuition(studentId) {
+    if (!confirm('Are you sure you want to reset all tuition data for this student? This action cannot be undone.')) {
+        return;
+    }
+    
+    fetch(`/api/financial/students/${studentId}/reset-tuition`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            window.toast.success('Tuition data reset successfully');
+            location.reload();
+        } else {
+            window.toast.error('Error resetting tuition: ' + result.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error resetting tuition:', error);
+        window.toast.error('Failed to reset tuition data');
+    });
+}
+
+// Show tuition settings page
+function showTuitionSettings() {
+    window.location.href = "{{ url_for('tuition_components.tuition_settings') }}";
+}
+
+// Show financial reports (placeholder)
+function showFinancialReports() {
+    window.toast.info('Financial reports feature coming soon');
+}
+
+// Show bulk actions (placeholder)
+function showBulkActions() {
+    window.toast.info('Bulk actions feature coming soon');
+}
+
+// Filter functions
+function applyFilters() {
+    const division = document.getElementById('divisionFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    const tuitionType = document.getElementById('tuitionTypeFilter').value;
+    const search = document.getElementById('searchFilter').value.toLowerCase();
+    
+    console.log('Applying filters:', { division, status, tuitionType, search });
+    
+    const rows = document.querySelectorAll('.financial-row');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        let show = true;
+        
+        // Apply division filter
+        if (division && row.dataset.division !== division) show = false;
+        
+        // Apply tuition type filter
+        if (tuitionType && row.dataset.tuitionType !== tuitionType) {
+            console.log(`Filtering out row - Expected: ${tuitionType}, Actual: ${row.dataset.tuitionType}`);
+            show = false;
+        }
+        
+        // Apply status filter (based on various status indicators)
+        if (status) {
+            const cells = row.querySelectorAll('td');
+            // FA Form is in the 4th column (index 3), Contract is in 5th column (index 4), Admire is in 6th column (index 5)
+            const faFormCell = cells[3];
+            const contractCell = cells[4];
+            const admireCell = cells[5];
+            
+            const faFormReceived = faFormCell ? faFormCell.querySelector('.fa-check-circle') : null;
+            const contractReceived = contractCell ? contractCell.querySelector('.fa-check-circle') : null;
+            const admireSetup = admireCell ? admireCell.querySelector('.fa-check-circle') : null;
+            
+            let statusMatch = false;
+            
+            switch (status) {
+                case 'active':
+                    // Consider active if student has tuition set and no major issues
+                    statusMatch = row.dataset.tuitionType !== 'not-set';
+                    break;
+                case 'pending':
+                    // Consider pending if FA form or contract is not received
+                    statusMatch = !faFormReceived || !contractReceived;
+                    break;
+                case 'complete':
+                    // Consider complete if FA form, contract, and Admire are all done
+                    statusMatch = faFormReceived && contractReceived && admireSetup;
+                    break;
+                case 'inactive':
+                    // Consider inactive if no tuition is set
+                    statusMatch = row.dataset.tuitionType === 'not-set';
+                    break;
+            }
+            
+            if (!statusMatch) show = false;
+        }
+        
+        // Apply search filter
+        if (search && !row.textContent.toLowerCase().includes(search)) show = false;
+        
+        row.style.display = show ? '' : 'none';
+        if (show) visibleCount++;
+    });
+    
+    console.log(`Filter applied: ${visibleCount} of ${rows.length} rows visible`);
+}
+
+// Enhanced contract generation with terms setup
+let currentContractStudent = null;
+
+function generateContract(studentId) {
+    currentContractStudent = studentId;
+    
+    console.log('=== STARTING CONTRACT GENERATION ===');
+    console.log('Student ID:', studentId);
+    console.log('Selected Academic Year:', selectedAcademicYear);
+    
+    // Get student financial data first
+    fetch(`/api/students/${studentId}/financial-info`)
+    .then(response => {
+        console.log('Financial info response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(studentData => {
+        console.log('Student data received:', studentData);
+        
+        if (studentData.student && studentData.student.student_name) {
+            // Populate student info in modal
+            document.getElementById('contractStudentName').textContent = studentData.student.student_name || 'Unknown Student';
+            document.getElementById('contractStudentId').value = studentId;
+            
+            // Get tuition components to calculate total
+            const academicYearParam = selectedAcademicYear ? `&academic_year_id=${selectedAcademicYear.id}` : '';
+            const componentsUrl = `/api/tuition-components/by-division?student_id=${studentId}${academicYearParam}`;
+            console.log('Fetching tuition components from:', componentsUrl);
+            
+            return fetch(componentsUrl);
+        } else {
+            throw new Error('Failed to load student data: ' + JSON.stringify(studentData));
+        }
+    })
+    .then(response => {
+        console.log('Tuition components response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(componentsData => {
+        console.log('Components data received:', componentsData);
+        
+        if (componentsData.success) {
+            const components = componentsData.components || [];
+            console.log('Number of components found:', components.length);
+            
+            let totalTuition = 0;
+            let registrationAmount = 0;
+            
+            // Calculate total and find registration fee
+            components.forEach(comp => {
+                if (comp.is_enabled) {
+                    const amount = comp.calculated_amount || comp.amount || 0;
+                    totalTuition += amount;
+                    
+                    if (comp.type === 'fee' || comp.name.toLowerCase().includes('registration')) {
+                        registrationAmount = amount;
+                    }
+                }
+            });
+            
+            console.log('Total tuition calculated:', totalTuition);
+            console.log('Registration amount:', registrationAmount);
+            
+            // Set default values in modal
+            document.getElementById('totalTuitionAmount').textContent = `$${totalTuition.toFixed(2)}`;
+            document.getElementById('registrationFeeAmount').textContent = `$${registrationAmount.toFixed(2)}`;
+            
+            // Set reasonable defaults
+            const currentDate = new Date();
+            const startMonth = currentDate.getMonth() < 8 ? 8 : currentDate.getMonth(); // Default to September or current month
+            const currentYear = currentDate.getFullYear();
+            
+            document.getElementById('paymentStartMonth').value = startMonth;
+            document.getElementById('paymentStartYear').value = currentYear;
+            document.getElementById('paymentEndMonth').value = (startMonth + 9) % 12; // 10 months default
+            document.getElementById('paymentEndYear').value = startMonth + 9 >= 12 ? currentYear + 1 : currentYear;
+            
+            calculatePaymentTerms(); // Calculate initial values
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('contractTermsModal'));
+            modal.show();
+        } else {
+            console.error('Failed to load tuition components:', componentsData);
+            alert('Failed to load tuition components: ' + (componentsData.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Detailed error in generateContract:', error);
+        alert('Error loading contract data: ' + error.message);
+    });
+}
+
+function calculatePaymentTerms() {
+    // Get values
+    const totalTuitionText = document.getElementById('totalTuitionAmount').textContent;
+    const registrationFeeText = document.getElementById('registrationFeeAmount').textContent;
+    
+    const totalTuition = parseFloat(totalTuitionText.replace('$', '').replace(',', '')) || 0;
+    const registrationFee = parseFloat(registrationFeeText.replace('$', '').replace(',', '')) || 0;
+    
+    const startMonth = parseInt(document.getElementById('paymentStartMonth').value);
+    const startYear = parseInt(document.getElementById('paymentStartYear').value);
+    const endMonth = parseInt(document.getElementById('paymentEndMonth').value);
+    const endYear = parseInt(document.getElementById('paymentEndYear').value);
+    
+    const registrationOption = document.querySelector('input[name="registrationFeeOption"]:checked').value;
+    
+    // Calculate number of months
+    let numberOfPayments = 0;
+    if (startYear === endYear) {
+        numberOfPayments = endMonth - startMonth + 1;
+    } else {
+        numberOfPayments = (12 - startMonth) + endMonth + 1 + (endYear - startYear - 1) * 12;
+    }
+    
+    // Ensure positive number
+    numberOfPayments = Math.max(1, numberOfPayments);
+    
+    // Calculate payment amounts
+    let amountToSpread = totalTuition;
+    let upfrontAmount = 0;
+    
+    if (registrationOption === 'upfront') {
+        amountToSpread = totalTuition - registrationFee;
+        upfrontAmount = registrationFee;
+    } else {
+        amountToSpread = totalTuition; // Include registration in payments
+    }
+    
+    const monthlyPayment = amountToSpread / numberOfPayments;
+    
+    // Update display
+    document.getElementById('numberOfPayments').textContent = numberOfPayments;
+    document.getElementById('monthlyPaymentAmount').textContent = `$${monthlyPayment.toFixed(2)}`;
+    document.getElementById('totalPaymentAmount').textContent = `$${totalTuition.toFixed(2)}`;
+    
+    // Update summary note
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    let summaryNote = `Payments from ${monthNames[startMonth]} ${startYear} to ${monthNames[endMonth]} ${endYear}`;
+    if (registrationOption === 'upfront' && upfrontAmount > 0) {
+        summaryNote += `. Registration fee of $${upfrontAmount.toFixed(2)} due upfront.`;
+    } else if (registrationOption === 'rolled') {
+        summaryNote += `. Registration fee included in monthly payments.`;
+    }
+    
+    document.getElementById('paymentSummaryNote').textContent = summaryNote;
+}
+
+function previewContract() {
+    const contractTerms = gatherContractTerms();
+    
+    // Hide terms modal and show preview modal
+    bootstrap.Modal.getInstance(document.getElementById('contractTermsModal')).hide();
+    const previewModal = new bootstrap.Modal(document.getElementById('contractPreviewModal'));
+    previewModal.show();
+    
+    // Generate preview
+    fetch('/api/financial/contract-preview', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(contractTerms)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Display preview content (could be HTML or iframe with PDF)
+            document.getElementById('contractPreviewContent').innerHTML = data.preview_html || 
+                `<div class="text-center">
+                    <iframe src="${data.preview_url}" width="100%" height="600px" frameborder="0"></iframe>
+                 </div>`;
+        } else {
+            document.getElementById('contractPreviewContent').innerHTML = 
+                `<div class="alert alert-danger">Error generating preview: ${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('contractPreviewContent').innerHTML = 
+            `<div class="alert alert-danger">Error generating preview</div>`;
+    });
+}
+
+function generateAndSendContract() {
+    const contractTerms = gatherContractTerms();
+    
+    // Show loading state
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+    
+    fetch('/api/financial/generate-contract', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(contractTerms)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modals first
+            bootstrap.Modal.getInstance(document.getElementById('contractTermsModal'))?.hide();
+            bootstrap.Modal.getInstance(document.getElementById('contractPreviewModal'))?.hide();
+            
+            // Update button UI with new status
+            updateContractButtonUI(contractTerms.student_id, data.contract_status);
+            
+            // After successful generation, automatically open the send dialog
+            setTimeout(() => {
+
+
+                sendContractDialog(contractTerms.student_id);
+            }, 500); // Small delay to let modals close
+        } else {
+            alert('Error generating contract: ' + data.error);
+        }
+        button.innerHTML = originalText;
+        button.disabled = false;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error generating contract');
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+function backToTerms() {
+    bootstrap.Modal.getInstance(document.getElementById('contractPreviewModal')).hide();
+    const termsModal = new bootstrap.Modal(document.getElementById('contractTermsModal'));
+    termsModal.show();
+}
+
+function gatherContractTerms() {
+    return {
+        student_id: document.getElementById('contractStudentId').value,
+        academic_year_id: selectedAcademicYear ? selectedAcademicYear.id : null,
+        payment_start_month: parseInt(document.getElementById('paymentStartMonth').value),
+        payment_start_year: parseInt(document.getElementById('paymentStartYear').value),
+        payment_end_month: parseInt(document.getElementById('paymentEndMonth').value),
+        payment_end_year: parseInt(document.getElementById('paymentEndYear').value),
+        registration_fee_option: document.querySelector('input[name="registrationFeeOption"]:checked').value,
+        total_tuition: parseFloat(document.getElementById('totalTuitionAmount').textContent.replace('$', '').replace(',', '')) || 0,
+        registration_fee: parseFloat(document.getElementById('registrationFeeAmount').textContent.replace('$', '').replace(',', '')) || 0,
+        number_of_payments: parseInt(document.getElementById('numberOfPayments').textContent) || 0,
+        monthly_payment: parseFloat(document.getElementById('monthlyPaymentAmount').textContent.replace('$', '').replace(',', '')) || 0
+    };
+}
+
+// Send Financial Aid Form with Email Confirmation Dialog
+function sendFAForm(studentId) {
+    // Get student data from the current row
+    const row = document.querySelector(`tr[data-student-id="${studentId}"]`);
+    if (!row) {
+        alert('Student data not found');
+        return;
+    }
+    
+    const studentName = row.querySelector('.student-name')?.textContent?.trim() || 'Student';
+    const division = row.dataset.division || 'Unknown';
+    
+    // Use email confirmation dialog for financial aid form
+    window.emailConfirmationDialog.show({
+        studentId: studentId,
+        emailType: 'financial_aid',
+        division: division,
+        onConfirm: (data) => {
+            // Send financial aid form with selected recipients
+            fetch(`/api/students/${studentId}/send-financial-aid-form`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    recipients: data.recipients
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    window.toast.success(`Financial aid form sent successfully!\nRecipients: ${data.recipients.join(', ')}`);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    window.toast.error(`Error sending financial aid form: ${result.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                window.toast.error('Error sending financial aid form. Please check the console for details.');
+            });
+        }
+    });
+}
+
+// Mark Financial Aid Form as Received
+function markFAReceived(recordId) {
+    if (!confirm('Mark financial aid form as received?')) {
+        return;
+    }
+    
+    fetch(`/api/financial/records/${recordId}/mark-fa-received`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            window.toast.success('Financial aid form marked as received');
+            location.reload();
+        } else {
+            window.toast.error('Error: ' + (result.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        window.toast.error('Error marking form as received');
+    });
+}
+
+// Generate and Send Tuition Contract with Email Confirmation Dialog
+function sendTuitionContract(studentId) {
+    // Get student data from the current row
+    const row = document.querySelector(`tr[data-student-id="${studentId}"]`);
+    if (!row) {
+        alert('Student data not found');
+        return;
+    }
+    
+    const studentName = row.querySelector('.student-name')?.textContent?.trim() || 'Student';
+    const division = row.dataset.division || 'Unknown';
+    
+    // Use email confirmation dialog for tuition contract
+    window.emailConfirmationDialog.show({
+        studentId: studentId,
+        emailType: 'tuition_contract',
+        division: division,
+        onConfirm: (data) => {
+            // Send tuition contract with selected recipients
+            fetch(`/api/students/${studentId}/send-tuition-contract`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    recipients: data.recipients
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    if (result.fallback) {
+                        window.toast.success('Contract generated as PDF (OpenSign unavailable). Check your OpenSign API configuration.');
+                    } else {
+                        window.toast.success(`Tuition contract sent successfully!\nRecipients: ${data.recipients.join(', ')}\nDocument ID: ${result.document_id || 'N/A'}`);
+                    }
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    window.toast.error(`Error sending tuition contract: ${result.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                window.toast.error('Error sending tuition contract. Please check the console for details.');
+            });
+        }
+    });
+}
+
+// Contract Status Management Functions
+async function checkContractStatus(studentId) {
+    try {
+        const response = await fetch('/api/financial/check-contract-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ student_id: studentId })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to check contract status');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error checking contract status:', error);
+        throw error;
+    }
+}
+
+async function sendEnhancedContract(studentId, emailData) {
+    try {
+        const response = await fetch('/api/financial/send-enhanced-contract', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                student_id: studentId,
+                ...emailData
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to send contract');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error sending contract:', error);
+        throw error;
+    }
+}
+
+async function markContractReceived(studentId) {
+    try {
+        const response = await fetch('/api/financial/mark-contract-received', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ student_id: studentId })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to mark contract as received');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error marking contract as received:', error);
+        throw error;
+    }
+}
+
+function updateContractButtonUI(studentId, contractStatus) {
+    console.log(`Updating contract button UI for student ${studentId} with status: ${contractStatus}`);
+    
+    // Find the student row
+    const studentRow = document.querySelector(`tr[data-student-id="${studentId}"]`);
+    if (!studentRow) {
+        console.error(`No student row found for student ${studentId}`);
+        return;
+    }
+    
+    // Get the Contract column (5th column, index 4)
+    const contractCell = studentRow.cells[4]; // Contract column
+    if (!contractCell) {
+        console.error(`No contract cell found for student ${studentId}`);
+        return;
+    }
+    
+    // Clear existing contract content and replace with new buttons
+    contractCell.innerHTML = '<div class="text-center contract-actions"></div>';
+    const buttonContainer = contractCell.querySelector('.contract-actions');
+    
+    console.log(`Updating contract buttons for status: ${contractStatus}`);
+    
+    switch (contractStatus) {
+        case 'not_generated':
+            buttonContainer.insertAdjacentHTML('beforeend', `
+                <button class="btn btn-primary btn-xs py-1 contract-btn" onclick="generateEnhancedContract('${studentId}')" title="Generate Enhanced Contract" style="width: 100%;">
+                    <i class="fas fa-file-contract"></i> Generate
+                </button>
+            `);
+            break;
+            
+        case 'generated':
+        case 'generated_outdated':
+            const isOutdated = contractStatus === 'generated_outdated';
+            
+            if (isOutdated) {
+                // Show warning for outdated contracts
+                buttonContainer.insertAdjacentHTML('beforeend', `
+                    <div class="alert alert-warning py-1 px-2 mb-1" style="font-size: 0.7em; line-height: 1.2;">
+                        <i class="fas fa-exclamation-triangle"></i> Outdated
+                    </div>
+                `);
+            }
+            
+            buttonContainer.insertAdjacentHTML('beforeend', `
+                <div class="btn-group-vertical contract-btn" role="group" style="width: 100%;">
+                    <button class="btn ${isOutdated ? 'btn-warning' : 'btn-success'} btn-xs py-1" onclick="${isOutdated ? 'generateEnhancedContract' : 'sendContractDialog'}('${studentId}')" title="${isOutdated ? 'Regenerate contract due to tuition changes' : 'Send Enhanced Contract'}" ${isOutdated ? '' : ''}>
+                        <i class="fas fa-${isOutdated ? 'sync-alt' : 'paper-plane'}"></i> ${isOutdated ? 'Regenerate' : 'Send'}
+                    </button>
+                    ${!isOutdated ? `
+                    <button class="btn btn-outline-secondary btn-xs py-1" onclick="generateEnhancedContract('${studentId}')" title="Edit/regenerate contract">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    ` : ''}
+                </div>
+            `);
+            break;
+            
+        case 'sent':
+            buttonContainer.insertAdjacentHTML('beforeend', `
+                <div class="btn-group-vertical contract-btn" role="group" style="width: 100%;">
+                    <button class="btn btn-success btn-xs py-1" onclick="markEnhancedContractReceived('${studentId}')" title="Mark contract as received/signed">
+                        <i class="fas fa-check-circle"></i> Received
+                    </button>
+                    <button class="btn btn-outline-secondary btn-xs py-1" onclick="generateEnhancedContract('${studentId}')" title="Regenerate contract">
+                        <i class="fas fa-redo"></i> Regenerate
+                    </button>
+                    <button class="btn btn-outline-primary btn-xs py-1" onclick="sendContractDialog('${studentId}')" title="Resend contract">
+                        <i class="fas fa-paper-plane"></i> Resend
+                    </button>
+                </div>
+            `);
+            break;
+            
+        case 'sent_outdated':
+            // Contract was sent but tuition has changed - needs regeneration
+            buttonContainer.insertAdjacentHTML('beforeend', `
+                <div class="alert alert-warning py-1 px-2 mb-1" style="font-size: 0.7em; line-height: 1.2;">
+                    <i class="fas fa-exclamation-triangle"></i> Outdated
+                </div>
+                <div class="btn-group-vertical contract-btn" role="group" style="width: 100%;">
+                    <button class="btn btn-warning btn-xs py-1" onclick="generateEnhancedContract('${studentId}')" title="Regenerate contract due to tuition changes">
+                        <i class="fas fa-sync-alt"></i> Regenerate
+                    </button>
+                </div>
+            `);
+            break;
+            
+        case 'signed':
+            buttonContainer.insertAdjacentHTML('beforeend', `
+                <div class="btn-group-vertical contract-btn" role="group" style="width: 100%;">
+                    <button class="btn btn-success btn-xs py-1" disabled title="Contract has been signed">
+                        <i class="fas fa-check-double"></i> Signed
+                    </button>
+                    <button class="btn btn-outline-secondary btn-xs py-1" onclick="generateEnhancedContract('${studentId}')" title="Generate new contract for next year">
+                        <i class="fas fa-file-plus"></i> New
+                    </button>
+                </div>
+            `);
+            break;
+        case 'signed_outdated':
+            // Contract was signed but tuition has changed - needs new contract
+            buttonContainer.insertAdjacentHTML('beforeend', `
+                <div class="alert alert-danger py-1 px-2 mb-1" style="font-size: 0.7em; line-height: 1.2;">
+                    <i class="fas fa-exclamation-triangle"></i> Contract Outdated
+                </div>
+                <div class="btn-group-vertical contract-btn" role="group" style="width: 100%;">
+                    <button class="btn btn-warning btn-xs py-1" onclick="generateEnhancedContract('${studentId}')" title="Generate new contract due to tuition changes">
+                        <i class="fas fa-file-contract"></i> New Contract Required
+                    </button>
+                </div>
+            `);
+            break;
+    }
+}
+
+function sendContractDialog(studentId) {
+    console.log('sendContractDialog called with studentId:', studentId);
+    
+    // Get student data from the current row
+    const studentRow = document.querySelector(`tr[data-student-id="${studentId}"]`);
+    if (!studentRow) {
+        console.error('Student row not found for ID:', studentId);
+        alert('Student data not found');
+        return;
+    }
+    
+    const studentName = studentRow.querySelector('.student-name')?.textContent?.trim() || 'Student';
+    const division = studentRow.dataset.division || 'Unknown';
+    
+    console.log('Student data found:', { studentName, division });
+    
+    // Use email confirmation dialog for enhanced contract
+    console.log('Checking email confirmation dialog availability...');
+    console.log('window.emailConfirmationDialog:', window.emailConfirmationDialog);
+    console.log('typeof EmailConfirmationDialog:', typeof EmailConfirmationDialog);
+    
+    if (!window.emailConfirmationDialog) {
+        console.error('Email confirmation dialog not available, attempting to initialize...');
+        
+        // Try to manually initialize it
+        try {
+            if (typeof EmailConfirmationDialog !== 'undefined') {
+                window.emailConfirmationDialog = new EmailConfirmationDialog();
+                console.log('Email confirmation dialog manually initialized');
+            } else {
+                console.error('EmailConfirmationDialog class not found');
+            }
+        } catch (e) {
+            console.error('Failed to manually initialize dialog:', e);
+        }
+        
+        // Try again after initialization
+        if (!window.emailConfirmationDialog) {
+            console.error('Still no dialog available, waiting and retrying...');
+            // Try to wait a bit for it to load
+            setTimeout(() => {
+                if (window.emailConfirmationDialog) {
+                    console.log('Dialog available after delay, retrying...');
+                    sendContractDialog(studentId); // Retry
+                } else {
+                    console.error('Dialog still not available after delay');
+                    alert('Email confirmation dialog not available. Please refresh the page and try again.');
+                }
+            }, 2000);
+            return;
+        }
+    }
+    
+    console.log('Email confirmation dialog is available, proceeding...');
+    
+    window.emailConfirmationDialog.show({
+        studentId: studentId,
+        emailType: 'enhanced_contract',
+        division: division,
+        onConfirm: (data) => {
+            console.log('Email confirmation data received:', data);
+            
+            // Convert recipient keys to actual email addresses
+            const emailAddresses = [];
+            data.recipients.forEach(recipient => {
+                const emailElement = document.getElementById(`email_${recipient}`);
+                if (emailElement && emailElement.textContent && emailElement.textContent !== 'No email address' && emailElement.textContent !== 'Loading...') {
+                    emailAddresses.push(emailElement.textContent.trim());
+                }
+            });
+            
+            console.log('Email addresses to send to:', emailAddresses);
+            
+            if (emailAddresses.length === 0) {
+                window.toast.error('No valid email addresses found for selected recipients');
+                return;
+            }
+            
+            // Send enhanced contract with email addresses and signing options
+            const emailData = {
+                student_id: studentId,
+                email_recipients: emailAddresses,
+                email_subject: data.customEmailSubject || `Enhanced Tuition Contract - ${studentName}`,
+                email_message: data.customEmailBody || 'Please find your enhanced tuition contract attached. Please review, sign, and return.',
+                use_opensign: data.use_opensign || false,
+                use_secure_upload: data.use_secure_upload || false,
+                expires_hours: data.expires_hours || 72,
+                signing_method: data.signing_method || 'traditional'
+            };
+            
+            console.log('Sending enhanced contract with data:', emailData);
+            
+            sendEnhancedContract(studentId, emailData)
+                .then(result => {
+                    console.log('Enhanced contract send result:', result);
+                    if (result.success) {
+                        console.log('Contract sent successfully, status returned:', result.contract_status);
+                        window.toast.success(`Enhanced contract sent successfully!\nRecipients: ${emailAddresses.join(', ')}`);
+                        updateContractButtonUI(studentId, result.contract_status);
+                        
+                        // Also refresh the contract status for all students to ensure UI is current
+                        setTimeout(() => {
+                            refreshAllContractStatuses();
+                        }, 500);
+                        
+                        // Show immediate visual feedback
+                        window.toast.info('Contract status updated. UI refreshed automatically.');
+                    } else {
+                        window.toast.error(`Error sending contract: ${result.error}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    window.toast.error('Error sending enhanced contract. Please check the console for details.');
+                });
+        }
+    });
+}
+
+function markContractReceivedDialog(studentId) {
+    const studentRow = document.querySelector(`tr[data-student-id="${studentId}"]`);
+    const studentName = studentRow?.querySelector('.student-name')?.textContent || 'Student';
+    
+    if (!confirm(`Mark contract as received/signed for ${studentName}?`)) return;
+    
+    markContractReceived(studentId)
+        .then(result => {
+            if (result.success) {
+                alert('Contract marked as received!');
+                updateContractButtonUI(studentId, result.contract_status);
+            } else {
+                alert('Error marking contract: ' + result.error);
+            }
+        })
+        .catch(error => {
+            alert('Error marking contract: ' + error.message);
+        });
+}
+
+// Function to refresh contract statuses for all students - OPTIMIZED
+async function refreshAllContractStatuses() {
+    console.log('Refreshing all contract statuses...');
+    const studentRows = document.querySelectorAll('tr[data-student-id]');
+    
+    // Collect all student IDs
+    const studentIds = Array.from(studentRows).map(row => row.dataset.studentId).filter(id => id);
+    
+    if (studentIds.length === 0) {
+        console.log('No students found to refresh');
+        return;
+    }
+    
+    try {
+        // Make a single batch API call instead of individual calls
+        const response = await fetch('/api/financial/batch-contract-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ student_ids: studentIds })
+        });
+        
+        if (response.ok) {
+            const results = await response.json();
+            console.log('Batch contract status results:', results);
+            
+            // Update UI for all students
+            results.forEach(result => {
+                if (result.student_id && result.contract_status) {
+                    updateContractButtonUI(result.student_id, result.contract_status);
+                }
+            });
+            
+            console.log('Finished refreshing all contract statuses');
+        } else {
+            console.error('Failed to fetch batch contract statuses');
+            // Fallback to individual calls if batch fails
+            await refreshAllContractStatusesIndividually(studentIds);
+        }
+    } catch (error) {
+        console.error('Error in batch contract status refresh:', error);
+        // Fallback to individual calls
+        await refreshAllContractStatusesIndividually(studentIds);
+    }
+}
+
+// Fallback function for individual status checks
+async function refreshAllContractStatusesIndividually(studentIds) {
+    console.log('Falling back to individual contract status checks...');
+    
+    // Use Promise.all for parallel execution instead of sequential
+    const promises = studentIds.map(async (studentId) => {
+        try {
+            const response = await fetch('/api/financial/check-contract-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ student_id: studentId })
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                console.log(`Contract status for student ${studentId}:`, result.contract_status);
+                updateContractButtonUI(studentId, result.contract_status);
+            } else {
+                console.error(`Failed to check contract status for student ${studentId}`);
+            }
+        } catch (error) {
+            console.error(`Error checking contract status for student ${studentId}:`, error);
+        }
+    });
+    
+    // Wait for all parallel requests to complete
+    await Promise.all(promises);
+    console.log('Finished individual contract status refresh');
+}
+
+// Update the generateAndSendContract function to handle new flow
+function generateAndSendContractNew() {
+    const contractTerms = gatherContractTerms();
+    
+    // Show loading state
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+    
+    fetch('/api/financial/generate-contract', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(contractTerms)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Contract generated successfully!');
+            // Close modals
+            bootstrap.Modal.getInstance(document.getElementById('contractTermsModal'))?.hide();
+            bootstrap.Modal.getInstance(document.getElementById('contractPreviewModal'))?.hide();
+            
+            // Update button UI
+            updateContractButtonUI(contractTerms.student_id, data.contract_status);
+        } else {
+            alert('Error generating contract: ' + data.error);
+        }
+        button.innerHTML = originalText;
+        button.disabled = false;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error generating contract');
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+
+// Auto-refresh contract statuses when page loads - TEMPORARILY DISABLED FOR DEBUGGING
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded - contract status auto-refresh DISABLED for debugging');
+    
+    // TEMPORARILY DISABLED - The auto-refresh is causing contract status to disappear
+    // TODO: Re-enable after fixing the API response issue
+    
+    /*
+    // Show loading state
+    const statusCells = document.querySelectorAll('tr[data-student-id] .contract-actions, tr[data-student-id] td:nth-child(5)');
+    statusCells.forEach(cell => {
+        if (cell && !cell.innerHTML.trim()) {
+            cell.innerHTML = '<div class="text-muted"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+        }
+    });
+    
+    // Start refresh immediately but give DOM time to settle
+    setTimeout(() => {
+        refreshAllContractStatuses();
+    }, 100); // Reduced from 1000ms to 100ms
+    */
+});
+
+// Enhanced tuition component save handler with immediate UI update
+const originalSaveTuitionComponents = window.saveTuitionComponents;
+if (originalSaveTuitionComponents) {
+    window.saveTuitionComponents = function(studentId) {
+        return originalSaveTuitionComponents(studentId).then(result => {
+            // Immediately update contract status if returned
+            if (result.contract_status) {
+                console.log('Tuition saved, updating contract status immediately:', result.contract_status);
+                updateContractButtonUI(studentId, result.contract_status);
+                
+                // Show notification if contract became outdated
+                if (result.contract_status.includes('outdated')) {
+                    window.toast.warning('Contract status updated due to tuition changes. Please review contract status.');
+                }
+            }
+            return result;
+        });
+    };
+}
+
+// Add periodic refresh for contract statuses (every 30 seconds)
+let contractStatusRefreshInterval;
+
+function startContractStatusAutoRefresh() {
+    // Clear any existing interval
+    if (contractStatusRefreshInterval) {
+        clearInterval(contractStatusRefreshInterval);
+    }
+    
+    // Refresh every 30 seconds
+    contractStatusRefreshInterval = setInterval(() => {
+        console.log('Auto-refreshing contract statuses...');
+        refreshAllContractStatuses();
+    }, 30000); // 30 seconds
+}
+
+function stopContractStatusAutoRefresh() {
+    if (contractStatusRefreshInterval) {
+        clearInterval(contractStatusRefreshInterval);
+        contractStatusRefreshInterval = null;
+    }
+}
+
+// Enhanced page visibility handling
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        stopContractStatusAutoRefresh();
+    } else {
+        startContractStatusAutoRefresh();
+        // Refresh immediately when page becomes visible again
+        console.log('Page became visible, refreshing contract statuses...');
+        refreshAllContractStatuses();
+    }
+});
+
+// TEMPORARILY DISABLED - Start auto-refresh after initial load
+// TODO: Re-enable after fixing the API response issue
+/*
+setTimeout(() => {
+    startContractStatusAutoRefresh();
+}, 2000); // Start after 2 seconds
+*/
+
+function generateEnhancedContract(studentId) {
+    // Call the existing generateContract function which opens the enhanced contract modal
+    generateContract(studentId);
+}
+
+// Refresh financial data for a specific student
+async function refreshStudentFinancialData(studentId) {
+    try {
+        console.log('Refreshing financial data for student:', studentId);
+        
+        // Find the student row
+        const studentRow = document.querySelector(`tr[data-student-id="${studentId}"]`);
+        if (!studentRow) {
+            console.error('Student row not found for ID:', studentId);
+            return;
+        }
+        
+        // Get updated financial info
+        const response = await fetch(`/api/students/${studentId}/financial-info`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch financial info');
+        }
+        
+        const data = await response.json();
+        console.log('Updated financial data:', data);
+        
+        // Update the tuition amount in the table
+        const tuitionCell = studentRow.querySelector('.tuition-amount');
+        if (tuitionCell && data.final_tuition_amount !== undefined) {
+            tuitionCell.textContent = `$${parseFloat(data.final_tuition_amount).toFixed(2)}`;
+        }
+        
+        // Update the tuition type
+        const tuitionTypeCell = studentRow.querySelector('.tuition-type');
+        if (tuitionTypeCell && data.tuition_type) {
+            tuitionTypeCell.textContent = data.tuition_type;
+        }
+        
+        // Update any other financial fields as needed
+        console.log('Student financial data refreshed successfully');
+        
+    } catch (error) {
+        console.error('Error refreshing student financial data:', error);
+        // Fall back to page reload if refresh fails
+        console.log('Falling back to page reload...');
+        location.reload();
+    }
+}
+
+function markEnhancedContractReceived(studentId) {
+    const studentRow = document.querySelector(`tr[data-student-id="${studentId}"]`);
+    const studentName = studentRow?.querySelector('.student-name')?.textContent || 'Student';
+    
+    if (!confirm(`Mark enhanced contract as received/signed for ${studentName}?`)) return;
+    
+    fetch('/api/financial/mark-contract-received', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ student_id: studentId })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            window.toast.success('Contract marked as received!');
+            updateContractButtonUI(studentId, result.contract_status);
+        } else {
+            window.toast.error('Error marking contract: ' + result.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error marking contract:', error);
+        window.toast.error('Error marking contract: ' + error.message);
+    });
+}
+
+// Function to view financial details for a student
+function viewFinancialDetails(studentId) {
+    // Navigate to the student's financial details page
+    window.location.href = `/students/${studentId}/financial`;
+}
+
+// Function to handle document upload
+function uploadDocument(recordId) {
+    if (!recordId) {
+        console.error('No record ID provided for upload');
+        return;
+    }
+    
+    // Set the record ID in the hidden input
+    document.getElementById('uploadRecordId').value = recordId;
+    
+    // Reset the form
+    document.getElementById('documentUploadForm').reset();
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('documentUploadModal'));
+    modal.show();
+}
+
+// Function to handle the actual upload submission
+function uploadDocumentSubmit() {
+    const form = document.getElementById('documentUploadForm');
+    const formData = new FormData();
+    
+    // Get form values
+    const recordId = document.getElementById('uploadRecordId').value;
+    const documentType = document.getElementById('documentType').value;
+    const documentFile = document.getElementById('documentFile').files[0];
+    const documentDescription = document.getElementById('documentDescription').value;
+    
+    // Validate inputs
+    if (!recordId) {
+        alert('Error: No record ID specified');
+        return;
+    }
+    
+    if (!documentType) {
+        alert('Please select a document type');
+        return;
+    }
+    
+    if (!documentFile) {
+        alert('Please select a file to upload');
+        return;
+    }
+    
+    // Check file size (10MB limit)
+    if (documentFile.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+    }
+    
+    // Prepare form data
+    formData.append('financial_record_id', recordId);
+    formData.append('document_type', documentType);
+    formData.append('file', documentFile);
+    formData.append('description', documentDescription);
+    
+    // Show loading state
+    const uploadButton = document.querySelector('#documentUploadModal .btn-primary');
+    const originalText = uploadButton.innerHTML;
+    uploadButton.disabled = true;
+    uploadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+    
+    // Submit upload
+    fetch('/api/financial/documents/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('documentUploadModal')).hide();
+            
+            // Show success message
+            window.toast?.success('Document uploaded successfully!') || alert('Document uploaded successfully!');
+            
+            // Refresh the page or update the UI
+            location.reload();
+        } else {
+            alert('Upload failed: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        alert('Upload failed: ' + error.message);
+    })
+    .finally(() => {
+        // Reset button state
+        uploadButton.disabled = false;
+        uploadButton.innerHTML = originalText;
+    });
+}
+
+// Function to view documents for a record
+function viewDocuments(recordId) {
+    // Navigate to a documents view or show modal
+    window.location.href = `/financial/records/${recordId}/documents`;
+}
+
+</script>
+{% endblock %}

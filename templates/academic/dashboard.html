@@ -1,0 +1,508 @@
+{% extends "base.html" %}
+
+{% block title %}Academic Dashboard{% endblock %}
+
+{% block content %}
+<div class="academic-dashboard page-enter">
+    <!-- Page Header -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="display-6 fw-bold text-primary">
+                <i class="fas fa-graduation-cap me-3"></i>
+                Academic Dashboard
+            </h1>
+            <p class="text-muted mb-0">
+                Academic Year: 
+                <select class="form-select form-select-sm d-inline-block ms-1" style="width: auto;" 
+                        id="academicAcademicYearSelector" onchange="changeAcademicAcademicYear()">
+                    {% for year in available_academic_years %}
+                    <option value="{{ year.id }}" {% if year.is_selected %}selected{% endif %}>
+                        {{ year.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </p>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group">
+                <a href="{{ url_for('academic.shiurim_list') }}" class="btn btn-primary" data-loading="Managing Shiurim...">
+                    <i class="fas fa-chalkboard-teacher"></i> Manage Shiurim
+                </a>
+                <a href="{{ url_for('academic.attendance_dashboard') }}" class="btn btn-success" data-loading="Opening Attendance...">
+                    <i class="fas fa-calendar-check"></i> Record Attendance
+                </a>
+                <a href="{{ url_for('academic.matriculation_dashboard') }}" class="btn btn-info" data-loading="Loading Matriculation...">
+                    <i class="fas fa-award"></i> Matriculation
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="stat-card bg-gradient" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="d-flex justify-content-between align-items-center text-white">
+                    <div>
+                        <h3 class="stat-card-value text-white">{{ total_students or 0 }}</h3>
+                        <p class="stat-card-label text-white-50 mb-0">Total Students</p>
+                        <small class="text-white-50">
+                            <i class="fas fa-arrow-up"></i> +12 this month
+                        </small>
+                    </div>
+                    <div class="stat-card-icon">
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="stat-card bg-gradient" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="d-flex justify-content-between align-items-center text-white">
+                    <div>
+                        <h3 class="stat-card-value text-white">{{ active_shiurim or 0 }}</h3>
+                        <p class="stat-card-label text-white-50 mb-0">Active Shiurim</p>
+                        <small class="text-white-50">
+                            <i class="fas fa-check-circle"></i> All running
+                        </small>
+                    </div>
+                    <div class="stat-card-icon">
+                        <i class="fas fa-chalkboard fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="stat-card bg-gradient" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="d-flex justify-content-between align-items-center text-white">
+                    <div>
+                        <h3 class="stat-card-value text-white">{{ avg_attendance or 85 }}%</h3>
+                        <p class="stat-card-label text-white-50 mb-0">Avg Attendance</p>
+                        <small class="text-white-50">
+                            <i class="fas fa-chart-line"></i> +3% this week
+                        </small>
+                    </div>
+                    <div class="stat-card-icon">
+                        <i class="fas fa-percentage fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="stat-card bg-gradient" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="d-flex justify-content-between align-items-center text-white">
+                    <div>
+                        <h3 class="stat-card-value text-white">{{ matriculating_students or 0 }}</h3>
+                        <p class="stat-card-label text-white-50 mb-0">Matriculating</p>
+                        <small class="text-white-50">
+                            <i class="fas fa-graduation-cap"></i> On track
+                        </small>
+                    </div>
+                    <div class="stat-card-icon">
+                        <i class="fas fa-user-graduate fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="row">
+        <!-- Left Column - Shiurim Overview -->
+        <div class="col-lg-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chalkboard-teacher text-primary me-2"></i>
+                        Shiurim Overview
+                    </h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="filterShiurim('all')">All Divisions</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="filterShiurim('YZA')">YZA Only</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="filterShiurim('KOLLEL')">Kollel Only</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if shiurim %}
+                    <div class="data-table">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Shiur</th>
+                                    <th>Instructor</th>
+                                    <th>Enrollment</th>
+                                    <th>Attendance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for shiur in shiurim %}
+                                <tr class="shiur-row" data-division="{{ shiur.division }}">
+                                    <td>
+                                        <div>
+                                            <strong class="text-dark">{{ shiur.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i>{{ shiur.schedule_display }}
+                                            </small>
+                                            <br>
+                                            <span class="badge badge-primary">{{ shiur.division }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                {{ shiur.instructor_name[0] }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-medium">{{ shiur.instructor_name }}</div>
+                                                <small class="text-muted">{{ shiur.instructor_title }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress me-2" style="width: 80px; height: 8px;">
+                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                     style="width: {{ (shiur.current_enrollment / shiur.max_students * 100)|int if shiur.max_students > 0 else 0 }}%">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">{{ shiur.current_enrollment }}/{{ shiur.max_students }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% set attendance_rate = shiur.attendance_rate or 85 %}
+                                        <span class="badge bg-{{ 'success' if attendance_rate >= 80 else 'warning' if attendance_rate >= 60 else 'danger' }}">
+                                            {{ attendance_rate }}%
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" title="View Details" onclick="viewShiurDetails({{ shiur.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <a href="{{ url_for('academic.attendance_dashboard') }}?shiur_id={{ shiur.id }}" 
+                                               class="btn btn-outline-success" title="Take Attendance">
+                                                <i class="fas fa-user-check"></i>
+                                            </a>
+                                            <button class="btn btn-outline-info" title="Statistics" onclick="showShiurStats({{ shiur.id }})">
+                                                <i class="fas fa-chart-bar"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-chalkboard-teacher fa-4x text-muted"></i>
+                        </div>
+                        <h5 class="text-muted">No Shiurim Available</h5>
+                        <p class="text-muted">Get started by creating your first shiur</p>
+                        <a href="{{ url_for('academic.shiurim_list') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Create First Shiur
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Today's Schedule -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-day text-success me-2"></i>
+                        Today's Schedule
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if todays_periods %}
+                    <div class="timeline">
+                        {% for period in todays_periods %}
+                        <div class="timeline-item {% if period.is_currently_active() %}active{% endif %}">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ period.name }}</h6>
+                                        <p class="text-muted mb-1">
+                                            <i class="fas fa-clock me-1"></i>{{ period.time_display }}
+                                        </p>
+                                        <span class="badge badge-primary">{{ period.division }}</span>
+                                    </div>
+                                    {% if period.is_currently_active() %}
+                                    <span class="badge bg-success pulse">Live</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-calendar-times fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No scheduled periods today</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt text-warning me-2"></i>
+                        Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" onclick="recordAttendance()">
+                            <i class="fas fa-user-check me-2"></i>
+                            Record Attendance
+                        </button>
+                        <button class="btn btn-outline-success" onclick="generateReport()">
+                            <i class="fas fa-file-export me-2"></i>
+                            Generate Report
+                        </button>
+                        <button class="btn btn-outline-info" onclick="emailSummary()">
+                            <i class="fas fa-envelope me-2"></i>
+                            Email Summary
+                        </button>
+                        <a href="{{ url_for('academic.shiurim_list') }}" class="btn btn-outline-warning">
+                            <i class="fas fa-plus me-2"></i>
+                            Add New Shiur
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line text-info me-2"></i>
+                        Attendance Trends
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="attendanceChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Matriculation Overview -->
+    <div class="card mt-5">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-award text-warning me-2"></i>
+                Matriculation Level Distribution
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for level in matriculation_levels %}
+                <div class="col-md-4 mb-3">
+                    <div class="matriculation-card p-3 border rounded">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0">{{ level.name }}</h6>
+                            <span class="badge bg-primary">{{ level.current_enrollment }}</span>
+                        </div>
+                        <p class="text-muted mb-2 small">{{ level.instructor_name }}</p>
+                        <div class="progress mb-2" style="height: 6px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ (level.current_enrollment / level.max_students * 100)|int if level.max_students > 0 else 0 }}%">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted small">
+                            <span>{{ level.duration_weeks }} weeks</span>
+                            <span>{{ level.available_spots }} spots left</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+.avatar-sm {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.timeline {
+    position: relative;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 2rem;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 1.5rem;
+    bottom: -1.5rem;
+    width: 2px;
+    background: #e5e7eb;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 0;
+    top: 0.25rem;
+    width: 1rem;
+    height: 1rem;
+    background: #e5e7eb;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #e5e7eb;
+}
+
+.timeline-item.active .timeline-marker {
+    background: #10b981;
+    box-shadow: 0 0 0 2px #10b981;
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.matriculation-card {
+    transition: all 0.2s ease;
+    background: #f8f9fa;
+}
+
+.matriculation-card:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+</style>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Attendance Trends Chart
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('attendanceChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sun'],
+            datasets: [{
+                label: 'Attendance Rate',
+                data: [85, 88, 82, 90, 87, 83],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    radius: 4,
+                    hoverRadius: 6
+                }
+            }
+        }
+    });
+});
+
+// Filter shiurim by division
+function filterShiurim(division) {
+    const rows = document.querySelectorAll('.shiur-row');
+    rows.forEach(row => {
+        if (division === 'all' || row.dataset.division === division) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+// Quick action functions
+function recordAttendance() {
+    window.toast.info('Opening attendance system...');
+    setTimeout(() => {
+        window.location.href = "{{ url_for('academic.attendance_dashboard') }}";
+    }, 500);
+}
+
+function generateReport() {
+    window.toast.info('Generating academic report...');
+    // API call to generate report
+}
+
+function emailSummary() {
+    window.toast.info('Preparing email summary...');
+    // API call to send summary
+}
+
+function viewShiurDetails(shiurId) {
+    window.toast.info('Loading shiur details...');
+    // Show modal or navigate to details page
+}
+
+function showShiurStats(shiurId) {
+    window.toast.info('Loading statistics...');
+    // Show statistics modal
+}
+
+// Change academic year for academic module
+function changeAcademicAcademicYear() {
+    const yearId = document.getElementById('academicAcademicYearSelector').value;
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('academic_year_id', yearId);
+    window.location.href = currentUrl.toString();
+}
+</script>
+{% endblock %} 

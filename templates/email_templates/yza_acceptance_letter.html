@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YZA Acceptance Letter</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .letter-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #003366;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            color: #003366;
+            margin: 0;
+            font-size: 28px;
+        }
+        .header p {
+            color: #666;
+            margin: 5px 0;
+        }
+        .date {
+            text-align: right;
+            margin-bottom: 30px;
+            color: #666;
+        }
+        .greeting {
+            margin-bottom: 20px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .content p {
+            margin-bottom: 15px;
+        }
+        .important-info {
+            background-color: #f0f8ff;
+            border-left: 4px solid #003366;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .signature {
+            margin-top: 40px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 14px;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #003366;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="letter-container">
+        <div class="header">
+            <h1>Yeshiva Zichron Aryeh</h1>
+            <p>Excellence in Torah Learning and Personal Growth</p>
+        </div>
+        
+        <div class="date">{{ current_date }}</div>
+        
+        <div class="greeting">
+            <p><strong>Dear {{ student.student_first_name }} {{ student.student_last_name }},</strong></p>
+        </div>
+        
+        <div class="content">
+            <p>בס״ד</p>
+            
+            <p>We are delighted to inform you that you have been accepted to Yeshiva Zichron Aryeh for the upcoming academic year. After careful review of your application and credentials, we are confident that you will be a valuable addition to our Yeshiva community.</p>
+            
+            <p>Your acceptance is a testament to your dedication to Torah learning and your commitment to personal growth. We look forward to supporting you in your journey of spiritual and intellectual development.</p>
+            
+            <div class="important-info">
+                <h3>Important Information:</h3>
+                <ul>
+                    <li><strong>Academic Year:</strong> {{ academic_year }}</li>
+                    <li><strong>Start Date:</strong> {{ start_date }}</li>
+                    <li><strong>Orientation:</strong> {{ orientation_date }}</li>
+                    {% if student.dormitory_meals_option %}
+                    <li><strong>Housing:</strong> Your dormitory request has been noted and will be processed.</li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <p>To confirm your enrollment, please complete the following steps:</p>
+            <ol>
+                <li>Confirm your acceptance by responding to this email within 14 days</li>
+                <li>Submit the enrollment deposit of $500</li>
+                <li>Complete and return the enclosed enrollment forms</li>
+                <li>Submit any outstanding documentation</li>
+            </ol>
+            
+            <p>We are excited to welcome you to our Beis Medrash, where you will join a vibrant community of talmidim dedicated to Torah study and avodas Hashem. Our experienced Rebbeim and staff are committed to helping you reach your full potential.</p>
+            
+            <p>If you have any questions or need additional information, please don't hesitate to contact our admissions office at {{ contact_email }} or {{ contact_phone }}.</p>
+            
+            <p>Once again, mazal tov on your acceptance!</p>
+        </div>
+        
+        <div class="signature">
+            <p>B'vracha,</p>
+            <br>
+            <p><strong>Rabbi [Name]</strong><br>
+            Rosh Yeshiva<br>
+            Yeshiva Zichron Aryeh</p>
+        </div>
+        
+        <div class="footer">
+            <p>Yeshiva Zichron Aryeh<br>
+            {{ yeshiva_address }}<br>
+            Phone: {{ yeshiva_phone }} | Email: {{ yeshiva_email }}</p>
+        </div>
+    </div>
+</body>
+</html> 

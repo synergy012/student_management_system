@@ -33,7 +33,7 @@ def permission_required(permission):
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('main.index'))
+        return redirect(url_for('core.index'))
     
     if request.method == 'POST':
         username = request.form.get('username')
@@ -63,7 +63,7 @@ def login():
                 login_user(user, remember=remember)
                 next_page = request.args.get('next')
                 if not next_page or urlparse(next_page).netloc != '':
-                    next_page = url_for('main.index')
+                    next_page = url_for('core.index')
                 return redirect(next_page)
             else:
                 # Increment failed login attempts

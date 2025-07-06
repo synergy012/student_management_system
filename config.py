@@ -29,6 +29,23 @@ class Config:
     # Security Configuration
     WTF_CSRF_ENABLED = True
     WTF_CSRF_SECRET_KEY = os.environ.get('WTF_CSRF_SECRET_KEY') or 'csrf-secret-key-change-in-production'
+    
+    # File Upload Configuration
+    MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB max file size
+    UPLOAD_FOLDER = 'uploads'
+    
+    # Dropbox Configuration
+    DROPBOX_ACCESS_TOKEN = os.environ.get('DROPBOX_ACCESS_TOKEN')
+    DROPBOX_APP_KEY = os.environ.get('DROPBOX_APP_KEY')
+    DROPBOX_APP_SECRET = os.environ.get('DROPBOX_APP_SECRET')
+    DROPBOX_FOLDER_PREFIX = os.environ.get('DROPBOX_FOLDER_PREFIX', '/StudentManagement')
+    USE_DROPBOX_STORAGE = os.environ.get('USE_DROPBOX_STORAGE', 'false').lower() in ['true', '1', 'yes']
+    
+    # Dropbox Sign Configuration
+    DROPBOX_SIGN_API_KEY = os.environ.get('DROPBOX_SIGN_API_KEY')
+    DROPBOX_SIGN_CLIENT_ID = os.environ.get('DROPBOX_SIGN_CLIENT_ID')
+    DROPBOX_SIGN_TEST_MODE = os.environ.get('DROPBOX_SIGN_TEST_MODE', 'true').lower() in ['true', '1', 'yes']
+    DROPBOX_SIGN_WEBHOOK_SECRET = os.environ.get('DROPBOX_SIGN_WEBHOOK_SECRET')
 
 class DevelopmentConfig(Config):
     DEBUG = True

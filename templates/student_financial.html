@@ -1,0 +1,2317 @@
+{% extends "base.html" %}
+
+{% block title %}Student Financial Workflow - {{ student.student_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="fas fa-user-graduate text-primary me-2"></i>{{ student.student_name }}</h1>
+            <p class="text-muted mb-0">{{ student.email }} | {{ student.phone_number }} | Division: {{ student.division }}</p>
+        </div>
+        <div class="d-flex align-items-center">
+            <!-- Academic Year Selector -->
+            <div class="me-3">
+                <label for="academic_year_selector" class="form-label mb-1"><strong>Academic Year:</strong></label>
+                <select class="form-select form-select-sm" id="academic_year_selector" onchange="changeAcademicYear(this.value)">
+                    {% for year in academic_years %}
+                    <option value="{{ year.id }}" {% if selected_year and year.id == selected_year.id %}selected{% endif %}>
+                        {{ year.year_label }}
+                        {% if year.is_active %} (Active){% elif year.is_current %} (Current){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <a href="{{ url_for('students.student_details', student_id=student.id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Student
+            </a>
+        </div>
+    </div>
+
+    <!-- Workflow Progress Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3"><i class="fas fa-route me-2"></i>Enrollment Workflow Progress</h5>
+            <div class="workflow-progress">
+                <div class="workflow-step" id="step-enrolled">
+                    <div class="step-icon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="step-label">Enrolled</div>
+                    <div class="step-status" id="status-enrolled">
+                        <span class="badge bg-success">Complete</span>
+                    </div>
+                </div>
+                
+                <div class="workflow-connector" id="connector-1"></div>
+                
+                <div class="workflow-step" id="step-financial-aid">
+                    <div class="step-icon">
+                        <i class="fas fa-hands-helping"></i>
+                    </div>
+                    <div class="step-label">Financial Aid</div>
+                    <div class="step-status" id="status-financial-aid">
+                        <span class="badge bg-secondary">Not Required</span>
+                    </div>
+                </div>
+                
+                <div class="workflow-connector" id="connector-2"></div>
+                
+                <div class="workflow-step" id="step-contract">
+                    <div class="step-icon">
+                        <i class="fas fa-file-contract"></i>
+                    </div>
+                    <div class="step-label">Tuition Contract</div>
+                    <div class="step-status" id="status-contract">
+                        <span class="badge bg-warning">Pending</span>
+                    </div>
+                </div>
+                
+                <div class="workflow-connector" id="connector-3"></div>
+                
+                <div class="workflow-step" id="step-admire">
+                    <div class="step-icon">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                    <div class="step-label">Admire Setup</div>
+                    <div class="step-status" id="status-admire">
+                        <span class="badge bg-secondary">Not Started</span>
+                    </div>
+                </div>
+                
+                <div class="workflow-connector" id="connector-4"></div>
+                
+                <div class="workflow-step" id="step-finalized">
+                    <div class="step-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="step-label">Finalized</div>
+                    <div class="step-status" id="status-finalized">
+                        <span class="badge bg-secondary">Not Complete</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workflow Stage Cards -->
+    <div class="row" id="workflow-cards">
+        <!-- Financial Aid Card -->
+        <div class="col-md-6 mb-4" id="financial-aid-card">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-hands-helping me-2"></i>Financial Aid
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="financial_aid_type" class="form-label">Financial Aid Type</label>
+                        <select class="form-select" id="financial_aid_type" name="financial_aid_type" onchange="updateWorkflowStatus()">
+                            <option value="Full Tuition">Full Tuition</option>
+                            <option value="Financial Aid">Financial Aid</option>
+                            <option value="Scholarship">Scholarship</option>
+                        </select>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="financial_aid_app_sent" name="financial_aid_app_sent" onchange="updateWorkflowStatus()">
+                                <label class="form-check-label" for="financial_aid_app_sent">
+                                    Application Sent
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="financial_aid_app_received" name="financial_aid_app_received" onchange="updateWorkflowStatus()">
+                                <label class="form-check-label" for="financial_aid_app_received">
+                                    Application Received
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="sendFinancialAidApp('{{ student.id }}', {{ selected_year.id if selected_year else 'null' }})">
+                            <i class="fas fa-paper-plane"></i> Send Application
+                        </button>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="markFinancialAidReceived()">
+                            <i class="fas fa-check"></i> Mark Received
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="viewAllDocuments()">
+                            <i class="fas fa-eye"></i> View All Documents
+                        </button>
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="uploadFinancialDocument()">
+                            <i class="fas fa-upload"></i> Upload Document
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tuition Contract Card -->
+        <div class="col-md-6 mb-4" id="tuition-contract-card">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-contract me-2"></i>Tuition Contract
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="tuition_determination" class="form-label">
+                            Tuition Amount
+                            <small class="text-muted">(Set using components below)</small>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="tuition_determination" name="tuition_determination" 
+                                   value="{{ tuition_record.tuition_determination if tuition_record and tuition_record.tuition_determination else '' }}" 
+                                   min="0" step="0.01" placeholder="Set components first" readonly>
+                            <button type="button" class="btn btn-outline-secondary" onclick="setTuition('{{ student.id }}')">
+                                <i class="fas fa-cog"></i> Set Components
+                            </button>
+                        </div>
+                        <small class="form-text text-muted">
+                            Use "Set Components" to configure tuition amounts. Manual editing is disabled to ensure accuracy.
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="tuition_determination_notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="tuition_determination_notes" name="tuition_determination_notes" 
+                                  rows="2" placeholder="Notes about tuition determination...">{{ tuition_record.tuition_determination_notes if tuition_record and tuition_record.tuition_determination_notes else '' }}</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12 mb-2">
+                            <div class="btn-group w-100" role="group">
+                                <button type="button" class="btn btn-outline-primary" onclick="generateContract('{{ student.id }}')">
+                                    <i class="fas fa-file-pdf"></i> Generate Contract
+                                </button>
+                                <button type="button" class="btn btn-outline-info" onclick="sendContract('{{ student.id }}')">
+                                    <i class="fas fa-paper-plane"></i> Send Contract
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="btn-group w-100" role="group">
+                                {% if student.tuition_contract_pdf_path %}
+                                <button type="button" class="btn btn-outline-success" onclick="viewContract('{{ student.id }}')">
+                                    <i class="fas fa-eye"></i> View Contract
+                                </button>
+                                {% endif %}
+                                <button type="button" class="btn btn-outline-info" onclick="uploadFinancialDocument('enrollment_contract')">
+                                    <i class="fas fa-upload"></i> Upload Contract
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="markContractReceived()">
+                                    <i class="fas fa-check"></i> Mark Received
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admire Setup Card -->
+        <div class="col-md-6 mb-4" id="admire-card">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-credit-card me-2"></i>Admire Payment Setup
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="payment_plan" class="form-label">Payment Plan</label>
+                        <select class="form-select" id="payment_plan" name="payment_plan" onchange="updateWorkflowStatus()">
+                            <option value="Full">Full Payment</option>
+                            <option value="Installments">Installments</option>
+                            <option value="Monthly">Monthly</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="amount_paid" class="form-label">Amount Paid</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="amount_paid" name="amount_paid" 
+                                   value="{{ tuition_record.amount_paid if tuition_record and tuition_record.amount_paid else 0 }}" 
+                                   min="0" step="0.01" placeholder="0.00" onchange="updateWorkflowStatus()">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="setupAdmire()">
+                            <i class="fas fa-cog"></i> Setup Admire
+                        </button>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="markAdmireComplete()">
+                            <i class="fas fa-check"></i> Mark Complete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAFSA Card -->
+        <div class="col-md-6 mb-4" id="fafsa-card">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-alt me-2"></i>FAFSA Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="fafsa_required" name="fafsa_required" onchange="updateWorkflowStatus()">
+                        <label class="form-check-label" for="fafsa_required">
+                            <strong>FAFSA Required for this Academic Year</strong>
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="fafsa_completed" name="fafsa_completed" onchange="updateWorkflowStatus()">
+                        <label class="form-check-label" for="fafsa_completed">
+                            FAFSA Completed
+                        </label>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="sendFafsaReminder()">
+                            <i class="fas fa-bell"></i> Send Reminder
+                        </button>
+                        <button type="button" class="btn btn-outline-success btn-sm" onclick="markFafsaComplete()">
+                            <i class="fas fa-check"></i> Mark Complete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tuition History Section -->
+    <div class="card mt-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-history me-2"></i>Tuition History
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if tuition_history %}
+            <div class="row">
+                {% for record in tuition_history %}
+                <div class="col-md-3 mb-3">
+                    <div class="border rounded p-3 {% if selected_year and record.academic_year_id == selected_year.id %}bg-light border-primary{% endif %}">
+                        <strong>{{ record.academic_year.year_label }}</strong>
+                        <span class="badge bg-{{ record.academic_year.status_color }} ms-1">{{ record.academic_year.status_badge }}</span>
+                        {% if record.tuition_determination %}
+                        <div class="text-success fw-bold mt-2">${{ "%.0f"|format(record.tuition_determination) }}</div>
+                        {% else %}
+                        <div class="text-muted mt-2">Not determined</div>
+                        {% endif %}
+                        <div class="small mt-2">
+                            Contract: <span class="badge bg-{{ 'success' if record.contract_status == 'Signed' else 'warning' if record.contract_status in ['Pending Signature', 'Sent'] else 'secondary' }}">{{ record.contract_status }}</span>
+                        </div>
+                        {% if record.payment_status %}
+                        <div class="small">
+                            Payment: <span class="badge bg-{{ record.payment_status_color }}">{{ record.payment_status }}</span>
+                        </div>
+                        {% endif %}
+                        {% if record.matriculation_status_for_year %}
+                        <div class="small">
+                            Status: <span class="badge bg-{{ 'success' if record.matriculation_status_for_year == 'Matriculating' else 'warning' }}">{{ record.matriculation_status_for_year }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center text-muted">
+                <i class="fas fa-info-circle fa-2x mb-2"></i>
+                <p>No tuition history available for this student.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+.workflow-progress {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0;
+}
+
+.workflow-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+}
+
+.step-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #6c757d;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.step-icon.active {
+    background: #007bff;
+    color: white;
+}
+
+.step-icon.completed {
+    background: #28a745;
+    color: white;
+}
+
+.step-icon.pending {
+    background: #ffc107;
+    color: #212529;
+}
+
+.step-label {
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.step-status {
+    text-align: center;
+}
+
+.workflow-connector {
+    flex: 1;
+    height: 3px;
+    background: #e9ecef;
+    margin: 0 10px;
+    position: relative;
+    top: -30px;
+}
+
+.workflow-connector.active {
+    background: #007bff;
+}
+
+.workflow-connector.completed {
+    background: #28a745;
+}
+
+@media (max-width: 768px) {
+    .workflow-progress {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .workflow-connector {
+        width: 3px;
+        height: 30px;
+        margin: 10px 0;
+        top: 0;
+    }
+}
+</style>
+
+<script>
+// Initialize workflow status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Student financial page loaded, initializing workflow status...');
+    updateWorkflowStatus();
+    
+    // Set up periodic refresh every 30 seconds for contract status
+    setInterval(() => {
+        console.log('Auto-refreshing workflow status...');
+        updateWorkflowStatus();
+    }, 30000);
+    
+    // Also refresh when the page gains focus (in case user switches tabs)
+    window.addEventListener('focus', () => {
+        console.log('Page gained focus, refreshing workflow status...');
+        updateWorkflowStatus();
+    });
+});
+
+// Update workflow status based on form data
+function updateWorkflowStatus() {
+    const financialAidType = document.getElementById('financial_aid_type').value;
+    const appSent = document.getElementById('financial_aid_app_sent').checked;
+    const appReceived = document.getElementById('financial_aid_app_received').checked;
+    const tuitionAmount = parseFloat(document.getElementById('tuition_determination').value) || 0;
+    const paymentPlan = document.getElementById('payment_plan').value;
+    const amountPaid = parseFloat(document.getElementById('amount_paid').value) || 0;
+    const fafsaRequired = document.getElementById('fafsa_required').checked;
+    const fafsaCompleted = document.getElementById('fafsa_completed').checked;
+    
+    // Update Financial Aid step
+    if (financialAidType === 'Full Tuition') {
+        updateStep('financial-aid', 'skipped', 'Not Required');
+        document.getElementById('financial-aid-card').style.display = 'none';
+    } else {
+        document.getElementById('financial-aid-card').style.display = 'block';
+        if (appReceived) {
+            updateStep('financial-aid', 'completed', 'Received');
+        } else if (appSent) {
+            updateStep('financial-aid', 'pending', 'Sent');
+        } else {
+            updateStep('financial-aid', 'pending', 'Not Started');
+        }
+    }
+    
+    // Update Contract step - check actual contract status
+    updateContractWorkflowStep(tuitionAmount);
+    
+    // Update Admire step
+    if (amountPaid > 0) {
+        updateStep('admire', 'completed', 'Complete');
+    } else {
+        updateStep('admire', 'pending', 'Not Started');
+    }
+    
+    // Update Finalized step
+    updateFinalizedStep(appReceived, tuitionAmount, amountPaid);
+}
+
+// Check actual contract status and update workflow step
+async function updateContractWorkflowStep(tuitionAmount) {
+    if (tuitionAmount <= 0) {
+        console.log('Tuition amount is 0 or negative, setting contract to pending tuition');
+        updateStep('contract', 'pending', 'Pending Tuition');
+        return;
+    }
+    
+    try {
+        const studentId = '{{ student.id }}';
+        console.log('Checking contract status for student:', studentId);
+        
+        const response = await fetch('/api/financial/check-contract-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ student_id: studentId })
+        });
+        
+        console.log('Contract status API response status:', response.status);
+        
+        if (response.ok) {
+            const result = await response.json();
+            const contractStatus = result.contract_status || 'not_generated';
+            
+            console.log('Contract workflow API result:', result);
+            console.log('Contract status:', contractStatus);
+            
+            // Also check for view signed contract buttons
+            updateViewSignedContractButtonWorkflow(contractStatus, result);
+            
+            switch(contractStatus) {
+                case 'Signed':
+                    console.log('Contract is signed, marking as completed');
+                    updateStep('contract', 'completed', 'Signed');
+                    break;
+                case 'Sent':
+                case 'Pending Signature':
+                    console.log('Contract is sent/pending, marking as pending signature');
+                    updateStep('contract', 'pending', 'Pending Signature');
+                    break;
+                case 'Generated':
+                    console.log('Contract is generated, marking as ready to send');
+                    updateStep('contract', 'pending', 'Ready to Send');
+                    break;
+                case 'signed_outdated':
+                    console.log('Contract is outdated, marking as needs update');
+                    updateStep('contract', 'pending', 'Needs Update');
+                    break;
+                default:
+                    console.log('Contract not generated, marking as ready to generate');
+                    updateStep('contract', 'pending', 'Ready to Generate');
+            }
+        } else {
+            console.error('Contract status API failed with status:', response.status);
+            const errorText = await response.text();
+            console.error('Error response:', errorText);
+            // Fallback to basic check if API fails
+            updateStep('contract', 'pending', 'API Error');
+        }
+    } catch (error) {
+        console.error('Error checking contract status:', error);
+        // Fallback to basic check if API fails
+        updateStep('contract', 'pending', 'Error');
+    }
+}
+
+// Update finalized step with contract status consideration
+async function updateFinalizedStep(appReceived, tuitionAmount, amountPaid) {
+    // Basic requirements check
+    if (!appReceived || tuitionAmount <= 0) {
+        updateStep('finalized', 'pending', 'Requirements Missing');
+        return;
+    }
+    
+    try {
+        const studentId = '{{ student.id }}';
+        const response = await fetch('/api/financial/check-contract-status', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ student_id: studentId })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            const contractStatus = result.contract_status || 'not_generated';
+            
+            // Finalized requires contract to be signed and some payment activity
+            if (contractStatus === 'Signed' && amountPaid > 0) {
+                updateStep('finalized', 'completed', 'Complete');
+            } else if (contractStatus === 'Signed') {
+                updateStep('finalized', 'pending', 'Awaiting Payment');
+            } else {
+                updateStep('finalized', 'pending', 'Awaiting Contract');
+            }
+        } else {
+            // Fallback logic
+            if (amountPaid > 0) {
+                updateStep('finalized', 'completed', 'Complete');
+            } else {
+                updateStep('finalized', 'pending', 'Not Complete');
+            }
+        }
+    } catch (error) {
+        console.error('Error in finalized step check:', error);
+        // Fallback logic
+        if (amountPaid > 0) {
+            updateStep('finalized', 'completed', 'Complete');
+        } else {
+            updateStep('finalized', 'pending', 'Not Complete');
+        }
+    }
+}
+
+function updateStep(stepId, status, label) {
+    const step = document.getElementById(`step-${stepId}`);
+    const icon = step.querySelector('.step-icon');
+    const statusElement = document.getElementById(`status-${stepId}`);
+    
+    // Remove all status classes
+    icon.classList.remove('active', 'completed', 'pending');
+    
+    // Add appropriate class
+    if (status === 'completed') {
+        icon.classList.add('completed');
+    } else if (status === 'pending') {
+        icon.classList.add('pending');
+    } else if (status === 'active') {
+        icon.classList.add('active');
+    }
+    
+    // Update status label
+    let badgeClass = 'bg-secondary';
+    if (status === 'completed') badgeClass = 'bg-success';
+    else if (status === 'pending') badgeClass = 'bg-warning';
+    else if (status === 'active') badgeClass = 'bg-primary';
+    
+    statusElement.innerHTML = `<span class="badge ${badgeClass}">${label}</span>`;
+    
+    // Update connectors
+    updateConnectors();
+}
+
+function updateConnectors() {
+    const steps = ['enrolled', 'financial-aid', 'contract', 'admire', 'finalized'];
+    
+    for (let i = 0; i < steps.length - 1; i++) {
+        const currentStep = document.getElementById(`step-${steps[i]}`);
+        const nextStep = document.getElementById(`step-${steps[i + 1]}`);
+        const connector = document.getElementById(`connector-${i + 1}`);
+        
+        if (currentStep && nextStep && connector) {
+            const currentIcon = currentStep.querySelector('.step-icon');
+            const nextIcon = nextStep.querySelector('.step-icon');
+            
+            if (currentIcon.classList.contains('completed') && nextIcon.classList.contains('completed')) {
+                connector.classList.add('completed');
+                connector.classList.remove('active', 'pending');
+            } else if (currentIcon.classList.contains('completed') || currentIcon.classList.contains('active')) {
+                connector.classList.add('active');
+                connector.classList.remove('completed', 'pending');
+            } else {
+                connector.classList.remove('completed', 'active');
+            }
+        }
+    }
+}
+
+// Academic year management
+function changeAcademicYear(yearId) {
+    if (!yearId) return;
+    
+    // Show loading state
+    const selector = document.getElementById('academic_year_selector');
+    const originalValue = selector.value;
+    selector.disabled = true;
+    
+    fetch(`/api/students/{{ student.id }}/change-academic-year`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ academic_year_id: yearId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updatePageContent(data);
+        } else {
+            alert('Error changing academic year: ' + (data.error || 'Unknown error'));
+            selector.value = originalValue;
+        }
+        selector.disabled = false;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error changing academic year');
+        selector.value = originalValue;
+        selector.disabled = false;
+    });
+}
+
+function updatePageContent(data) {
+    // Update form fields
+    if (data.tuition_record) {
+        const record = data.tuition_record;
+        
+        // Update financial aid type
+        const aidTypeSelect = document.getElementById('financial_aid_type');
+        if (aidTypeSelect) {
+            aidTypeSelect.value = record.financial_aid_type || 'Full Tuition';
+        }
+        
+        // Update checkboxes
+        const appSentCheckbox = document.getElementById('financial_aid_app_sent');
+        if (appSentCheckbox) {
+            appSentCheckbox.checked = record.financial_aid_app_sent || false;
+        }
+        
+        const appReceivedCheckbox = document.getElementById('financial_aid_app_received');
+        if (appReceivedCheckbox) {
+            appReceivedCheckbox.checked = record.financial_aid_app_received || false;
+        }
+        
+        // Update tuition determination
+        const tuitionInput = document.getElementById('tuition_determination');
+        if (tuitionInput) {
+            tuitionInput.value = record.tuition_determination || '';
+        }
+        
+        // Update tuition notes
+        const notesTextarea = document.getElementById('tuition_determination_notes');
+        if (notesTextarea) {
+            notesTextarea.value = record.tuition_determination_notes || '';
+        }
+        
+        // Update payment plan
+        const paymentPlanSelect = document.getElementById('payment_plan');
+        if (paymentPlanSelect) {
+            paymentPlanSelect.value = record.payment_plan || 'Full';
+        }
+        
+        // Update amount paid
+        const amountPaidInput = document.getElementById('amount_paid');
+        if (amountPaidInput) {
+            amountPaidInput.value = record.amount_paid || 0;
+        }
+    }
+    
+    // Update workflow status
+    updateWorkflowStatus();
+}
+
+// Action functions
+function sendFinancialAidApp(studentId, yearId) {
+    // Use email confirmation dialog for financial aid form (with secure upload)
+    window.emailConfirmationDialog.show({
+        studentId: studentId,
+        emailType: 'financial_aid',
+        division: '{{ student.division }}',
+        onConfirm: (data) => {
+            // Send financial aid form with selected recipients (includes secure upload link)
+            fetch(`/api/students/${studentId}/send-financial-aid-form`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    recipients: data.recipients
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert(`Financial aid form sent successfully!\nRecipients: ${data.recipients.join(', ')}\nIncludes secure upload link for documents.`);
+                    document.getElementById('financial_aid_app_sent').checked = true;
+                    updateWorkflowStatus();
+                } else {
+                    alert(`Error sending financial aid form: ${result.error}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error sending financial aid form. Please check the console for details.');
+            });
+        }
+    });
+}
+
+function markFinancialAidReceived() {
+    document.getElementById('financial_aid_app_received').checked = true;
+    updateWorkflowStatus();
+}
+
+function viewAllDocuments() {
+    // View all documents for this student using the financial record
+    const studentId = document.getElementById('uploadStudentId').value;
+    const academicYearId = document.getElementById('uploadAcademicYearId').value;
+    
+    // Navigate to unified document view
+    if (academicYearId) {
+        // Use the API to get or create financial record, then view documents
+        fetch(`/api/students/${studentId}/get-or-create-financial-record`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ academic_year_id: academicYearId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.open(`/financial/records/${data.financial_record_id}/documents`, '_blank');
+            } else {
+                alert('Error accessing documents: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error accessing documents');
+        });
+    } else {
+        alert('Please select an academic year first');
+    }
+}
+
+let currentStudentData = null;
+let tuitionComponents = [];
+let selectedAcademicYear = {{ selected_year | tojson if selected_year else 'null' }};
+
+// Main function to set tuition for a student - EXACT COPY FROM FINANCIAL DASHBOARD
+function setTuition(studentId) {
+    currentStudentData = { id: studentId };
+    
+    // Load student financial info and components
+    const academicYearParam = selectedAcademicYear ? `&academic_year_id=${selectedAcademicYear.id}` : '';
+    Promise.all([
+        fetch(`/api/students/${studentId}/financial-info`).then(r => r.json()),
+        fetch(`/api/tuition-components/by-division?student_id=${studentId}${academicYearParam}`).then(r => r.json())
+    ])
+    .then(([studentInfo, componentsData]) => {
+        currentStudentData = { ...currentStudentData, ...studentInfo };
+        tuitionComponents = componentsData.components || [];
+        
+        // Load FAFSA status for current year
+        const currentYear = new Date().getFullYear();
+        document.getElementById('fafsaRequired').checked = studentInfo.fafsa_required_this_year || false;
+        
+        // Load proration data if exists (check if any component is prorated)
+        let hasProration = false;
+        let prorationPercentage = 100;
+        let prorationReason = '';
+        
+        tuitionComponents.forEach(component => {
+            if (component.is_prorated && component.proration_percentage < 100) {
+                hasProration = true;
+                prorationPercentage = component.proration_percentage;
+                prorationReason = component.proration_reason || '';
+            }
+        });
+        
+        if (hasProration) {
+            document.getElementById('prorationPercentage').value = prorationPercentage;
+            document.getElementById('prorationReason').value = prorationReason;
+        }
+        
+        renderTuitionComponents();
+        updateTotals();
+        
+        const modal = new bootstrap.Modal(document.getElementById('setTuitionModal'));
+        modal.show();
+    })
+    .catch(error => {
+        console.error('Error loading tuition data:', error);
+        alert('Failed to load tuition information');
+    });
+}
+
+// Render tuition components - EXACT COPY FROM FINANCIAL DASHBOARD
+function renderTuitionComponents() {
+    const container = document.getElementById('tuitionComponentsList');
+    let html = '';
+    
+    tuitionComponents.forEach((component, index) => {
+        const isEnabled = component.is_required || component.is_enabled;
+        const componentType = component.type || component.component_type;
+        const badgeColor = component.is_required ? 'primary' : 
+                         componentType === 'room' ? 'info' : 
+                         componentType === 'board' ? 'success' : 'secondary';
+        
+        html += `
+            <div class="tuition-component-row" data-component-id="${component.id}">
+                <div class="row align-items-center">
+                    <div class="col-md-1">
+                        <div class="form-check">
+                            <input class="form-check-input component-checkbox" type="checkbox" 
+                                   ${isEnabled ? 'checked' : ''} 
+                                   ${component.is_required ? 'disabled' : ''} 
+                                   onchange="toggleComponent(${index})">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div>
+                            <strong>${component.name}</strong>
+                            <span class="badge bg-${badgeColor} ms-1">${componentType}</span>
+                        </div>
+                        <small class="text-muted">${component.description}</small>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Amount</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control component-amount" 
+                                   value="${component.amount}" step="0.01" 
+                                   ${!isEnabled ? 'disabled' : ''} 
+                                   onchange="updateTotals()" 
+                                   style="min-width: 100px;">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Discount %</label>
+                        <input type="number" class="form-control form-control-sm component-discount" 
+                               value="${component.discount_percentage || 0}" 
+                               min="0" max="100" 
+                               ${!isEnabled ? 'disabled' : ''} 
+                               onchange="updateTotals()"
+                               style="min-width: 80px;">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Final Amount</label>
+                        <input type="text" class="form-control form-control-sm component-final" readonly 
+                               value="$${component.calculated_amount}"
+                               style="min-width: 100px;">
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                onclick="resetComponent(${index})" title="Reset to default">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Toggle component enabled/disabled - EXACT COPY FROM FINANCIAL DASHBOARD
+function toggleComponent(index) {
+    const component = tuitionComponents[index];
+    const checkbox = document.querySelector(`[data-component-id="${component.id}"] .component-checkbox`);
+    const amountInput = document.querySelector(`[data-component-id="${component.id}"] .component-amount`);
+    const discountInput = document.querySelector(`[data-component-id="${component.id}"] .component-discount`);
+    
+    const isEnabled = checkbox.checked;
+    component.is_enabled = isEnabled;
+    
+    amountInput.disabled = !isEnabled;
+    discountInput.disabled = !isEnabled;
+    
+    updateTotals();
+}
+
+// Update totals calculation - EXACT COPY FROM FINANCIAL DASHBOARD
+function updateTotals() {
+    let subtotal = 0;
+    let totalDiscount = 0;
+    
+    tuitionComponents.forEach((component, index) => {
+        const row = document.querySelector(`[data-component-id="${component.id}"]`);
+        const checkbox = row.querySelector('.component-checkbox');
+        const amountInput = row.querySelector('.component-amount');
+        const discountInput = row.querySelector('.component-discount');
+        const finalInput = row.querySelector('.component-final');
+        
+        if (checkbox.checked) {
+            const amount = parseFloat(amountInput.value) || 0;
+            const discount = parseFloat(discountInput.value) || 0;
+            const discountAmount = (amount * discount) / 100;
+            const finalAmount = amount - discountAmount;
+            
+            subtotal += amount;
+            totalDiscount += discountAmount;
+            
+            finalInput.value = `$${finalAmount.toFixed(2)}`;
+            component.calculated_amount = finalAmount;
+        } else {
+            finalInput.value = '$0.00';
+            component.calculated_amount = 0;
+        }
+    });
+    
+    // Apply global discount
+    const globalDiscount = parseFloat(document.getElementById('globalDiscount').value) || 0;
+    const globalDiscountAmount = (subtotal * globalDiscount) / 100;
+    totalDiscount += globalDiscountAmount;
+    
+    const finalTotal = subtotal - totalDiscount;
+    
+    document.getElementById('subtotalAmount').textContent = `$${subtotal.toFixed(2)}`;
+    document.getElementById('totalDiscountAmount').textContent = `$${totalDiscount.toFixed(2)}`;
+    document.getElementById('finalTotalAmount').textContent = `$${finalTotal.toFixed(2)}`;
+}
+
+// Apply global discount to all enabled components - EXACT COPY FROM FINANCIAL DASHBOARD
+function applyGlobalDiscount() {
+    const globalDiscount = parseFloat(document.getElementById('globalDiscount').value) || 0;
+    
+    tuitionComponents.forEach((component, index) => {
+        const row = document.querySelector(`[data-component-id="${component.id}"]`);
+        const checkbox = row.querySelector('.component-checkbox');
+        const discountInput = row.querySelector('.component-discount');
+        
+        // Apply global discount to ALL enabled components
+        if (checkbox.checked) {
+            discountInput.value = globalDiscount;
+            component.discount_percentage = globalDiscount;
+        }
+    });
+    
+    updateTotals();
+    alert(`Applied ${globalDiscount}% discount to all enabled components`);
+}
+
+// Clear global discount from all components - EXACT COPY FROM FINANCIAL DASHBOARD
+function clearGlobalDiscount() {
+    document.getElementById('globalDiscount').value = 0;
+    document.getElementById('globalDiscountReason').value = '';
+    
+    tuitionComponents.forEach((component, index) => {
+        const row = document.querySelector(`[data-component-id="${component.id}"]`);
+        const discountInput = row.querySelector('.component-discount');
+        
+        discountInput.value = 0;
+        component.discount_percentage = 0;
+    });
+    
+    updateTotals();
+    alert('Cleared all discounts');
+}
+
+// Store original amounts for proration reset
+let originalComponentAmounts = {};
+
+// Apply proration to all enabled components - EXACT COPY FROM FINANCIAL DASHBOARD
+function applyProration() {
+    const prorationPercentage = parseFloat(document.getElementById('prorationPercentage').value) || 100;
+    
+    // Store original amounts if not already stored
+    if (Object.keys(originalComponentAmounts).length === 0) {
+        tuitionComponents.forEach(component => {
+            const row = document.querySelector(`[data-component-id="${component.id}"]`);
+            const amountInput = row.querySelector('.component-amount');
+            originalComponentAmounts[component.id] = parseFloat(amountInput.value) || component.default_amount || 0;
+        });
+    }
+    
+    tuitionComponents.forEach((component, index) => {
+        const row = document.querySelector(`[data-component-id="${component.id}"]`);
+        const checkbox = row.querySelector('.component-checkbox');
+        const amountInput = row.querySelector('.component-amount');
+        
+        if (checkbox.checked) {
+            const originalAmount = originalComponentAmounts[component.id];
+            const proratedAmount = originalAmount * (prorationPercentage / 100);
+            amountInput.value = proratedAmount.toFixed(2);
+            component.amount = proratedAmount;
+        }
+    });
+    
+    updateTotals();
+    
+    if (prorationPercentage < 100) {
+        alert(`Applied ${prorationPercentage}% proration to all enabled components`);
+    }
+}
+
+// Reset proration back to original amounts - EXACT COPY FROM FINANCIAL DASHBOARD
+function resetProration() {
+    document.getElementById('prorationPercentage').value = 100;
+    document.getElementById('prorationReason').value = '';
+    
+    tuitionComponents.forEach(component => {
+        const row = document.querySelector(`[data-component-id="${component.id}"]`);
+        const amountInput = row.querySelector('.component-amount');
+        
+        if (originalComponentAmounts[component.id] !== undefined) {
+            amountInput.value = originalComponentAmounts[component.id].toFixed(2);
+            component.amount = originalComponentAmounts[component.id];
+        }
+    });
+    
+    originalComponentAmounts = {};
+    updateTotals();
+    alert('Reset all amounts to original values');
+}
+
+// Load application defaults - EXACT COPY FROM FINANCIAL DASHBOARD
+function loadApplicationDefaults() {
+    if (!currentStudentData?.id) return;
+    
+    fetch(`/api/students/${currentStudentData.id}/application-defaults`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                tuitionComponents.forEach((component, index) => {
+                    const row = document.querySelector(`[data-component-id="${component.id}"]`);
+                    const checkbox = row.querySelector('.component-checkbox');
+                    
+                    if (component.type === 'room' && data.application_preferences?.dormitory_meals_option?.includes('dorm')) {
+                        checkbox.checked = true;
+                        component.is_enabled = true;
+                    } else if (component.type === 'board' && data.application_preferences?.dormitory_meals_option?.includes('meal')) {
+                        checkbox.checked = true;
+                        component.is_enabled = true;
+                    }
+                    
+                    toggleComponent(index);
+                });
+                
+                if (data.application_preferences?.financial_aid_request) {
+                    document.getElementById('fafsaRequired').checked = true;
+                }
+                
+                updateTotals();
+                alert('Application defaults loaded');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading defaults:', error);
+            alert('Failed to load application defaults');
+        });
+}
+
+// Reset component to default values - EXACT COPY FROM FINANCIAL DASHBOARD
+function resetComponent(index) {
+    const component = tuitionComponents[index];
+    const row = document.querySelector(`[data-component-id="${component.id}"]`);
+    
+    row.querySelector('.component-amount').value = component.default_amount || component.amount;
+    row.querySelector('.component-discount').value = 0;
+    
+    updateTotals();
+}
+
+// Save tuition components - EXACT COPY FROM FINANCIAL DASHBOARD
+function saveTuitionComponents() {
+    if (!currentStudentData?.id) {
+        alert('No student selected');
+        return;
+    }
+    
+    const componentData = tuitionComponents.map(component => {
+        const row = document.querySelector(`[data-component-id="${component.id}"]`);
+        const checkbox = row.querySelector('.component-checkbox');
+        const amountInput = row.querySelector('.component-amount');
+        const discountInput = row.querySelector('.component-discount');
+        
+        const amount = parseFloat(amountInput.value) || 0;
+        const discountPercentage = parseFloat(discountInput.value) || 0;
+        const finalAmount = amount * (1 - discountPercentage / 100);
+        
+        return {
+            component_id: component.id,
+            is_enabled: checkbox.checked,
+            amount: amount,
+            discount_percentage: discountPercentage,
+            final_amount: finalAmount
+        };
+    }).filter(comp => comp.is_enabled);
+    
+    const hasDormComponent = componentData.some(comp => {
+        const component = tuitionComponents.find(tc => tc.id === comp.component_id);
+        return component && (component.type === 'room' || component.component_type === 'room');
+    });
+    const hasMealComponent = componentData.some(comp => {
+        const component = tuitionComponents.find(tc => tc.id === comp.component_id);
+        return component && (component.type === 'board' || component.component_type === 'board');
+    });
+    
+    const saveData = {
+        components: componentData,
+        global_discount_percentage: parseFloat(document.getElementById('globalDiscount').value) || 0,
+        global_discount_reason: document.getElementById('globalDiscountReason').value || '',
+        proration_percentage: parseFloat(document.getElementById('prorationPercentage').value) || 100,
+        proration_reason: document.getElementById('prorationReason').value || '',
+        fafsa_required: document.getElementById('fafsaRequired').checked,
+        dorm_program_this_year: hasDormComponent,
+        meal_program_this_year: hasMealComponent,
+        academic_year_id: selectedAcademicYear ? selectedAcademicYear.id : null
+    };
+    
+    fetch(`/api/students/${currentStudentData.id}/tuition-components/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(saveData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            alert('Tuition components saved successfully');
+            bootstrap.Modal.getInstance(document.getElementById('setTuitionModal')).hide();
+            location.reload();
+        } else {
+            const errorMessage = result.error || result.message || 'Unknown error occurred';
+            alert('Error saving: ' + errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving tuition:', error);
+        alert('Failed to save tuition components');
+    });
+}
+
+// Old function removed - now using setTuition() which is identical to financial dashboard
+
+// Old function removed - now using renderTuitionComponents() from financial dashboard
+
+// Old functions removed - now using the exact same functions from financial dashboard
+
+function generateContract(studentId) {
+    // Get student financial data first to populate contract terms
+    fetch(`/api/students/${studentId}/financial-info`)
+    .then(response => {
+        console.log('Financial info response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(studentData => {
+        console.log('Student data received:', studentData);
+        
+        if (studentData.student && studentData.student.student_name) {
+            // Populate student info in modal
+            document.getElementById('contractStudentName').textContent = studentData.student.student_name || 'Unknown Student';
+            document.getElementById('contractStudentId').value = studentId;
+            
+            // Get tuition components to calculate total
+            const academicYearParam = studentData.selected_year ? `&academic_year_id=${studentData.selected_year.id}` : '';
+            const componentsUrl = `/api/tuition-components/by-division?student_id=${studentId}${academicYearParam}`;
+            console.log('Fetching tuition components from:', componentsUrl);
+            
+            return fetch(componentsUrl);
+        } else {
+            throw new Error('Failed to load student data: ' + JSON.stringify(studentData));
+        }
+    })
+    .then(response => {
+        console.log('Tuition components response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(componentsData => {
+        console.log('Components data received:', componentsData);
+        
+        if (componentsData.success) {
+            const components = componentsData.components || [];
+            console.log('Number of components found:', components.length);
+            
+            let totalTuition = 0;
+            let registrationAmount = 0;
+            
+            // Calculate total and find registration fee
+            components.forEach(comp => {
+                if (comp.is_enabled) {
+                    const amount = comp.calculated_amount || comp.amount || 0;
+                    totalTuition += amount;
+                    
+                    if (comp.type === 'fee' || comp.name.toLowerCase().includes('registration')) {
+                        registrationAmount = amount;
+                    }
+                }
+            });
+            
+            console.log('Total tuition calculated:', totalTuition);
+            console.log('Registration amount:', registrationAmount);
+            
+            // Set default values in modal
+            document.getElementById('totalTuitionAmount').textContent = `$${totalTuition.toFixed(2)}`;
+            document.getElementById('registrationFeeAmount').textContent = `$${registrationAmount.toFixed(2)}`;
+            
+            // Set reasonable defaults for payment terms
+            const currentDate = new Date();
+            const startMonth = currentDate.getMonth() < 8 ? 8 : currentDate.getMonth(); // Default to September or current month
+            const currentYear = currentDate.getFullYear();
+            
+            document.getElementById('paymentStartMonth').value = startMonth;
+            document.getElementById('paymentStartYear').value = currentYear;
+            document.getElementById('paymentEndMonth').value = (startMonth + 9) % 12; // 10 months default
+            document.getElementById('paymentEndYear').value = startMonth + 9 >= 12 ? currentYear + 1 : currentYear;
+            
+            calculatePaymentTerms(); // Calculate initial values
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('contractTermsModal'));
+            modal.show();
+        } else {
+            console.error('Failed to load tuition components:', componentsData);
+            alert('Failed to load tuition components: ' + (componentsData.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Detailed error in generateContract:', error);
+        alert('Error loading contract data: ' + error.message);
+    });
+}
+
+function sendContract(studentId) {
+    sendContractDialog(studentId);
+}
+
+function sendContractDialog(studentId) {
+    console.log('sendContractDialog called with studentId:', studentId);
+    
+    // Get student data - for the details page, we can get it from the page context
+    const studentName = '{{ student.student_name }}';
+    const division = '{{ student.division }}';
+    
+    console.log('Student data found:', { studentName, division });
+    
+    // Use email confirmation dialog for enhanced contract
+    console.log('Checking email confirmation dialog availability...');
+    console.log('window.emailConfirmationDialog:', window.emailConfirmationDialog);
+    console.log('typeof EmailConfirmationDialog:', typeof EmailConfirmationDialog);
+    
+    if (!window.emailConfirmationDialog) {
+        console.error('Email confirmation dialog not available, attempting to initialize...');
+        
+        // Try to manually initialize it
+        try {
+            if (typeof EmailConfirmationDialog !== 'undefined') {
+                window.emailConfirmationDialog = new EmailConfirmationDialog();
+                console.log('Email confirmation dialog manually initialized');
+            } else {
+                console.error('EmailConfirmationDialog class not found');
+            }
+        } catch (e) {
+            console.error('Failed to manually initialize dialog:', e);
+        }
+        
+        // Try again after initialization
+        if (!window.emailConfirmationDialog) {
+            console.error('Still no dialog available, waiting and retrying...');
+            // Try to wait a bit for it to load
+            setTimeout(() => {
+                if (window.emailConfirmationDialog) {
+                    console.log('Dialog available after delay, retrying...');
+                    sendContractDialog(studentId); // Retry
+                } else {
+                    console.error('Dialog still not available after delay');
+                    alert('Email confirmation dialog not available. Please refresh the page and try again.');
+                }
+            }, 2000);
+            return;
+        }
+    }
+    
+    console.log('Email confirmation dialog is available, proceeding...');
+    
+    window.emailConfirmationDialog.show({
+        studentId: studentId,
+        emailType: 'enhanced_contract',
+        division: division,
+        onConfirm: (data) => {
+            console.log('Email confirmation data received:', data);
+            
+            // Convert recipient keys to actual email addresses
+            const emailAddresses = [];
+            data.recipients.forEach(recipient => {
+                const emailElement = document.getElementById(`email_${recipient}`);
+                if (emailElement && emailElement.textContent && emailElement.textContent !== 'No email address' && emailElement.textContent !== 'Loading...') {
+                    emailAddresses.push(emailElement.textContent.trim());
+                }
+            });
+            
+            console.log('Email addresses to send to:', emailAddresses);
+            
+            if (emailAddresses.length === 0) {
+                alert('No valid email addresses found for selected recipients');
+                return;
+            }
+            
+            // Send enhanced contract with email addresses and signing options
+            const emailData = {
+                student_id: studentId,
+                email_recipients: emailAddresses,
+                email_subject: data.customEmailSubject || `Enhanced Tuition Contract - ${studentName}`,
+                email_message: data.customEmailBody || 'Please find your enhanced tuition contract attached. Please review, sign, and return.',
+                use_opensign: data.use_opensign || false,
+                use_secure_upload: data.use_secure_upload || false,
+                expires_hours: data.expires_hours || 72,
+                signing_method: data.signing_method || 'traditional'
+            };
+            
+            console.log('Sending enhanced contract with data:', emailData);
+            
+            sendEnhancedContract(studentId, emailData)
+                .then(result => {
+                    console.log('Enhanced contract send result:', result);
+                    if (result.success) {
+                        alert(`Enhanced contract sent successfully!\nRecipients: ${emailAddresses.join(', ')}`);
+                        location.reload(); // Refresh to show updated status
+                    } else {
+                        alert(`Error sending contract: ${result.error}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error sending enhanced contract. Please check the console for details.');
+                });
+        }
+    });
+}
+
+async function sendEnhancedContract(studentId, emailData) {
+    try {
+        const response = await fetch('/api/financial/send-enhanced-contract', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                student_id: studentId,
+                ...emailData
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to send contract');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error sending contract:', error);
+        throw error;
+    }
+}
+
+function viewContract(studentId) {
+    // Check if contract exists
+    fetch(`/api/students/${studentId}/tuition-contract/download`)
+    .then(response => {
+        if (response.ok) {
+            // Open contract in new tab
+            window.open(`/api/students/${studentId}/tuition-contract/download`, '_blank');
+        } else {
+            alert('No contract available to view. Please generate a contract first.');
+        }
+    })
+    .catch(error => {
+        console.error('Error checking contract:', error);
+        alert('Error accessing contract. Please try again.');
+    });
+}
+
+function markContractReceived() {
+    const studentId = '{{ student.id }}';
+    if (confirm('Mark contract as received/signed?')) {
+        fetch(`/api/financial/mark-contract-received`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_id: studentId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Contract marked as received!');
+                // Immediately update workflow status instead of full page reload
+                updateWorkflowStatus();
+            } else {
+                alert('Error marking contract as received: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error marking contract as received');
+        });
+    }
+}
+
+// Update view signed contract button for workflow
+function updateViewSignedContractButtonWorkflow(contractStatus, contractData) {
+    console.log('updateViewSignedContractButtonWorkflow called with:', contractStatus, contractData);
+    
+    const studentId = '{{ student.id }}';
+    
+    // Find the "Mark Received" button specifically
+    const markReceivedButton = document.querySelector('button[onclick="markContractReceived()"]');
+    
+    if (!markReceivedButton) {
+        console.log('Mark Received button not found');
+        return;
+    }
+    
+    if (contractStatus !== 'Signed') {
+        console.log('Contract not signed, keeping Mark Received button');
+        // Make sure the Mark Received button is visible
+        markReceivedButton.style.display = '';
+        markReceivedButton.innerHTML = '<i class="fas fa-check"></i> Mark Received';
+        markReceivedButton.className = 'btn btn-outline-secondary';
+        return;
+    }
+    
+    // Contract is signed - replace Mark Received button with View Signed Contract button
+    console.log('Contract is signed, replacing Mark Received button');
+    console.log('Contract data:', contractData);
+    console.log('OpenSign signed URL:', contractData.opensign_signed_url);
+    console.log('Uploaded contract ID:', contractData.uploaded_contract_id);
+    
+    let buttonHtml = '';
+    let buttonOnclick = '';
+    
+    // Digital signature - OpenSign URL (priority)
+    if (contractData.opensign_signed_url) {
+        console.log('Replacing with OpenSign view button');
+        buttonHtml = '<i class="fas fa-file-signature"></i> View Digital Signature';
+        buttonOnclick = `window.open('${contractData.opensign_signed_url}', '_blank')`;
+    }
+    // Print upload - Uploaded contract
+    else if (contractData.uploaded_contract_id) {
+        console.log('Replacing with uploaded contract view button');
+        buttonHtml = '<i class="fas fa-file-pdf"></i> View Uploaded Contract';
+        buttonOnclick = `window.open('/students/${studentId}/view-uploaded-contract', '_blank')`;
+    }
+    // Fallback - general signed contract message
+    else {
+        console.log('No specific signed contract URL found, trying fallback view option');
+        buttonHtml = '<i class="fas fa-file-pdf"></i> View Contract';
+        buttonOnclick = `
+            console.log('Attempting to view contract with fallback method');
+            // Try to open the general contract view first
+            fetch('/api/students/${studentId}/opensign-status')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Fallback opensign status data:', data);
+                    if (data.signed_url) {
+                        window.open(data.signed_url, '_blank');
+                    } else if (data.document_url) {
+                        window.open(data.document_url, '_blank');
+                    } else {
+                        alert('Contract has been signed but view link is not available. Please contact support.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error in fallback contract view:', error);
+                    alert('Contract has been signed but view link is not available. Please contact support.');
+                });
+        `.replace(/\$\{studentId\}/g, studentId);
+    }
+    
+    // Replace the button content and functionality
+    markReceivedButton.innerHTML = buttonHtml;
+    markReceivedButton.className = 'btn btn-success'; // Change to success color
+    markReceivedButton.setAttribute('onclick', buttonOnclick);
+    markReceivedButton.setAttribute('title', 'View signed contract');
+}
+
+function setupAdmire() {
+    alert('Setup Admire payment system - feature coming soon!');
+}
+
+function markAdmireComplete() {
+    alert('Admire setup marked as complete - feature coming soon!');
+}
+
+function sendFafsaReminder() {
+    alert('FAFSA reminder sent - feature coming soon!');
+}
+
+function markFafsaComplete() {
+    document.getElementById('fafsa_completed').checked = true;
+    updateWorkflowStatus();
+}
+
+function saveTuitionComponentsEnhanced() {
+    if (!currentStudentData?.id) {
+        alert('No student selected');
+        return;
+    }
+    
+    const componentData = tuitionComponents.map(component => {
+        const row = document.querySelector(`[data-component-id="${component.id}"]`);
+        const checkbox = row.querySelector('.component-checkbox');
+        const amountInput = row.querySelector('.component-amount');
+        const discountInput = row.querySelector('.component-discount');
+        
+        const amount = parseFloat(amountInput.value) || 0;
+        const discountPercentage = parseFloat(discountInput.value) || 0;
+        const finalAmount = amount * (1 - discountPercentage / 100);
+        
+        return {
+            component_id: component.id,
+            is_enabled: checkbox.checked,
+            amount: amount,
+            discount_percentage: discountPercentage,
+            final_amount: finalAmount
+        };
+    }).filter(comp => comp.is_enabled);
+    
+    const hasDormComponent = componentData.some(comp => {
+        const component = tuitionComponents.find(tc => tc.id === comp.component_id);
+        return component && (component.type === 'room' || component.component_type === 'room');
+    });
+    const hasMealComponent = componentData.some(comp => {
+        const component = tuitionComponents.find(tc => tc.id === comp.component_id);
+        return component && (component.type === 'board' || component.component_type === 'board');
+    });
+    
+    const saveData = {
+        components: componentData,
+        global_discount_percentage: parseFloat(document.getElementById('globalDiscount').value) || 0,
+        global_discount_reason: document.getElementById('globalDiscountReason').value || '',
+        proration_percentage: parseFloat(document.getElementById('prorationPercentage').value) || 100,
+        proration_reason: document.getElementById('prorationReason').value || '',
+        fafsa_required: document.getElementById('fafsaRequired').checked,
+        dorm_program_this_year: hasDormComponent,
+        meal_program_this_year: hasMealComponent,
+        academic_year_id: selectedAcademicYear ? selectedAcademicYear.id : null
+    };
+    
+    fetch(`/api/students/${currentStudentData.id}/tuition-components/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(saveData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success) {
+            alert('Tuition components saved successfully');
+            bootstrap.Modal.getInstance(document.getElementById('setTuitionModal')).hide();
+            location.reload();
+        } else {
+            const errorMessage = result.error || result.message || 'Unknown error occurred';
+            alert('Error saving: ' + errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving tuition:', error);
+        alert('Failed to save tuition components');
+    });
+}
+
+// Additional functions for the enhanced modals
+function calculatePaymentTerms() {
+    // Get values
+    const totalTuitionText = document.getElementById('totalTuitionAmount').textContent;
+    const registrationFeeText = document.getElementById('registrationFeeAmount').textContent;
+    
+    const totalTuition = parseFloat(totalTuitionText.replace('$', '').replace(',', '')) || 0;
+    const registrationFee = parseFloat(registrationFeeText.replace('$', '').replace(',', '')) || 0;
+    
+    const startMonth = parseInt(document.getElementById('paymentStartMonth').value);
+    const startYear = parseInt(document.getElementById('paymentStartYear').value);
+    const endMonth = parseInt(document.getElementById('paymentEndMonth').value);
+    const endYear = parseInt(document.getElementById('paymentEndYear').value);
+    
+    const registrationOption = document.querySelector('input[name="registrationFeeOption"]:checked').value;
+    
+    // Calculate number of months
+    let numberOfPayments = 0;
+    if (startYear === endYear) {
+        numberOfPayments = endMonth - startMonth + 1;
+    } else {
+        numberOfPayments = (12 - startMonth) + endMonth + 1 + (endYear - startYear - 1) * 12;
+    }
+    
+    // Ensure positive number
+    numberOfPayments = Math.max(1, numberOfPayments);
+    
+    // Calculate payment amounts
+    let amountToSpread = totalTuition;
+    let upfrontAmount = 0;
+    
+    if (registrationOption === 'upfront') {
+        amountToSpread = totalTuition - registrationFee;
+        upfrontAmount = registrationFee;
+    } else {
+        amountToSpread = totalTuition; // Include registration in payments
+    }
+    
+    const monthlyPayment = amountToSpread / numberOfPayments;
+    
+    // Update display
+    document.getElementById('numberOfPayments').textContent = numberOfPayments;
+    document.getElementById('monthlyPaymentAmount').textContent = `$${monthlyPayment.toFixed(2)}`;
+    document.getElementById('totalPaymentAmount').textContent = `$${totalTuition.toFixed(2)}`;
+    
+    // Update summary note
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    let summaryNote = `Payments from ${monthNames[startMonth]} ${startYear} to ${monthNames[endMonth]} ${endYear}`;
+    if (registrationOption === 'upfront' && upfrontAmount > 0) {
+        summaryNote += `. Registration fee of $${upfrontAmount.toFixed(2)} due upfront.`;
+    } else if (registrationOption === 'rolled') {
+        summaryNote += `. Registration fee included in monthly payments.`;
+    }
+    
+    document.getElementById('paymentSummaryNote').textContent = summaryNote;
+}
+
+function previewContract() {
+    const contractTerms = gatherContractTerms();
+    
+    // Hide terms modal and show preview modal
+    bootstrap.Modal.getInstance(document.getElementById('contractTermsModal')).hide();
+    const previewModal = new bootstrap.Modal(document.getElementById('contractPreviewModal'));
+    previewModal.show();
+    
+    // Generate preview
+    fetch('/api/financial/contract-preview', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(contractTerms)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Display preview content
+            document.getElementById('contractPreviewContent').innerHTML = data.preview_html || 
+                `<div class="text-center">
+                    <iframe src="${data.preview_url}" width="100%" height="600px" frameborder="0"></iframe>
+                 </div>`;
+        } else {
+            document.getElementById('contractPreviewContent').innerHTML = 
+                `<div class="alert alert-danger">Error generating preview: ${data.error}</div>`;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('contractPreviewContent').innerHTML = 
+            `<div class="alert alert-danger">Error generating preview</div>`;
+    });
+}
+
+function backToTerms() {
+    // Hide preview modal and show terms modal
+    bootstrap.Modal.getInstance(document.getElementById('contractPreviewModal')).hide();
+    const termsModal = new bootstrap.Modal(document.getElementById('contractTermsModal'));
+    termsModal.show();
+}
+
+function gatherContractTerms() {
+    return {
+        student_id: document.getElementById('contractStudentId').value,
+        total_tuition: parseFloat(document.getElementById('totalTuitionAmount').textContent.replace('$', '').replace(',', '')) || 0,
+        registration_fee: parseFloat(document.getElementById('registrationFeeAmount').textContent.replace('$', '').replace(',', '')) || 0,
+        registration_fee_option: document.querySelector('input[name="registrationFeeOption"]:checked').value,
+        payment_start_month: parseInt(document.getElementById('paymentStartMonth').value),
+        payment_start_year: parseInt(document.getElementById('paymentStartYear').value),
+        payment_end_month: parseInt(document.getElementById('paymentEndMonth').value),
+        payment_end_year: parseInt(document.getElementById('paymentEndYear').value)
+    };
+}
+
+function generateAndSendContract() {
+    const contractTerms = gatherContractTerms();
+    
+    // Show loading state
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+    
+    fetch('/api/financial/generate-contract', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(contractTerms)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modals first
+            bootstrap.Modal.getInstance(document.getElementById('contractTermsModal'))?.hide();
+            bootstrap.Modal.getInstance(document.getElementById('contractPreviewModal'))?.hide();
+            
+            // After successful generation, automatically open the send dialog
+            setTimeout(() => {
+                sendContractDialog(contractTerms.student_id);
+            }, 500); // Small delay to let modals close
+        } else {
+            alert('Error generating contract: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error generating contract');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = originalText;
+    });
+}
+</script>
+
+<!-- Contract Terms Modal -->
+<div class="modal fade" id="contractTermsModal" tabindex="-1" aria-labelledby="contractTermsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="contractTermsModalLabel">
+                    <i class="fas fa-file-contract"></i> Contract Terms Setup
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Student Info -->
+                <div class="alert alert-info">
+                    <strong>Student:</strong> <span id="contractStudentName">{{ student.student_name }}</span>
+                    <input type="hidden" id="contractStudentId" value="{{ student.id }}">
+                </div>
+                
+                <!-- Financial Summary -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">Total Tuition</h6>
+                                <h4 class="text-primary" id="totalTuitionAmount">$0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">Registration Fee</h6>
+                                <h4 class="text-secondary" id="registrationFeeAmount">$0.00</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Period -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold mb-3">Payment Period</h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Start Month/Year</label>
+                        <div class="row">
+                            <div class="col-8">
+                                <select class="form-select" id="paymentStartMonth" onchange="calculatePaymentTerms()">
+                                    <option value="0">January</option>
+                                    <option value="1">February</option>
+                                    <option value="2">March</option>
+                                    <option value="3">April</option>
+                                    <option value="4">May</option>
+                                    <option value="5">June</option>
+                                    <option value="6">July</option>
+                                    <option value="7">August</option>
+                                    <option value="8" selected>September</option>
+                                    <option value="9">October</option>
+                                    <option value="10">November</option>
+                                    <option value="11">December</option>
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <input type="number" class="form-control" id="paymentStartYear" value="2024" min="2024" max="2030" onchange="calculatePaymentTerms()">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">End Month/Year</label>
+                        <div class="row">
+                            <div class="col-8">
+                                <select class="form-select" id="paymentEndMonth" onchange="calculatePaymentTerms()">
+                                    <option value="0">January</option>
+                                    <option value="1">February</option>
+                                    <option value="2">March</option>
+                                    <option value="3">April</option>
+                                    <option value="4">May</option>
+                                    <option value="5" selected>June</option>
+                                    <option value="6">July</option>
+                                    <option value="7">August</option>
+                                    <option value="8">September</option>
+                                    <option value="9">October</option>
+                                    <option value="10">November</option>
+                                    <option value="11">December</option>
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <input type="number" class="form-control" id="paymentEndYear" value="2025" min="2024" max="2030" onchange="calculatePaymentTerms()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Registration Fee Handling -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold mb-3">Registration Fee Handling</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="registrationFeeOption" id="regFeeUpfront" value="upfront" checked onchange="calculatePaymentTerms()">
+                            <label class="form-check-label" for="regFeeUpfront">
+                                <strong>Pay Separately (Upfront)</strong> - Registration fee due at contract signing
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="registrationFeeOption" id="regFeeRolled" value="rolled" onchange="calculatePaymentTerms()">
+                            <label class="form-check-label" for="regFeeRolled">
+                                <strong>Roll into Payments</strong> - Include registration fee in monthly payments
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calculated Payment Summary -->
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title">Payment Summary</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Number of Payments:</strong><br>
+                                <span class="h5 text-primary" id="numberOfPayments">0</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Monthly Payment:</strong><br>
+                                <span class="h5 text-success" id="monthlyPaymentAmount">$0.00</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Total Amount:</strong><br>
+                                <span class="h5 text-info" id="totalPaymentAmount">$0.00</span>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted" id="paymentSummaryNote"></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="previewContract()">
+                    <i class="fas fa-eye"></i> Preview Contract
+                </button>
+                <button type="button" class="btn btn-success" onclick="generateAndSendContract()">
+                    <i class="fas fa-paper-plane"></i> Generate & Send
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contract Preview Modal -->
+<div class="modal fade" id="contractPreviewModal" tabindex="-1" aria-labelledby="contractPreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="contractPreviewModalLabel">
+                    <i class="fas fa-file-pdf"></i> Contract Preview
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="contractPreviewContent" style="min-height: 600px;">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading preview...</span>
+                        </div>
+                        <div class="mt-3">Generating contract preview...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="backToTerms()">
+                    <i class="fas fa-arrow-left"></i> Back to Terms
+                </button>
+                <button type="button" class="btn btn-success" onclick="generateAndSendContract()">
+                    <i class="fas fa-paper-plane"></i> Generate & Send Contract
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Set Tuition Modal - EXACT COPY FROM FINANCIAL DASHBOARD -->
+<div class="modal fade" id="setTuitionModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Set Tuition Components</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- FAFSA Requirement Section -->
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">FAFSA Requirement for Academic Year</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="fafsaRequired">
+                                    <label class="form-check-label" for="fafsaRequired">
+                                        <strong>Student must complete FAFSA for this academic year</strong>
+                                    </label>
+                                </div>
+                                <small class="text-muted">Check this box if the student is required to complete FAFSA for financial aid eligibility this year.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Load Defaults Button -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <button type="button" class="btn btn-outline-secondary" onclick="loadApplicationDefaults()">
+                            <i class="fas fa-download"></i> Load Application Defaults
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tuition Components Section -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <h6><i class="fas fa-list"></i> Tuition Components</h6>
+                        <div id="tuitionComponentsList">
+                            <!-- Components will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Proration Section -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-calendar-alt"></i> Proration
+                                    <small class="text-muted ms-2">Reduces amounts based on partial enrollment period</small>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Proration %</label>
+                                        <input type="number" class="form-control" id="prorationPercentage" 
+                                               min="0" max="100" value="100" onchange="applyProration()" 
+                                               placeholder="100">
+                                        <small class="text-muted">Reduces Amount column values</small>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <label class="form-label">Reason</label>
+                                        <input type="text" class="form-control" id="prorationReason" 
+                                               placeholder="e.g., Mid-year start, Early withdrawal">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">&nbsp;</label>
+                                        <div>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="resetProration()">
+                                                <i class="fas fa-undo"></i> Reset
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-12">
+                                        <small class="text-info">
+                                            <i class="fas fa-info-circle"></i> 
+                                            <strong>Proration vs Discount:</strong> Proration reduces base amounts (for partial enrollment). 
+                                            Discounts are applied after proration for financial aid.
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Global Discount Section -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-percentage"></i> Global Discount
+                                    <small class="text-muted ms-2">Applies percentage discount to all enabled components</small>
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Discount %</label>
+                                        <input type="number" class="form-control" id="globalDiscount" 
+                                               min="0" max="100" value="0" onchange="applyGlobalDiscount()" 
+                                               placeholder="0">
+                                        <small class="text-muted">Applied to Amount column values</small>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <label class="form-label">Reason</label>
+                                        <input type="text" class="form-control" id="globalDiscountReason" 
+                                               placeholder="Enter reason for discount (optional)">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">&nbsp;</label>
+                                        <div>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" onclick="clearGlobalDiscount()">
+                                                <i class="fas fa-times"></i> Clear
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Totals Section -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">Totals</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <strong>Subtotal: <span id="subtotalAmount">$0.00</span></strong>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong>Total Discount: <span id="totalDiscountAmount">$0.00</span></strong>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <strong class="text-success">Final Total: <span id="finalTotalAmount">$0.00</span></strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="saveTuitionComponents()">
+                    <i class="fas fa-save"></i> Save Tuition Components
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Document Upload Modal -->
+<div class="modal fade" id="documentUploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Financial Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="documentUploadForm" enctype="multipart/form-data">
+                    <input type="hidden" id="uploadStudentId" value="{{ student.id }}">
+                    <input type="hidden" id="uploadAcademicYearId" value="{{ selected_year.id if selected_year else '' }}">
+                    <div class="mb-3">
+                        <label class="form-label">Document Type</label>
+                        <select class="form-select" id="documentType" required>
+                            <option value="financial_aid_form">Financial Aid Form</option>
+                            <option value="enrollment_contract">Enrollment Contract</option>
+                            <option value="fafsa_document">FAFSA Document</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Select File</label>
+                        <input type="file" class="form-control" id="documentFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
+                        <small class="text-muted">Accepted formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="documentDescription" rows="2" placeholder="Add any notes about this document..."></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-lock"></i> Documents are encrypted and stored securely
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="uploadDocumentSubmit()">Upload Document</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/email-confirmation.js') }}"></script>
+<script>
+// Function to upload financial document
+function uploadFinancialDocument(docType = '') {
+    // Reset the form
+    document.getElementById('documentUploadForm').reset();
+    
+    // Pre-select document type if provided
+    if (docType) {
+        document.getElementById('documentType').value = docType;
+    }
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('documentUploadModal'));
+    modal.show();
+}
+
+// Function to handle the actual upload submission
+function uploadDocumentSubmit() {
+    const formData = new FormData();
+    
+    // Get form values
+    const studentId = document.getElementById('uploadStudentId').value;
+    const academicYearId = document.getElementById('uploadAcademicYearId').value;
+    const documentType = document.getElementById('documentType').value;
+    const documentFile = document.getElementById('documentFile').files[0];
+    const documentDescription = document.getElementById('documentDescription').value;
+    
+    // Validate inputs
+    if (!studentId) {
+        alert('Error: No student ID specified');
+        return;
+    }
+    
+    if (!documentType) {
+        alert('Please select a document type');
+        return;
+    }
+    
+    if (!documentFile) {
+        alert('Please select a file to upload');
+        return;
+    }
+    
+    // Check file size (10MB limit)
+    if (documentFile.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+    }
+    
+    // First get or create the financial record for this student and academic year
+    fetch(`/api/students/${studentId}/get-or-create-financial-record`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ academic_year_id: academicYearId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Now upload the document
+            formData.append('financial_record_id', data.financial_record_id);
+            formData.append('document_type', documentType);
+            formData.append('file', documentFile);
+            formData.append('description', documentDescription);
+            
+            // Show loading state
+            const uploadButton = document.querySelector('#documentUploadModal .btn-primary');
+            const originalText = uploadButton.innerHTML;
+            uploadButton.disabled = true;
+            uploadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            
+            // Submit upload
+            return fetch('/api/financial/documents/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(uploadData => {
+                if (uploadData.success) {
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('documentUploadModal')).hide();
+                    
+                    // Show success message
+                    alert('Document uploaded successfully!');
+                    
+                    // Refresh the page to show updated status
+                    location.reload();
+                } else {
+                    alert('Upload failed: ' + (uploadData.error || 'Unknown error'));
+                }
+            })
+            .finally(() => {
+                // Reset button state
+                uploadButton.disabled = false;
+                uploadButton.innerHTML = originalText;
+            });
+        } else {
+            alert('Error creating financial record: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        alert('Upload failed: ' + error.message);
+    });
+}
+
+// Initialize email confirmation dialog when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the email confirmation dialog
+    if (typeof EmailConfirmationDialog !== 'undefined') {
+        window.emailConfirmationDialog = new EmailConfirmationDialog();
+        console.log('Email confirmation dialog initialized');
+    } else {
+        console.error('EmailConfirmationDialog class not found');
+    }
+});
+</script>
+{% endblock %}

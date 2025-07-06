@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Kollel Student - {{ kollel_student.student.student_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-user-edit text-primary"></i>
+                        Edit Kollel Student
+                    </h1>
+                    <p class="text-muted mb-0">{{ kollel_student.student.student_name }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('kollel.kollel_dashboard') }}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    <a href="{{ url_for('kollel.student_history', kollel_student_id=kollel_student.id) }}" class="btn btn-outline-info">
+                        <i class="fas fa-history"></i> View History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Student Information Card -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user"></i> Student Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-6">Name:</dt>
+                        <dd class="col-sm-6">{{ kollel_student.student.student_name }}</dd>
+                        
+                        <dt class="col-sm-6">Student ID:</dt>
+                        <dd class="col-sm-6">{{ kollel_student.student.student_id }}</dd>
+                        
+                        <dt class="col-sm-6">Status:</dt>
+                        <dd class="col-sm-6">
+                            <span class="badge bg-success">{{ kollel_student.student.status }}</span>
+                        </dd>
+                        
+                        <dt class="col-sm-6">Joined Kollel:</dt>
+                        <dd class="col-sm-6">{{ kollel_student.date_joined_kollel.strftime('%m/%d/%Y') if kollel_student.date_joined_kollel else 'N/A' }}</dd>
+                        
+                        <dt class="col-sm-6">Current Status:</dt>
+                        <dd class="col-sm-6">
+                            <span class="badge bg-{% if kollel_student.is_active %}success{% else %}secondary{% endif %}">
+                                {% if kollel_student.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Form -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit"></i> Edit Kollel Settings
+                    </h5>
+                    <small class="text-muted">Changes will apply to future stipend calculations only</small>
+                </div>
+                <div class="card-body">
+                    <form id="editForm" method="POST">
+                        <div class="row">
+                            <!-- Base Stipend Amount -->
+                            <div class="col-md-6 mb-3">
+                                <label for="base_stipend_amount" class="form-label">
+                                    <i class="fas fa-dollar-sign text-success"></i> Base Stipend Amount
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <select class="form-select" id="base_stipend_amount" name="base_stipend_amount" required>
+                                        <option value="0" {% if kollel_student.base_stipend_amount == 0 %}selected{% endif %}>0 (Incentive capped at $500)</option>
+                                        <option value="500" {% if kollel_student.base_stipend_amount == 500 %}selected{% endif %}>500</option>
+                                        <option value="600" {% if kollel_student.base_stipend_amount == 600 %}selected{% endif %}>600</option>
+                                        <option value="700" {% if kollel_student.base_stipend_amount == 700 %}selected{% endif %}>700</option>
+                                    </select>
+                                </div>
+                                <div class="form-text">
+                                    Current: <strong>${{ kollel_student.base_stipend_amount }}</strong>
+                                </div>
+                            </div>
+
+                            <!-- Kollel Elyon Status -->
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-star text-warning"></i> Kollel Elyon Status
+                                </label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="is_kollel_elyon" name="is_kollel_elyon" value="1"
+                                           {% if kollel_student.is_kollel_elyon %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_kollel_elyon">
+                                        Kollel Elyon Student
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    Auto-adds $1,000 Kollel Elyon bonus to future stipends
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Note: All students are eligible for Mussar Chabura and Retzufin by default -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Note:</strong> All kollel students are eligible for Mussar Chabura ($25/session) and Retzufin pay. 
+                            These amounts are not auto-populated since attendance varies by month.
+                        </div>
+
+                        <!-- Important Notice -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Important:</strong> Changes made here will only affect future stipend calculations. 
+                            Existing monthly stipend records will remain unchanged to preserve historical accuracy.
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('kollel.kollel_dashboard') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+<script>
+document.getElementById('editForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {};
+    
+    // Convert form data to object
+    for (let [key, value] of formData.entries()) {
+        if (key === 'is_kollel_elyon') {
+            data[key] = true;
+        } else {
+            data[key] = value;
+        }
+    }
+    
+    // Handle unchecked checkboxes
+    ['is_kollel_elyon'].forEach(field => {
+        if (!formData.has(field)) {
+            data[field] = false;
+        }
+    });
+    
+    // Show loading state
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalHtml = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    submitBtn.disabled = true;
+    
+    // Submit via AJAX
+    fetch('{{ url_for("kollel.edit_kollel_student", kollel_student_id=kollel_student.id) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showToast('success', result.message);
+            
+            // Show changes made
+            if (result.changes && result.changes.length > 0) {
+                setTimeout(() => {
+                    showToast('info', 'Changes: ' + result.changes.join(', '));
+                }, 1000);
+            }
+            
+            // Redirect after success
+            setTimeout(() => {
+                window.location.href = '{{ url_for("kollel.kollel_dashboard") }}';
+            }, 2000);
+        } else {
+            showToast('error', result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('error', 'Error saving changes');
+    })
+    .finally(() => {
+        // Restore button state
+        submitBtn.innerHTML = originalHtml;
+        submitBtn.disabled = false;
+    });
+});
+
+// Toast notification function
+function showToast(type, message) {
+    const toastContainer = document.getElementById('toastContainer');
+    
+    const toastElement = document.createElement('div');
+    toastElement.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0`;
+    toastElement.setAttribute('role', 'alert');
+    toastElement.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toastElement);
+    
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+</script>
+{% endblock %} 

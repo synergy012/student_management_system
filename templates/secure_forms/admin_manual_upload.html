@@ -1,0 +1,360 @@
+{% extends "base.html" %}
+
+{% block title %}Manual Upload - Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-upload text-primary"></i>
+                    Manual Document Upload
+                </h1>
+                <div class="btn-group">
+                    <a href="{{ url_for('secure_forms.admin_form_uploads') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-list"></i> View All Uploads
+                    </a>
+                    <a href="{{ url_for('secure_forms.admin_secure_forms') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-link"></i> Secure Links
+                    </a>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-file-upload me-2"></i>Upload Received Document
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                Use this form to upload contracts or documents that you've received through other channels 
+                                (email, mail, in-person, etc.) and need to be recorded in the system.
+                            </div>
+                            
+                            <form id="manualUploadForm" enctype="multipart/form-data">
+                                <!-- Student Search -->
+                                <div class="mb-4">
+                                    <label for="studentSearch" class="form-label required">Student</label>
+                                    <input type="text" class="form-control" id="studentSearch" 
+                                           placeholder="Type student name or ID to search..." 
+                                           autocomplete="off" required>
+                                    <input type="hidden" id="studentId" name="student_id" required>
+                                    <div id="studentResults" class="list-group position-absolute mt-1" style="z-index: 1000; display: none;"></div>
+                                    <div class="form-text">Start typing to search for a student</div>
+                                </div>
+                                
+                                <!-- Selected Student Info -->
+                                <div id="selectedStudentInfo" class="alert alert-success d-none mb-4">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>Selected Student:</strong> <span id="selectedStudentName"></span>
+                                            <span class="badge bg-primary ms-2" id="selectedStudentDivision"></span>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearStudentSelection()">
+                                            <i class="fas fa-times"></i> Change
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Document Type -->
+                                <div class="mb-4">
+                                    <label for="documentType" class="form-label required">Document Type</label>
+                                    <select class="form-select" id="documentType" name="document_type" required>
+                                        <option value="">Select document type...</option>
+                                        <option value="tuition_contract">Tuition Contract (Signed)</option>
+                                        <option value="financial_aid_form">Financial Aid Application</option>
+                                        <option value="enrollment_form">Enrollment Form</option>
+                                        <option value="other">Other Document</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Contract Linking (shown when tuition_contract is selected) -->
+                                <div id="contractLinking" class="mb-4 d-none">
+                                    <label for="contractId" class="form-label">Link to Existing Contract (Optional)</label>
+                                    <select class="form-select" id="contractId" name="contract_id">
+                                        <option value="">Select a contract to link to...</option>
+                                    </select>
+                                    <div class="form-text">
+                                        Select an existing contract record to link this upload to, or leave blank to create a general upload record.
+                                    </div>
+                                </div>
+                                
+                                <!-- Document Description -->
+                                <div class="mb-4">
+                                    <label for="documentDescription" class="form-label">Description (Optional)</label>
+                                    <textarea class="form-control" id="documentDescription" name="document_description" 
+                                              rows="3" placeholder="Add any notes about this document, how it was received, etc..."></textarea>
+                                </div>
+                                
+                                <!-- File Upload -->
+                                <div class="mb-4">
+                                    <label for="fileInput" class="form-label required">Document File</label>
+                                    <input type="file" class="form-control" id="fileInput" name="file" 
+                                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
+                                    <div class="form-text">
+                                        Accepted formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB)
+                                    </div>
+                                </div>
+                                
+                                <!-- Upload Progress -->
+                                <div id="uploadProgress" class="mb-4 d-none">
+                                    <div class="progress">
+                                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                             role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Submit Button -->
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn">
+                                        <i class="fas fa-upload"></i> Upload Document
+                                    </button>
+                                </div>
+                            </form>
+                            
+                            <!-- Result Messages -->
+                            <div id="messageContainer" class="mt-4"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let searchTimeout;
+    let selectedStudent = null;
+    
+    // Student search functionality
+    document.getElementById('studentSearch').addEventListener('input', function(e) {
+        const query = e.target.value.trim();
+        
+        clearTimeout(searchTimeout);
+        
+        if (query.length < 2) {
+            hideStudentResults();
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            searchStudents(query);
+        }, 300);
+    });
+    
+    async function searchStudents(query) {
+        try {
+            const response = await fetch(`/secure-forms/api/admin/students/search?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                displayStudentResults(data.students);
+            } else {
+                console.error('Search error:', data.error);
+            }
+        } catch (error) {
+            console.error('Search request failed:', error);
+        }
+    }
+    
+    function displayStudentResults(students) {
+        const resultsContainer = document.getElementById('studentResults');
+        
+        if (students.length === 0) {
+            hideStudentResults();
+            return;
+        }
+        
+        resultsContainer.innerHTML = '';
+        
+        students.forEach(student => {
+            const resultItem = document.createElement('button');
+            resultItem.type = 'button';
+            resultItem.className = 'list-group-item list-group-item-action';
+            resultItem.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${student.name}</strong><br>
+                        <small class="text-muted">ID: ${student.id}</small>
+                    </div>
+                    <span class="badge bg-${student.division === 'YZA' ? 'primary' : 'success'}">${student.division}</span>
+                </div>
+            `;
+            
+            resultItem.addEventListener('click', () => selectStudent(student));
+            resultsContainer.appendChild(resultItem);
+        });
+        
+        resultsContainer.style.display = 'block';
+    }
+    
+    function selectStudent(student) {
+        selectedStudent = student;
+        
+        document.getElementById('studentSearch').value = student.name;
+        document.getElementById('studentId').value = student.id;
+        document.getElementById('selectedStudentName').textContent = student.name;
+        document.getElementById('selectedStudentDivision').textContent = student.division;
+        
+        document.getElementById('selectedStudentInfo').classList.remove('d-none');
+        hideStudentResults();
+        
+        // Load contracts if tuition_contract is selected
+        const documentType = document.getElementById('documentType').value;
+        if (documentType === 'tuition_contract') {
+            loadStudentContracts(student.id);
+        }
+    }
+    
+    function clearStudentSelection() {
+        selectedStudent = null;
+        document.getElementById('studentSearch').value = '';
+        document.getElementById('studentId').value = '';
+        document.getElementById('selectedStudentInfo').classList.add('d-none');
+        document.getElementById('contractId').innerHTML = '<option value="">Select a contract to link to...</option>';
+        hideStudentResults();
+    }
+    
+    function hideStudentResults() {
+        document.getElementById('studentResults').style.display = 'none';
+    }
+    
+    // Document type change handler
+    document.getElementById('documentType').addEventListener('change', function(e) {
+        const contractLinking = document.getElementById('contractLinking');
+        
+        if (e.target.value === 'tuition_contract') {
+            contractLinking.classList.remove('d-none');
+            if (selectedStudent) {
+                loadStudentContracts(selectedStudent.id);
+            }
+        } else {
+            contractLinking.classList.add('d-none');
+        }
+    });
+    
+    async function loadStudentContracts(studentId) {
+        try {
+            const response = await fetch(`/secure-forms/api/admin/students/${studentId}/contracts`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                const contractSelect = document.getElementById('contractId');
+                contractSelect.innerHTML = '<option value="">Select a contract to link to...</option>';
+                
+                data.contracts.forEach(contract => {
+                    const option = document.createElement('option');
+                    option.value = contract.id;
+                    option.textContent = `${contract.academic_year} - ${contract.contract_type} ($${contract.amount.toLocaleString()}) - ${contract.status}`;
+                    contractSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load contracts:', error);
+        }
+    }
+    
+    // Form submission
+    document.getElementById('manualUploadForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (!selectedStudent) {
+            showMessage('error', 'Please select a student');
+            return;
+        }
+        
+        const formData = new FormData(e.target);
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progressContainer = document.getElementById('uploadProgress');
+        const progressBar = progressContainer.querySelector('.progress-bar');
+        
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        progressContainer.classList.remove('d-none');
+        
+        try {
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    progressBar.style.width = percentComplete + '%';
+                }
+            });
+            
+            xhr.open('POST', '/secure-forms/api/admin/manual-upload');
+            
+            xhr.onload = function() {
+                progressContainer.classList.add('d-none');
+                
+                if (xhr.status === 200) {
+                    const result = JSON.parse(xhr.responseText);
+                    if (result.success) {
+                        showMessage('success', result.message);
+                        resetForm();
+                    } else {
+                        showMessage('error', result.error || 'Upload failed');
+                        resetUploadButton();
+                    }
+                } else {
+                    const error = JSON.parse(xhr.responseText);
+                    showMessage('error', error.error || 'Upload failed');
+                    resetUploadButton();
+                }
+            };
+            
+            xhr.onerror = function() {
+                progressContainer.classList.add('d-none');
+                showMessage('error', 'Network error occurred during upload');
+                resetUploadButton();
+            };
+            
+            xhr.send(formData);
+            
+        } catch (error) {
+            progressContainer.classList.add('d-none');
+            showMessage('error', 'An error occurred during upload');
+            resetUploadButton();
+        }
+    });
+    
+    function resetUploadButton() {
+        const uploadBtn = document.getElementById('uploadBtn');
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload Document';
+    }
+    
+    function resetForm() {
+        document.getElementById('manualUploadForm').reset();
+        clearStudentSelection();
+        document.getElementById('contractLinking').classList.add('d-none');
+        resetUploadButton();
+    }
+    
+    function showMessage(type, message) {
+        const container = document.getElementById('messageContainer');
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+        
+        container.innerHTML = `
+            <div class="alert ${alertClass} alert-dismissible fade show">
+                <i class="fas ${icon}"></i> ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
+    
+    // Hide search results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!document.getElementById('studentSearch').contains(e.target) && 
+            !document.getElementById('studentResults').contains(e.target)) {
+            hideStudentResults();
+        }
+    });
+</script>
+{% endblock %} 

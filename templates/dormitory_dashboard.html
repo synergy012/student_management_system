@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+
+{% block title %}Dormitory Management - Student Management System{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-building"></i> Dormitory Management
+                    </h1>
+                    <p class="text-muted mb-0">Manage dormitories, rooms, and bed assignments</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('dormitories.dormitory_map') }}" class="btn btn-info me-2">
+                        <i class="fas fa-map"></i> Visual Map
+                    </a>
+                    <button class="btn btn-success" onclick="showAddDormitoryModal()">
+                        <i class="fas fa-plus"></i> Add Dormitory
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Total Dormitories</h5>
+                            <h2 class="mb-0">{{ total_dormitories }}</h2>
+                        </div>
+                        <i class="fas fa-building fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Total Rooms</h5>
+                            <h2 class="mb-0">{{ total_rooms }}</h2>
+                        </div>
+                        <i class="fas fa-door-open fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Available Beds</h5>
+                            <h2 class="mb-0">{{ available_beds }}</h2>
+                        </div>
+                        <i class="fas fa-bed fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Occupancy Rate</h5>
+                            <h2 class="mb-0">{{ overall_occupancy }}%</h2>
+                        </div>
+                        <i class="fas fa-chart-pie fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dormitories List -->
+    <div class="row">
+        {% for dormitory in dormitories %}
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <span class="badge" style="background-color: {{ dormitory.map_color }}">●</span>
+                        {{ dormitory.display_name or dormitory.name }}
+                    </h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                                data-bs-toggle="dropdown">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="editDormitory({{ dormitory.id }})">
+                                <i class="fas fa-edit"></i> Edit Dormitory
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="manageDormitoryRooms({{ dormitory.id }})">
+                                <i class="fas fa-door-open"></i> Manage Rooms
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="deleteDormitory({{ dormitory.id }})">
+                                <i class="fas fa-trash"></i> Delete
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if dormitory.description %}
+                    <p class="card-text text-muted small">{{ dormitory.description }}</p>
+                    {% endif %}
+                    
+                    <div class="row text-center mb-3">
+                        <div class="col-4">
+                            <div class="border-end">
+                                <strong class="d-block">{{ dormitory.total_rooms }}</strong>
+                                <small class="text-muted">Rooms</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="border-end">
+                                <strong class="d-block">{{ dormitory.total_beds }}</strong>
+                                <small class="text-muted">Beds</small>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <strong class="d-block">{{ dormitory.occupied_beds }}</strong>
+                            <small class="text-muted">Occupied</small>
+                        </div>
+                    </div>
+
+                    <!-- Occupancy Progress Bar -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small">Occupancy</span>
+                            <span class="small font-weight-bold">{{ dormitory.occupancy_rate }}%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-{{ dormitory.status_color }}" 
+                                 style="width: {{ dormitory.occupancy_rate }}%"></div>
+                        </div>
+                    </div>
+
+                    {% if dormitory.address %}
+                    <p class="small text-muted mb-0">
+                        <i class="fas fa-map-marker-alt"></i> {{ dormitory.address }}
+                    </p>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between">
+                        <button class="btn btn-sm btn-outline-primary" 
+                                onclick="viewDormitoryDetails({{ dormitory.id }})">
+                            <i class="fas fa-eye"></i> View Details
+                        </button>
+                        <button class="btn btn-sm btn-primary" 
+                                onclick="showAddRoomModal({{ dormitory.id }})">
+                            <i class="fas fa-plus"></i> Add Room
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add Dormitory Modal -->
+<div class="modal fade" id="addDormitoryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Dormitory</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addDormitoryForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="dormitoryName" class="form-label">Name *</label>
+                                <input type="text" class="form-control" id="dormitoryName" name="name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="dormitoryDisplayName" class="form-label">Display Name</label>
+                                <input type="text" class="form-control" id="dormitoryDisplayName" name="display_name">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dormitoryDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="dormitoryDescription" name="description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dormitoryAddress" class="form-label">Address</label>
+                        <textarea class="form-control" id="dormitoryAddress" name="address" rows="2"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="dormitoryColor" class="form-label">Map Color</label>
+                                <input type="color" class="form-control form-control-color" 
+                                       id="dormitoryColor" name="map_color" value="#3498db">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="dormitoryPositionX" class="form-label">Map Position X</label>
+                                <input type="number" class="form-control" id="dormitoryPositionX" 
+                                       name="map_position_x" value="100">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="dormitoryPositionY" class="form-label">Map Position Y</label>
+                                <input type="number" class="form-control" id="dormitoryPositionY" 
+                                       name="map_position_y" value="100">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dormitoryNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="dormitoryNotes" name="notes" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="addDormitory()">
+                    <i class="fas fa-plus"></i> Add Dormitory
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Room Modal -->
+<div class="modal fade" id="addRoomModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Room</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addRoomForm">
+                    <input type="hidden" id="roomDormitoryId" name="dormitory_id">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="roomNumber" class="form-label">Room Number *</label>
+                                <input type="text" class="form-control" id="roomNumber" name="room_number" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="roomName" class="form-label">Room Name</label>
+                                <input type="text" class="form-control" id="roomName" name="room_name">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="roomFloor" class="form-label">Floor</label>
+                                <input type="number" class="form-control" id="roomFloor" name="floor" min="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="roomType" class="form-label">Room Type</label>
+                                <select class="form-control" id="roomType" name="room_type">
+                                    <option value="Standard">Standard</option>
+                                    <option value="Suite">Suite</option>
+                                    <option value="Single">Single</option>
+                                    <option value="Double">Double</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="bedCount" class="form-label">Number of Beds *</label>
+                                <input type="number" class="form-control" id="bedCount" name="bed_count" 
+                                       min="1" max="8" value="2" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="hasPrivateBathroom" name="has_private_bathroom">
+                                <label class="form-check-label" for="hasPrivateBathroom">
+                                    Private Bathroom
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="hasAirConditioning" 
+                                       name="has_air_conditioning" checked>
+                                <label class="form-check-label" for="hasAirConditioning">
+                                    Air Conditioning
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="hasHeating" name="has_heating" checked>
+                                <label class="form-check-label" for="hasHeating">
+                                    Heating
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="roomNotes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="roomNotes" name="notes" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="addRoom()">
+                    <i class="fas fa-plus"></i> Add Room
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showAddDormitoryModal() {
+    document.getElementById('addDormitoryForm').reset();
+    new bootstrap.Modal(document.getElementById('addDormitoryModal')).show();
+}
+
+function showAddRoomModal(dormitoryId) {
+    document.getElementById('addRoomForm').reset();
+    document.getElementById('roomDormitoryId').value = dormitoryId;
+    new bootstrap.Modal(document.getElementById('addRoomModal')).show();
+}
+
+function addDormitory() {
+    const form = document.getElementById('addDormitoryForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    fetch('/api/dormitories', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', result.message);
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert('danger', result.message);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error adding dormitory: ' + error.message);
+    });
+}
+
+function addRoom() {
+    const form = document.getElementById('addRoomForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    const dormitoryId = data.dormitory_id;
+    
+    // Convert checkbox values to boolean
+    data.has_private_bathroom = document.getElementById('hasPrivateBathroom').checked;
+    data.has_air_conditioning = document.getElementById('hasAirConditioning').checked;
+    data.has_heating = document.getElementById('hasHeating').checked;
+    
+    fetch(`/api/dormitories/${dormitoryId}/rooms`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', result.message);
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert('danger', result.message);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error adding room: ' + error.message);
+    });
+}
+
+function viewDormitoryDetails(dormitoryId) {
+    // Redirect to detailed view (could be implemented later)
+    window.location.href = `/dormitories/map?dormitory=${dormitoryId}`;
+}
+
+function manageDormitoryRooms(dormitoryId) {
+    // Redirect to room management view
+    window.location.href = `/dormitories/map?dormitory=${dormitoryId}&view=rooms`;
+}
+
+function editDormitory(dormitoryId) {
+    // Implement edit functionality
+    showAlert('info', 'Edit dormitory functionality coming soon!');
+}
+
+function deleteDormitory(dormitoryId) {
+    if (confirm('Are you sure you want to delete this dormitory? This action cannot be undone.')) {
+        fetch(`/api/dormitories/${dormitoryId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showAlert('success', result.message);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert('danger', result.message);
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Error deleting dormitory: ' + error.message);
+        });
+    }
+}
+
+function showAlert(type, message) {
+    const alertContainer = document.createElement('div');
+    alertContainer.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertContainer.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+    alertContainer.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertContainer);
+    
+    setTimeout(() => {
+        if (alertContainer.parentNode) {
+            alertContainer.parentNode.removeChild(alertContainer);
+        }
+    }, 5000);
+}
+</script>
+{% endblock %} 

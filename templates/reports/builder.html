@@ -1,0 +1,1090 @@
+{% extends "base.html" %}
+
+{% block title %}Report Builder{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-3">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2>
+                        <i class="fas fa-tools"></i> Report Builder
+                        <span id="reportName" class="text-muted fs-6"></span>
+                    </h2>
+                    <p class="text-muted mb-0">Build custom reports with drag-and-drop functionality</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-secondary" onclick="resetBuilder()">
+                        <i class="fas fa-undo"></i> Reset
+                    </button>
+                    <button class="btn btn-success" onclick="previewReport()">
+                        <i class="fas fa-eye"></i> Preview
+                    </button>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="exportReport('csv')">
+                                <i class="fas fa-file-csv"></i> Export as CSV
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="exportReport('pdf')">
+                                <i class="fas fa-file-pdf"></i> Export as PDF
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="progress-steps d-flex justify-content-between">
+                <div class="step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Report Type</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Select Fields</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Configure Filters</div>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-label">Preview & Export</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Left Sidebar - Available Fields -->
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-list"></i> Available Fields
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <!-- Report Type Selection -->
+                    <div class="mb-3" id="reportTypeSection">
+                        <label for="reportTypeSelect" class="form-label">Report Type</label>
+                        <select class="form-select" id="reportTypeSelect">
+                            <option value="">Select Report Type</option>
+                        </select>
+                    </div>
+
+                    <!-- Field Categories -->
+                    <div id="fieldCategories" style="display: none;">
+                        <div class="mb-3">
+                            <input type="text" class="form-control form-control-sm" 
+                                   id="fieldSearchInput" placeholder="Search fields...">
+                        </div>
+                        <div id="availableFieldsList">
+                            <!-- Fields will be populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center - Report Configuration -->
+        <div class="col-md-6">
+            <!-- Selected Fields -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-check-square"></i> Selected Fields
+                            <span id="selectedFieldsCount" class="badge bg-primary ms-2">0</span>
+                        </h6>
+                        <button class="btn btn-sm btn-outline-danger" onclick="clearSelectedFields()">
+                            <i class="fas fa-trash"></i> Clear All
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="selectedFieldsList" class="sortable-list">
+                        <div class="text-center text-muted py-4" id="selectedFieldsEmpty">
+                            <i class="fas fa-mouse-pointer fa-2x mb-2"></i>
+                            <p class="mb-0">Drag fields from the left panel to build your report</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters Configuration -->
+            <div class="card mb-3" id="filtersCard" style="display: none;">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-filter"></i> Filters
+                            <span id="filtersCount" class="badge bg-secondary ms-2">0</span>
+                        </h6>
+                        <button class="btn btn-sm btn-outline-primary" onclick="addFilter()">
+                            <i class="fas fa-plus"></i> Add Filter
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="filtersList">
+                        <div class="text-center text-muted py-3" id="filtersEmpty">
+                            <i class="fas fa-filter"></i>
+                            <p class="mb-0 small">No filters configured</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sorting Configuration -->
+            <div class="card" id="sortingCard" style="display: none;">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-sort"></i> Sorting
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <select class="form-select" id="sortFieldSelect">
+                                <option value="">Select field to sort by...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select" id="sortDirectionSelect">
+                                <option value="asc">Ascending</option>
+                                <option value="desc">Descending</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar - Preview & Actions -->
+        <div class="col-md-3">
+            <!-- Report Summary -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Report Summary
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between small mb-2">
+                        <span>Report Type:</span>
+                        <span id="summaryReportType" class="text-muted">Not selected</span>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-2">
+                        <span>Fields Selected:</span>
+                        <span id="summaryFieldsCount" class="text-muted">0</span>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-2">
+                        <span>Filters Applied:</span>
+                        <span id="summaryFiltersCount" class="text-muted">0</span>
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <span>Estimated Records:</span>
+                        <span id="summaryRecordsCount" class="text-muted">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Template -->
+            <div class="card mb-3" id="saveTemplateCard" style="display: none;">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-save"></i> Save Template
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form id="saveTemplateForm">
+                        <div class="mb-3">
+                            <input type="text" class="form-control form-control-sm" 
+                                   id="templateNameInput" placeholder="Template name...">
+                        </div>
+                        <div class="mb-3">
+                            <textarea class="form-control form-control-sm" 
+                                      id="templateDescriptionInput" rows="2" 
+                                      placeholder="Description (optional)..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-check-sm">
+                                <input class="form-check-input" type="checkbox" id="templatePublicCheck">
+                                <label class="form-check-label small" for="templatePublicCheck">
+                                    Make public
+                                </label>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-primary w-100" onclick="saveTemplate()">
+                            <i class="fas fa-save"></i> Save Template
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="loadTemplate()" id="loadTemplateBtn">
+                            <i class="fas fa-folder-open"></i> Load Template
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="previewReport()" id="previewBtn" disabled>
+                            <i class="fas fa-eye"></i> Preview Data
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="exportReport('csv')" id="exportCsvBtn" disabled>
+                            <i class="fas fa-file-csv"></i> Export CSV
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="exportReport('pdf')" id="exportPdfBtn" disabled>
+                            <i class="fas fa-file-pdf"></i> Export PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Report Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Loading preview...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="me-auto">
+                    <small class="text-muted">
+                        Showing first <span id="previewRecordCount">--</span> of 
+                        <span id="previewTotalCount">--</span> records
+                    </small>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-primary" onclick="exportReport('csv')">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="exportReport('pdf')">
+                        <i class="fas fa-file-pdf"></i> Export PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Load Template Modal -->
+<div class="modal fade" id="loadTemplateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Load Template</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="templatesList">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Loading templates...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.progress-steps {
+    margin: 20px 0;
+}
+
+.progress-steps .step {
+    text-align: center;
+    flex: 1;
+    position: relative;
+}
+
+.progress-steps .step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 15px;
+    right: -50%;
+    width: 100%;
+    height: 2px;
+    background-color: #e9ecef;
+    z-index: -1;
+}
+
+.progress-steps .step.active:not(:last-child)::after {
+    background-color: #007bff;
+}
+
+.progress-steps .step-number {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 5px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.progress-steps .step.active .step-number {
+    background-color: #007bff;
+    color: white;
+}
+
+.progress-steps .step-label {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.progress-steps .step.active .step-label {
+    color: #007bff;
+    font-weight: bold;
+}
+
+.field-item {
+    padding: 8px 12px;
+    margin: 5px 0;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: move;
+    user-select: none;
+    transition: all 0.2s;
+}
+
+.field-item:hover {
+    background: #e9ecef;
+    border-color: #007bff;
+}
+
+.field-item.dragging {
+    opacity: 0.5;
+}
+
+.selected-field-item {
+    padding: 12px;
+    margin: 8px 0;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    cursor: move;
+    position: relative;
+}
+
+.selected-field-item:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 4px rgba(0,123,255,0.1);
+}
+
+.sortable-list {
+    min-height: 200px;
+    padding: 10px;
+    border: 2px dashed #dee2e6;
+    border-radius: 6px;
+    transition: all 0.3s;
+}
+
+.sortable-list.drag-over {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.filter-item {
+    padding: 12px;
+    margin: 8px 0;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+}
+
+.field-category {
+    margin-bottom: 15px;
+}
+
+.field-category-header {
+    font-size: 12px;
+    font-weight: bold;
+    color: #6c757d;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+</style>
+
+<script>
+let currentReportType = '';
+let availableFields = [];
+let selectedFields = [];
+let reportFilters = {};
+let reportSorting = {};
+let reportTemplateId = null;
+
+// Initialize builder
+document.addEventListener('DOMContentLoaded', function() {
+    loadReportTypes();
+    initializeDragAndDrop();
+    checkUrlParameters();
+    
+    // Event listeners
+    document.getElementById('reportTypeSelect').addEventListener('change', onReportTypeChange);
+    document.getElementById('fieldSearchInput').addEventListener('input', filterAvailableFields);
+    document.getElementById('sortFieldSelect').addEventListener('change', updateSorting);
+    document.getElementById('sortDirectionSelect').addEventListener('change', updateSorting);
+});
+
+function checkUrlParameters() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const templateId = urlParams.get('template');
+    const reportType = urlParams.get('type');
+    const isQuick = urlParams.get('quick');
+    
+    if (templateId) {
+        loadTemplateById(templateId);
+    } else if (reportType) {
+        document.getElementById('reportTypeSelect').value = reportType;
+        onReportTypeChange();
+        
+        if (isQuick) {
+            // Auto-select default fields for quick start
+            setTimeout(() => autoSelectDefaultFields(), 500);
+        }
+    }
+}
+
+function loadReportTypes() {
+    fetch('/api/reports/types')
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            const select = document.getElementById('reportTypeSelect');
+            select.innerHTML = '<option value="">Select Report Type</option>';
+            
+            result.report_types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type.key;
+                option.textContent = type.name;
+                option.dataset.description = type.description;
+                select.appendChild(option);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error loading report types:', error);
+    });
+}
+
+function onReportTypeChange() {
+    const reportType = document.getElementById('reportTypeSelect').value;
+    
+    if (!reportType) {
+        document.getElementById('fieldCategories').style.display = 'none';
+        updateStep(1);
+        return;
+    }
+    
+    currentReportType = reportType;
+    updateStep(2);
+    updateSummary();
+    
+    // Load fields for this report type
+    fetch(`/api/reports/fields/${reportType}`)
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            availableFields = result.fields;
+            displayAvailableFields(result.grouped_fields);
+            document.getElementById('fieldCategories').style.display = 'block';
+            populateSortFieldSelect();
+        }
+    })
+    .catch(error => {
+        console.error('Error loading fields:', error);
+    });
+}
+
+function displayAvailableFields(groupedFields) {
+    const container = document.getElementById('availableFieldsList');
+    container.innerHTML = '';
+    
+    Object.entries(groupedFields).forEach(([category, fields]) => {
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'field-category';
+        
+        const header = document.createElement('div');
+        header.className = 'field-category-header';
+        header.textContent = category;
+        categoryDiv.appendChild(header);
+        
+        fields.forEach(field => {
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'field-item';
+            fieldDiv.draggable = true;
+            fieldDiv.dataset.fieldName = field.field_name;
+            fieldDiv.dataset.fieldType = field.field_type;
+            fieldDiv.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong class="small">${field.display_name}</strong>
+                        <div class="text-muted" style="font-size: 11px;">${field.field_type}</div>
+                    </div>
+                    <div>
+                        ${field.is_filterable ? '<i class="fas fa-filter text-info" title="Filterable"></i>' : ''}
+                        ${field.is_sortable ? '<i class="fas fa-sort text-secondary" title="Sortable"></i>' : ''}
+                    </div>
+                </div>
+            `;
+            
+            // Add drag events
+            fieldDiv.addEventListener('dragstart', handleFieldDragStart);
+            fieldDiv.addEventListener('dragend', handleFieldDragEnd);
+            
+            categoryDiv.appendChild(fieldDiv);
+        });
+        
+        container.appendChild(categoryDiv);
+    });
+}
+
+function filterAvailableFields() {
+    const searchTerm = document.getElementById('fieldSearchInput').value.toLowerCase();
+    const fieldItems = document.querySelectorAll('.field-item');
+    
+    fieldItems.forEach(item => {
+        const fieldName = item.querySelector('strong').textContent.toLowerCase();
+        const isVisible = fieldName.includes(searchTerm);
+        item.style.display = isVisible ? 'block' : 'none';
+    });
+}
+
+function initializeDragAndDrop() {
+    const selectedFieldsList = document.getElementById('selectedFieldsList');
+    
+    selectedFieldsList.addEventListener('dragover', handleDragOver);
+    selectedFieldsList.addEventListener('drop', handleDrop);
+    selectedFieldsList.addEventListener('dragenter', handleDragEnter);
+    selectedFieldsList.addEventListener('dragleave', handleDragLeave);
+}
+
+function handleFieldDragStart(e) {
+    e.dataTransfer.setData('text/plain', e.target.dataset.fieldName);
+    e.target.classList.add('dragging');
+}
+
+function handleFieldDragEnd(e) {
+    e.target.classList.remove('dragging');
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+}
+
+function handleDragEnter(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    
+    const fieldName = e.dataTransfer.getData('text/plain');
+    addSelectedField(fieldName);
+}
+
+function addSelectedField(fieldName) {
+    // Check if field is already selected
+    if (selectedFields.find(f => f.field_name === fieldName)) {
+        return;
+    }
+    
+    const field = availableFields.find(f => f.field_name === fieldName);
+    if (!field) return;
+    
+    selectedFields.push(field);
+    updateSelectedFieldsDisplay();
+    updateStep(3);
+    updateSummary();
+    enableActions();
+}
+
+function updateSelectedFieldsDisplay() {
+    const container = document.getElementById('selectedFieldsList');
+    const emptyMessage = document.getElementById('selectedFieldsEmpty');
+    
+    if (selectedFields.length === 0) {
+        emptyMessage.style.display = 'block';
+        return;
+    }
+    
+    emptyMessage.style.display = 'none';
+    
+    container.innerHTML = selectedFields.map((field, index) => `
+        <div class="selected-field-item" data-field-index="${index}">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="flex-grow-1">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-grip-vertical text-muted me-2"></i>
+                        <div>
+                            <strong>${field.display_name}</strong>
+                            <div class="text-muted small">${field.field_type} • ${field.field_name}</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeSelectedField(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('') + emptyMessage.outerHTML;
+    
+    // Update counter
+    document.getElementById('selectedFieldsCount').textContent = selectedFields.length;
+    
+    // Show cards if we have fields
+    if (selectedFields.length > 0) {
+        document.getElementById('filtersCard').style.display = 'block';
+        document.getElementById('sortingCard').style.display = 'block';
+        document.getElementById('saveTemplateCard').style.display = 'block';
+    }
+    
+    populateSortFieldSelect();
+}
+
+function removeSelectedField(index) {
+    selectedFields.splice(index, 1);
+    updateSelectedFieldsDisplay();
+    updateSummary();
+    
+    if (selectedFields.length === 0) {
+        updateStep(2);
+        document.getElementById('filtersCard').style.display = 'none';
+        document.getElementById('sortingCard').style.display = 'none';
+        document.getElementById('saveTemplateCard').style.display = 'none';
+        disableActions();
+    }
+}
+
+function clearSelectedFields() {
+    selectedFields = [];
+    updateSelectedFieldsDisplay();
+    updateStep(2);
+    updateSummary();
+    disableActions();
+}
+
+function populateSortFieldSelect() {
+    const select = document.getElementById('sortFieldSelect');
+    select.innerHTML = '<option value="">Select field to sort by...</option>';
+    
+    selectedFields.forEach(field => {
+        if (field.is_sortable) {
+            const option = document.createElement('option');
+            option.value = field.field_name;
+            option.textContent = field.display_name;
+            select.appendChild(option);
+        }
+    });
+}
+
+function updateSorting() {
+    const field = document.getElementById('sortFieldSelect').value;
+    const direction = document.getElementById('sortDirectionSelect').value;
+    
+    if (field) {
+        reportSorting = { field: field, direction: direction };
+    } else {
+        reportSorting = {};
+    }
+    
+    updateSummary();
+}
+
+function addFilter() {
+    // Implementation for adding filters
+    console.log('Add filter functionality to be implemented');
+}
+
+function autoSelectDefaultFields() {
+    const reportTypeSelect = document.getElementById('reportTypeSelect');
+    const reportType = reportTypeSelect.value;
+    
+    // Get default fields for the report type
+    fetch('/api/reports/types')
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            const typeInfo = result.report_types.find(t => t.key === reportType);
+            if (typeInfo && typeInfo.default_fields) {
+                typeInfo.default_fields.forEach(fieldName => {
+                    addSelectedField(fieldName);
+                });
+            }
+        }
+    });
+}
+
+function previewReport() {
+    if (!validateConfiguration()) return;
+    
+    const config = buildReportConfig();
+    
+    fetch('/api/reports/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            displayPreview(result);
+            document.getElementById('summaryRecordsCount').textContent = result.total_count;
+        } else {
+            showAlert('danger', 'Preview failed: ' + result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error generating preview:', error);
+        showAlert('danger', 'Error generating preview');
+    });
+}
+
+function displayPreview(result) {
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    const container = document.getElementById('previewContent');
+    
+    document.getElementById('previewRecordCount').textContent = result.preview_count;
+    document.getElementById('previewTotalCount').textContent = result.total_count;
+    
+    if (result.preview_data.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-inbox fa-3x mb-3"></i>
+                <h5>No Data Found</h5>
+                <p>No records match your current filter criteria</p>
+            </div>
+        `;
+    } else {
+        const table = document.createElement('table');
+        table.className = 'table table-striped table-hover';
+        
+        // Create headers
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        selectedFields.forEach(field => {
+            const th = document.createElement('th');
+            th.textContent = field.display_name;
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+        
+        // Create body
+        const tbody = document.createElement('tbody');
+        result.preview_data.forEach(row => {
+            const tr = document.createElement('tr');
+            selectedFields.forEach(field => {
+                const td = document.createElement('td');
+                let value = row[field.field_name];
+                
+                // Format value based on type
+                if (value === null || value === undefined) {
+                    value = '';
+                } else if (field.field_type === 'date') {
+                    value = new Date(value).toLocaleDateString();
+                } else if (field.field_type === 'boolean') {
+                    value = value ? 'Yes' : 'No';
+                }
+                
+                td.textContent = value;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        
+        container.innerHTML = '';
+        container.appendChild(table);
+    }
+    
+    modal.show();
+}
+
+function exportReport(format) {
+    if (!validateConfiguration()) return;
+    
+    const config = buildReportConfig();
+    
+    showAlert('info', 'Generating report...', 3000);
+    
+    fetch('/api/reports/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            config: config,
+            format: format
+        })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', `Report generated successfully! ${result.filtered_records} records exported.`);
+            window.location.href = result.download_url;
+        } else {
+            showAlert('danger', 'Export failed: ' + result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error exporting report:', error);
+        showAlert('danger', 'Error exporting report');
+    });
+}
+
+function saveTemplate() {
+    if (!validateConfiguration()) return;
+    
+    const name = document.getElementById('templateNameInput').value.trim();
+    if (!name) {
+        showAlert('danger', 'Please enter a template name');
+        return;
+    }
+    
+    const templateData = {
+        name: name,
+        description: document.getElementById('templateDescriptionInput').value.trim(),
+        report_type: currentReportType,
+        fields: selectedFields.map(f => f.field_name),
+        filters: reportFilters,
+        sorting: reportSorting,
+        is_public: document.getElementById('templatePublicCheck').checked
+    };
+    
+    const url = reportTemplateId ? `/api/reports/templates/${reportTemplateId}` : '/api/reports/templates';
+    const method = reportTemplateId ? 'PUT' : 'POST';
+    
+    fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(templateData)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', result.message);
+            if (!reportTemplateId) {
+                reportTemplateId = result.template.id;
+            }
+            document.getElementById('reportName').textContent = `(${name})`;
+        } else {
+            showAlert('danger', 'Save failed: ' + result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving template:', error);
+        showAlert('danger', 'Error saving template');
+    });
+}
+
+function loadTemplate() {
+    const modal = new bootstrap.Modal(document.getElementById('loadTemplateModal'));
+    modal.show();
+    
+    // Load available templates
+    fetch('/api/reports/templates')
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            displayTemplatesList(result.templates);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading templates:', error);
+    });
+}
+
+function loadTemplateById(templateId) {
+    fetch(`/api/reports/templates/${templateId}`)
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            applyTemplate(result.template);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading template:', error);
+    });
+}
+
+function applyTemplate(template) {
+    reportTemplateId = template.id;
+    
+    // Set report type
+    document.getElementById('reportTypeSelect').value = template.report_type;
+    onReportTypeChange();
+    
+    // Wait for fields to load, then apply template
+    setTimeout(() => {
+        // Clear existing selections
+        selectedFields = [];
+        
+        // Add template fields
+        template.fields.forEach(fieldName => {
+            addSelectedField(fieldName);
+        });
+        
+        // Apply filters and sorting
+        reportFilters = template.filters || {};
+        reportSorting = template.sorting || {};
+        
+        // Update UI
+        document.getElementById('templateNameInput').value = template.name;
+        document.getElementById('templateDescriptionInput').value = template.description || '';
+        document.getElementById('templatePublicCheck').checked = template.is_public;
+        document.getElementById('reportName').textContent = `(${template.name})`;
+        
+        if (reportSorting.field) {
+            document.getElementById('sortFieldSelect').value = reportSorting.field;
+            document.getElementById('sortDirectionSelect').value = reportSorting.direction || 'asc';
+        }
+        
+        updateStep(4);
+        updateSummary();
+        enableActions();
+    }, 1000);
+}
+
+function displayTemplatesList(templates) {
+    const container = document.getElementById('templatesList');
+    
+    if (templates.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-file-alt fa-2x mb-3"></i>
+                <p>No templates available</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = templates.map(template => `
+        <div class="list-group-item list-group-item-action" onclick="selectTemplate(${template.id})">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="mb-1">${template.name}</h6>
+                    <p class="mb-1 small text-muted">${template.description || 'No description'}</p>
+                    <small class="text-muted">${template.report_type} • ${template.fields.length} fields</small>
+                </div>
+                <small>${formatDate(template.updated_at)}</small>
+            </div>
+        </div>
+    `).join('');
+}
+
+function selectTemplate(templateId) {
+    bootstrap.Modal.getInstance(document.getElementById('loadTemplateModal')).hide();
+    loadTemplateById(templateId);
+}
+
+function buildReportConfig() {
+    return {
+        report_type: currentReportType,
+        fields: selectedFields.map(f => f.field_name),
+        filters: reportFilters,
+        sorting: reportSorting,
+        name: document.getElementById('templateNameInput').value || 'Unnamed Report'
+    };
+}
+
+function validateConfiguration() {
+    if (!currentReportType) {
+        showAlert('danger', 'Please select a report type');
+        return false;
+    }
+    
+    if (selectedFields.length === 0) {
+        showAlert('danger', 'Please select at least one field');
+        return false;
+    }
+    
+    return true;
+}
+
+function updateStep(step) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.querySelector(`.step[data-step="${step}"]`).classList.add('active');
+}
+
+function updateSummary() {
+    document.getElementById('summaryReportType').textContent = currentReportType || 'Not selected';
+    document.getElementById('summaryFieldsCount').textContent = selectedFields.length;
+    document.getElementById('summaryFiltersCount').textContent = Object.keys(reportFilters).length;
+}
+
+function enableActions() {
+    document.getElementById('previewBtn').disabled = false;
+    document.getElementById('exportCsvBtn').disabled = false;
+    document.getElementById('exportPdfBtn').disabled = false;
+}
+
+function disableActions() {
+    document.getElementById('previewBtn').disabled = true;
+    document.getElementById('exportCsvBtn').disabled = true;
+    document.getElementById('exportPdfBtn').disabled = true;
+}
+
+function resetBuilder() {
+    if (confirm('Are you sure you want to reset the report builder? All current configuration will be lost.')) {
+        location.reload();
+    }
+}
+
+// Utility functions
+function formatDate(dateString) {
+    return new Date(dateString).toLocaleDateString();
+}
+
+function showAlert(type, message, timeout = 5000) {
+    // Implement based on your existing alert system
+    console.log(`${type}: ${message}`);
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,666 @@
+{% extends "base.html" %}
+
+{% block title %}Reports Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-chart-bar"></i> Reports Dashboard</h2>
+                    <p class="text-muted mb-0">Generate comprehensive reports on students, applications, financials, and more</p>
+                </div>
+                <div>
+                    <a href="/reports/builder" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Create New Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Report Templates</h5>
+                            <h3 id="templateCount" class="mb-0">--</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-file-alt fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Reports Generated</h5>
+                            <h3 id="reportsCount" class="mb-0">--</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-download fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Report Types</h5>
+                            <h3 id="reportTypesCount" class="mb-0">--</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-layer-group fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">This Month</h5>
+                            <h3 id="monthlyCount" class="mb-0">--</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calendar fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Report Templates -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-file-alt"></i> Report Templates
+                        </h5>
+                        <div>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-secondary" id="refreshTemplates">
+                                    <i class="fas fa-sync"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" onclick="showCreateTemplateModal()">
+                                    <i class="fas fa-plus"></i> New Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Template Filters -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <select class="form-select form-select-sm" id="templateTypeFilter">
+                                <option value="">All Report Types</option>
+                                <option value="students">Students</option>
+                                <option value="applications">Applications</option>
+                                <option value="financial">Financial</option>
+                                <option value="dormitory">Dormitory</option>
+                                <option value="kollel">Kollel</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control form-control-sm" 
+                                   id="templateSearchFilter" placeholder="Search templates...">
+                        </div>
+                    </div>
+
+                    <!-- Templates List -->
+                    <div id="templatesList">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Loading templates...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Reports & Quick Actions -->
+        <div class="col-md-4">
+            <!-- Quick Actions -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="generateQuickReport('students')">
+                            <i class="fas fa-users"></i> Student Report
+                        </button>
+                        <button class="btn btn-outline-success btn-sm" onclick="generateQuickReport('applications')">
+                            <i class="fas fa-file-text"></i> Application Report
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="generateQuickReport('financial')">
+                            <i class="fas fa-dollar-sign"></i> Financial Report
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm" onclick="generateQuickReport('dormitory')">
+                            <i class="fas fa-bed"></i> Dormitory Report
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="generateQuickReport('kollel')">
+                            <i class="fas fa-graduation-cap"></i> Kollel Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Reports -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-history"></i> Recent Reports
+                        </h6>
+                        <a href="#" onclick="showReportHistory()" class="btn btn-sm btn-outline-secondary">
+                            View All
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="recentReportsList" style="max-height: 400px; overflow-y: auto;">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                            <small class="d-block mt-2 text-muted">Loading recent reports...</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Template Modal -->
+<div class="modal fade" id="createTemplateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Report Template</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createTemplateForm">
+                    <div class="mb-3">
+                        <label for="templateName" class="form-label">Template Name</label>
+                        <input type="text" class="form-control" id="templateName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="templateDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="templateDescription" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="templateType" class="form-label">Report Type</label>
+                        <select class="form-select" id="templateType" required>
+                            <option value="">Select Report Type</option>
+                            <option value="students">Students</option>
+                            <option value="applications">Applications</option>
+                            <option value="financial">Financial</option>
+                            <option value="dormitory">Dormitory</option>
+                            <option value="kollel">Kollel</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="templatePublic">
+                            <label class="form-check-label" for="templatePublic">
+                                Make this template public (accessible to other users)
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createTemplateAndRedirect()">
+                    Create & Configure
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report History Modal -->
+<div class="modal fade" id="reportHistoryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Report History</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="reportHistoryContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Loading report history...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let allTemplates = [];
+let reportHistory = [];
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+    loadReportTypes();
+    
+    // Set up event listeners
+    document.getElementById('refreshTemplates').addEventListener('click', loadTemplates);
+    document.getElementById('templateTypeFilter').addEventListener('change', filterTemplates);
+    document.getElementById('templateSearchFilter').addEventListener('input', filterTemplates);
+});
+
+function loadDashboardData() {
+    loadTemplates();
+    loadRecentReports();
+    loadReportTypes();
+}
+
+function loadTemplates() {
+    fetch('/api/reports/templates')
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            allTemplates = result.templates;
+            displayTemplates(allTemplates);
+            document.getElementById('templateCount').textContent = allTemplates.length;
+        } else {
+            showAlert('danger', 'Error loading templates: ' + result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading templates:', error);
+        showAlert('danger', 'Error loading templates');
+    });
+}
+
+function loadRecentReports() {
+    fetch('/api/reports/history?per_page=5')
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            reportHistory = result.executions;
+            displayRecentReports(reportHistory);
+            document.getElementById('reportsCount').textContent = result.pagination.total;
+            
+            // Count this month's reports
+            const thisMonth = new Date();
+            const monthlyReports = reportHistory.filter(report => {
+                const reportDate = new Date(report.executed_at);
+                return reportDate.getMonth() === thisMonth.getMonth() && 
+                       reportDate.getFullYear() === thisMonth.getFullYear();
+            });
+            document.getElementById('monthlyCount').textContent = monthlyReports.length;
+        } else {
+            console.error('Error loading recent reports:', result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading recent reports:', error);
+    });
+}
+
+function loadReportTypes() {
+    fetch('/api/reports/types')
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            document.getElementById('reportTypesCount').textContent = result.report_types.length;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading report types:', error);
+    });
+}
+
+function displayTemplates(templates) {
+    const container = document.getElementById('templatesList');
+    
+    if (templates.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-file-alt fa-3x mb-3"></i>
+                <h5>No Report Templates</h5>
+                <p>Create your first report template to get started</p>
+                <button class="btn btn-primary" onclick="showCreateTemplateModal()">
+                    <i class="fas fa-plus"></i> Create Template
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = templates.map(template => `
+        <div class="card mb-3 template-card" data-type="${template.report_type}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="card-title mb-1">
+                            ${template.name}
+                            ${template.is_public ? '<span class="badge bg-info ms-2">Public</span>' : ''}
+                        </h6>
+                        <p class="card-text text-muted small mb-2">${template.description || 'No description'}</p>
+                        <div class="d-flex gap-3 small text-muted">
+                            <span><i class="fas fa-layer-group"></i> ${template.report_type}</span>
+                            <span><i class="fas fa-list"></i> ${template.fields.length} fields</span>
+                            <span><i class="fas fa-clock"></i> Used ${template.use_count} times</span>
+                            ${template.last_used ? `<span><i class="fas fa-calendar"></i> ${formatDate(template.last_used)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-sm btn-outline-primary" onclick="generateFromTemplate(${template.id}, 'csv')">
+                            <i class="fas fa-file-csv"></i> CSV
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="generateFromTemplate(${template.id}, 'pdf')">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="fas fa-cog"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/reports/builder?template=${template.id}">
+                                    <i class="fas fa-edit"></i> Edit Template
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="duplicateTemplate(${template.id})">
+                                    <i class="fas fa-copy"></i> Duplicate
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="deleteTemplate(${template.id})">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function displayRecentReports(reports) {
+    const container = document.getElementById('recentReportsList');
+    
+    if (reports.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-3 text-muted">
+                <i class="fas fa-history"></i>
+                <p class="mb-0 mt-2 small">No recent reports</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = reports.map(report => `
+        <div class="list-group-item border-0">
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                    <h6 class="mb-1 small">${report.report_name}</h6>
+                    <p class="mb-1 small text-muted">
+                        ${report.report_type} • ${report.filtered_records} records
+                    </p>
+                    <small class="text-muted">${formatDateTime(report.executed_at)}</small>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-${report.status === 'completed' ? 'success' : 'danger'} mb-1">
+                        ${report.status}
+                    </span>
+                    ${report.status === 'completed' ? `
+                        <div>
+                            <a href="/api/reports/download/${report.id}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterTemplates() {
+    const typeFilter = document.getElementById('templateTypeFilter').value;
+    const searchFilter = document.getElementById('templateSearchFilter').value.toLowerCase();
+    
+    let filteredTemplates = allTemplates;
+    
+    if (typeFilter) {
+        filteredTemplates = filteredTemplates.filter(template => template.report_type === typeFilter);
+    }
+    
+    if (searchFilter) {
+        filteredTemplates = filteredTemplates.filter(template => 
+            template.name.toLowerCase().includes(searchFilter) ||
+            (template.description && template.description.toLowerCase().includes(searchFilter))
+        );
+    }
+    
+    displayTemplates(filteredTemplates);
+}
+
+function showCreateTemplateModal() {
+    const modal = new bootstrap.Modal(document.getElementById('createTemplateModal'));
+    modal.show();
+}
+
+function createTemplateAndRedirect() {
+    const form = document.getElementById('createTemplateForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const templateData = {
+        name: document.getElementById('templateName').value,
+        description: document.getElementById('templateDescription').value,
+        report_type: document.getElementById('templateType').value,
+        is_public: document.getElementById('templatePublic').checked
+    };
+    
+    fetch('/api/reports/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(templateData)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', result.message);
+            window.location.href = `/reports/builder?template=${result.template.id}`;
+        } else {
+            showAlert('danger', 'Error creating template: ' + result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error creating template:', error);
+        showAlert('danger', 'Error creating template');
+    });
+}
+
+function generateFromTemplate(templateId, format) {
+    showAlert('info', 'Generating report...', 3000);
+    
+    fetch('/api/reports/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            template_id: templateId,
+            format: format
+        })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', `Report generated successfully! ${result.filtered_records} records exported.`);
+            window.location.href = result.download_url;
+            loadRecentReports(); // Refresh recent reports
+        } else {
+            showAlert('danger', 'Error generating report: ' + result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error generating report:', error);
+        showAlert('danger', 'Error generating report');
+    });
+}
+
+function generateQuickReport(reportType) {
+    // Redirect to report builder with quick start
+    window.location.href = `/reports/builder?type=${reportType}&quick=true`;
+}
+
+function showReportHistory() {
+    const modal = new bootstrap.Modal(document.getElementById('reportHistoryModal'));
+    modal.show();
+    
+    // Load full history
+    fetch('/api/reports/history?per_page=50')
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            displayFullReportHistory(result.executions);
+        } else {
+            document.getElementById('reportHistoryContent').innerHTML = `
+                <div class="alert alert-danger">Error loading report history: ${result.message}</div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading report history:', error);
+        document.getElementById('reportHistoryContent').innerHTML = `
+            <div class="alert alert-danger">Error loading report history</div>
+        `;
+    });
+}
+
+function displayFullReportHistory(reports) {
+    const container = document.getElementById('reportHistoryContent');
+    
+    if (reports.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="fas fa-history fa-3x mb-3"></i>
+                <h5>No Report History</h5>
+                <p>Generate your first report to see history here</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Report Name</th>
+                        <th>Type</th>
+                        <th>Format</th>
+                        <th>Records</th>
+                        <th>Executed</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${reports.map(report => `
+                        <tr>
+                            <td>${report.report_name}</td>
+                            <td><span class="badge bg-secondary">${report.report_type}</span></td>
+                            <td><span class="badge bg-info">${report.export_format.toUpperCase()}</span></td>
+                            <td>${report.filtered_records}</td>
+                            <td>
+                                <small>${formatDateTime(report.executed_at)}</small><br>
+                                <small class="text-muted">by ${report.executed_by}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-${report.status === 'completed' ? 'success' : 'danger'}">
+                                    ${report.status}
+                                </span>
+                            </td>
+                            <td>
+                                ${report.status === 'completed' ? `
+                                    <a href="/api/reports/download/${report.id}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                ` : ''}
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+function deleteTemplate(templateId) {
+    if (!confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
+        return;
+    }
+    
+    fetch(`/api/reports/templates/${templateId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showAlert('success', result.message);
+            loadTemplates();
+        } else {
+            showAlert('danger', 'Error deleting template: ' + result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting template:', error);
+        showAlert('danger', 'Error deleting template');
+    });
+}
+
+// Utility functions
+function formatDate(dateString) {
+    return new Date(dateString).toLocaleDateString();
+}
+
+function formatDateTime(dateString) {
+    return new Date(dateString).toLocaleString();
+}
+
+function showAlert(type, message, timeout = 5000) {
+    // You can implement this function based on your existing alert system
+    // For now, just use browser alert
+    if (type === 'success') {
+        console.log('Success:', message);
+    } else if (type === 'danger') {
+        console.error('Error:', message);
+    }
+    // TODO: Implement proper alert system
+}
+</script>
+{% endblock %} 
