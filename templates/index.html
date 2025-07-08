@@ -112,7 +112,7 @@
     <!-- Quick Navigation Cards -->
     <div class="row g-4 mb-5">
         <div class="col-lg-3 col-md-6">
-            <div class="nav-card" onclick="navigateTo('/students')">
+            <div class="nav-card" onclick="navigateTo('{{ url_for('students.view_students') }}')">
                 <div class="nav-card-icon bg-primary">
                     <i class="fas fa-users fa-2x"></i>
                 </div>
@@ -126,7 +126,7 @@
         </div>
         
         <div class="col-lg-3 col-md-6">
-            <div class="nav-card" onclick="navigateTo('/applications')">
+            <div class="nav-card" onclick="navigateTo('{{ url_for('applications.applications_dashboard') }}')">
                 <div class="nav-card-icon bg-success">
                     <i class="fas fa-file-alt fa-2x"></i>
                 </div>
@@ -140,7 +140,7 @@
         </div>
         
         <div class="col-lg-3 col-md-6">
-            <div class="nav-card" onclick="navigateTo('/academic')">
+            <div class="nav-card" onclick="navigateTo('{{ url_for('academic.academic_dashboard') }}')">
                 <div class="nav-card-icon bg-warning">
                     <i class="fas fa-graduation-cap fa-2x"></i>
                 </div>
@@ -154,7 +154,7 @@
 </div>
 
         <div class="col-lg-3 col-md-6">
-            <div class="nav-card" onclick="navigateTo('/dormitories')">
+            <div class="nav-card" onclick="navigateTo('{{ url_for('dormitories.dormitory_dashboard') }}')">
                 <div class="nav-card-icon bg-info">
                     <i class="fas fa-building fa-2x"></i>
                 </div>
@@ -640,28 +640,28 @@ function navigateTo(url) {
 function createNewStudent() {
     window.toast.info('Opening student creation form...');
     setTimeout(() => {
-        window.location.href = '/students/new';
+        window.location.href = '{{ url_for('students.create_student') }}';
     }, 500);
 }
 
 function recordAttendance() {
     window.toast.info('Opening attendance system...');
     setTimeout(() => {
-        window.location.href = '/attendance';
+        window.location.href = '{{ url_for('academic.attendance_dashboard') }}';
     }, 500);
 }
 
 function reviewApplications() {
     window.toast.info('Loading applications...');
     setTimeout(() => {
-        window.location.href = '/applications';
+        window.location.href = '{{ url_for('applications.applications_dashboard') }}';
     }, 500);
 }
 
 function generateReports() {
     window.toast.info('Opening report builder...');
     setTimeout(() => {
-        window.location.href = '/reports';
+        window.location.href = '{{ url_for('reports.reports_dashboard') }}';
     }, 500);
 }
 
