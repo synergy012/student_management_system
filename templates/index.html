@@ -126,7 +126,7 @@
         </div>
         
         <div class="col-lg-3 col-md-6">
-            <div class="nav-card" onclick="navigateTo('{{ url_for('applications.applications_dashboard') }}')">
+            <div class="nav-card" onclick="navigateTo('{{ url_for('applications.applications_list') }}')">
                 <div class="nav-card-icon bg-success">
                     <i class="fas fa-file-alt fa-2x"></i>
                 </div>
@@ -654,7 +654,7 @@ function recordAttendance() {
 function reviewApplications() {
     window.toast.info('Loading applications...');
     setTimeout(() => {
-        window.location.href = '{{ url_for('applications.applications_dashboard') }}';
+        window.location.href = '{{ url_for('applications.applications_list') }}';
     }, 500);
 }
 

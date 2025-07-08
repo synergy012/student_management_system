@@ -67,6 +67,10 @@
 - `settings.download_division_form` → `/download-division-form/<division>/<form_type>`
 - `settings.get_dropbox_sign_quota` → `/dropbox-sign-quota`
 
+### Dormitories Routes
+- `dormitories.dormitory_dashboard` → `/dormitories`
+- `dormitories.dormitory_map` → `/dormitories/map`
+
 ### Reports Routes
 - `reports.reports_dashboard` → `/reports`
 - `reports.report_builder` → `/reports/builder`
