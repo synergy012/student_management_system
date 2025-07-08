@@ -387,7 +387,7 @@ function displayTemplates(templates) {
                                 <i class="fas fa-cog"></i>
                             </button>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="/reports/builder?template=${template.id}">
+                                <li><a class="dropdown-item" href="{{ url_for('reports.report_builder') }}?template=${template.id}">
                                     <i class="fas fa-edit"></i> Edit Template
                                 </a></li>
                                 <li><a class="dropdown-item" href="#" onclick="duplicateTemplate(${template.id})">
@@ -435,7 +435,7 @@ function displayRecentReports(reports) {
                     </span>
                     ${report.status === 'completed' ? `
                         <div>
-                            <a href="/api/reports/download/${report.id}" class="btn btn-sm btn-outline-primary">
+                            <a href="{{ url_for('reports.download_report', execution_id='${report.id}') }}" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-download"></i>
                             </a>
                         </div>
@@ -494,7 +494,7 @@ function createTemplateAndRedirect() {
     .then(result => {
         if (result.success) {
             showAlert('success', result.message);
-            window.location.href = `/reports/builder?template=${result.template.id}`;
+            window.location.href = `{{ url_for('reports.report_builder') }}?template=${result.template.id}`;
         } else {
             showAlert('danger', 'Error creating template: ' + result.message);
         }
@@ -534,7 +534,7 @@ function generateFromTemplate(templateId, format) {
 
 function generateQuickReport(reportType) {
     // Redirect to report builder with quick start
-    window.location.href = `/reports/builder?type=${reportType}&quick=true`;
+    window.location.href = `{{ url_for('reports.report_builder') }}?type=${reportType}&quick=true`;
 }
 
 function showReportHistory() {
@@ -607,7 +607,7 @@ function displayFullReportHistory(reports) {
                             </td>
                             <td>
                                 ${report.status === 'completed' ? `
-                                    <a href="/api/reports/download/${report.id}" class="btn btn-sm btn-outline-primary">
+                                    <a href="{{ url_for('reports.download_report', execution_id='${report.id}') }}" class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-download"></i>
                                     </a>
                                 ` : ''}

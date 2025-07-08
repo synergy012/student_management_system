@@ -1484,7 +1484,7 @@ function updateViewSignedContractButton(contractStatus, contractData) {
                                 </div>
                             </div>
                             <div>
-                                <a href="/students/${studentId}/view-uploaded-contract" 
+                                <a href="{{ url_for('students.view_uploaded_contract', student_id='${studentId}') }}" 
                                    target="_blank" class="btn btn-sm btn-success" data-view-signed-contract>
                                     <i class="fas fa-file-pdf"></i> View Signed Contract (Upload)
                                 </a>

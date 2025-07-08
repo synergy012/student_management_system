@@ -142,7 +142,7 @@
                         <!-- Download Pre-filled Form -->
                         {% if secure_link.pre_filled_pdf_path %}
                         <div class="text-center mb-4">
-                            <a href="/download-form/{{ secure_link.token }}" class="btn btn-outline-primary btn-lg">
+                            <a href="{{ url_for('secure_forms.download_form', token=secure_link.token) }}" class="btn btn-outline-primary btn-lg">
                                 <i class="fas fa-download"></i> Download Pre-filled Form
                             </a>
                         </div>
