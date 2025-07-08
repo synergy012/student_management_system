@@ -32,40 +32,40 @@
                         </button>
                         <ul class="dropdown-menu">
                             <li><h6 class="dropdown-header">YZA - Yeshiva Zichron Aryeh</h6></li>
-                            <li><a class="dropdown-item" href="{{ url_for('financial.division_financial_aid', division='YZA') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('financial.financial_aid.division_financial_aid', division='YZA') }}">
                                 <i class="fas fa-hands-helping"></i> Financial Aid Applications
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('financial.division_tuition_contracts', division='YZA') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('financial.financial_divisions.division_tuition_contracts', division='YZA') }}">
                                 <i class="fas fa-file-contract"></i> Tuition Contracts
                             </a></li>
                             {% if current_user.has_permission('manage_users') %}
-                            <li><a class="dropdown-item" href="{{ url_for('financial.division_financial_config', division='YZA') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('financial.financial_divisions.division_financial_config', division='YZA') }}">
                                 <i class="fas fa-cog"></i> Division Settings
                             </a></li>
                             {% endif %}
                             <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header">YOH - Yeshiva Ohel Hatorah</h6></li>
-                            <li><a class="dropdown-item" href="{{ url_for('financial.division_financial_aid', division='YOH') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('financial.financial_aid.division_financial_aid', division='YOH') }}">
                                 <i class="fas fa-hands-helping"></i> Financial Aid Applications
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('financial.division_tuition_contracts', division='YOH') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('financial.financial_divisions.division_tuition_contracts', division='YOH') }}">
                                 <i class="fas fa-file-contract"></i> Tuition Contracts
                             </a></li>
                             {% if current_user.has_permission('manage_users') %}
-                            <li><a class="dropdown-item" href="{{ url_for('financial.division_financial_config', division='YOH') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('financial.financial_divisions.division_financial_config', division='YOH') }}">
                                 <i class="fas fa-cog"></i> Division Settings
                             </a></li>
                             {% endif %}
                             <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header">KOLLEL</h6></li>
-                            <li><a class="dropdown-item" href="{{ url_for('financial.division_financial_aid', division='KOLLEL') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('financial.financial_aid.division_financial_aid', division='KOLLEL') }}">
                                 <i class="fas fa-hands-helping"></i> Financial Aid Applications
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('financial.division_tuition_contracts', division='KOLLEL') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('financial.financial_divisions.division_tuition_contracts', division='KOLLEL') }}">
                                 <i class="fas fa-file-contract"></i> Tuition Contracts
                             </a></li>
                             {% if current_user.has_permission('manage_users') %}
-                            <li><a class="dropdown-item" href="{{ url_for('financial.division_financial_config', division='KOLLEL') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('financial.financial_divisions.division_financial_config', division='KOLLEL') }}">
                                 <i class="fas fa-cog"></i> Division Settings
                             </a></li>
                             {% endif %}

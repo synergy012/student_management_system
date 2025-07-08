@@ -1,0 +1,536 @@
+[
+  {
+    "file": "templates\\404.html",
+    "type": "url_for_fix",
+    "old": "core.index",
+    "new": "core.index"
+  },
+  {
+    "file": "templates\\500.html",
+    "type": "url_for_fix",
+    "old": "core.index",
+    "new": "core.index"
+  },
+  {
+    "file": "templates\\applications.html",
+    "type": "url_for_fix",
+    "old": "files.view_attachment",
+    "new": "files.view_attachment"
+  },
+  {
+    "file": "templates\\applications.html",
+    "type": "url_for_fix",
+    "old": "files.serve_attachment",
+    "new": "files.serve_attachment"
+  },
+  {
+    "file": "templates\\applications.html",
+    "type": "url_for_fix",
+    "old": "applications.applications_list",
+    "new": "applications.applications_list"
+  },
+  {
+    "file": "templates\\applications.html",
+    "type": "url_for_fix",
+    "old": "applications.applications_list",
+    "new": "applications.applications_list"
+  },
+  {
+    "file": "templates\\application_create.html",
+    "type": "url_for_fix",
+    "old": "applications.applications_list",
+    "new": "applications.applications_list"
+  },
+  {
+    "file": "templates\\base.html",
+    "type": "url_for_fix",
+    "old": "auth.logout",
+    "new": "auth.logout"
+  },
+  {
+    "file": "templates\\base.html",
+    "type": "url_for_fix",
+    "old": "auth.profile",
+    "new": "auth.profile"
+  },
+  {
+    "file": "templates\\base.html",
+    "type": "url_for_fix",
+    "old": "students.view_students",
+    "new": "students.view_students"
+  },
+  {
+    "file": "templates\\base.html",
+    "type": "url_for_fix",
+    "old": "academic.academic_dashboard",
+    "new": "academic.academic_dashboard"
+  },
+  {
+    "file": "templates\\base.html",
+    "type": "url_for_fix",
+    "old": "kollel.kollel_dashboard",
+    "new": "kollel.kollel_dashboard"
+  },
+  {
+    "file": "templates\\base.html",
+    "type": "url_for_fix",
+    "old": "dormitories.dormitory_dashboard",
+    "new": "dormitories.dormitory_dashboard"
+  },
+  {
+    "file": "templates\\base.html",
+    "type": "url_for_fix",
+    "old": "reports.reports_dashboard",
+    "new": "reports.reports_dashboard"
+  },
+  {
+    "file": "templates\\base.html",
+    "type": "url_for_fix",
+    "old": "pdf_templates.template_manager",
+    "new": "pdf_templates.template_manager"
+  },
+  {
+    "file": "templates\\base.html",
+    "type": "url_for_fix",
+    "old": "email_templates.template_manager",
+    "new": "email_templates.template_manager"
+  },
+  {
+    "file": "templates\\base.html",
+    "type": "url_for_fix",
+    "old": "academic_year_transition.transition_dashboard",
+    "new": "academic_year_transition.transition_dashboard"
+  },
+  {
+    "file": "templates\\base.html",
+    "type": "url_for_fix",
+    "old": "enrollment.enrollment_dashboard",
+    "new": "enrollment.enrollment_dashboard"
+  },
+  {
+    "file": "templates\\base.html",
+    "type": "url_for_fix",
+    "old": "applications.applications_list",
+    "new": "applications.applications_list"
+  },
+  {
+    "file": "templates\\base.html",
+    "type": "url_for_fix",
+    "old": "core.index",
+    "new": "core.index"
+  },
+  {
+    "file": "templates\\base.html",
+    "type": "url_for_fix",
+    "old": "static",
+    "new": "static"
+  },
+  {
+    "file": "templates\\dormitory_dashboard.html",
+    "type": "url_for_fix",
+    "old": "dormitories.dormitory_map",
+    "new": "dormitories.dormitory_map"
+  },
+  {
+    "file": "templates\\dormitory_map.html",
+    "type": "url_for_fix",
+    "old": "dormitories.dormitory_dashboard",
+    "new": "dormitories.dormitory_dashboard"
+  },
+  {
+    "file": "templates\\financial_dashboard.html",
+    "type": "url_for_fix",
+    "old": "tuition_components.tuition_settings",
+    "new": "tuition_components.tuition_settings"
+  },
+  {
+    "file": "templates\\kollel_dashboard.html",
+    "type": "url_for_fix",
+    "old": "kollel.kollel_students",
+    "new": "kollel.kollel_students"
+  },
+  {
+    "file": "templates\\kollel_dashboard.html",
+    "type": "url_for_fix",
+    "old": "kollel.edit_kollel_student",
+    "new": "kollel.edit_kollel_student"
+  },
+  {
+    "file": "templates\\kollel_dashboard.html",
+    "type": "url_for_fix",
+    "old": "kollel.manage_breaks",
+    "new": "kollel.manage_breaks"
+  },
+  {
+    "file": "templates\\settings.html",
+    "type": "url_for_fix",
+    "old": "kollel.kollel_settings",
+    "new": "kollel.kollel_settings"
+  },
+  {
+    "file": "templates\\settings.html",
+    "type": "url_for_fix",
+    "old": "settings.settings",
+    "new": "settings.settings"
+  },
+  {
+    "file": "templates\\settings.html",
+    "type": "url_for_fix",
+    "old": "settings.update_division_email",
+    "new": "settings.update_division_email"
+  },
+  {
+    "file": "templates\\settings.html",
+    "type": "url_for_fix",
+    "old": "settings.update_acceptance_template",
+    "new": "settings.update_acceptance_template"
+  },
+  {
+    "file": "templates\\settings.html",
+    "type": "url_for_fix",
+    "old": "settings.update_pdf_template",
+    "new": "settings.update_pdf_template"
+  },
+  {
+    "file": "templates\\settings.html",
+    "type": "url_for_fix",
+    "old": "settings.download_division_form",
+    "new": "settings.download_division_form"
+  },
+  {
+    "file": "templates\\settings.html",
+    "type": "url_for_fix",
+    "old": "settings.upload_division_form",
+    "new": "settings.upload_division_form"
+  },
+  {
+    "file": "templates\\settings.html",
+    "type": "url_for_fix",
+    "old": "settings.test_dropbox_connection",
+    "new": "settings.test_dropbox_connection"
+  },
+  {
+    "file": "templates\\settings.html",
+    "type": "url_for_fix",
+    "old": "settings.test_dropbox_sign_connection",
+    "new": "settings.test_dropbox_sign_connection"
+  },
+  {
+    "file": "templates\\settings.html",
+    "type": "url_for_fix",
+    "old": "settings.dropbox_sign_quota",
+    "new": "settings.dropbox_sign_quota"
+  },
+  {
+    "file": "templates\\settings.html",
+    "type": "url_for_fix",
+    "old": "pdf_templates.template_manager",
+    "new": "pdf_templates.template_manager"
+  },
+  {
+    "file": "templates\\students.html",
+    "type": "url_for_fix",
+    "old": "students.view_students",
+    "new": "students.view_students"
+  },
+  {
+    "file": "templates\\students.html",
+    "type": "url_for_fix",
+    "old": "students.student_details",
+    "new": "students.student_details"
+  },
+  {
+    "file": "templates\\students.html",
+    "type": "url_for_fix",
+    "old": "students.edit_student",
+    "new": "students.edit_student"
+  },
+  {
+    "file": "templates\\students.html",
+    "type": "url_for_fix",
+    "old": "students.create_student",
+    "new": "students.create_student"
+  },
+  {
+    "file": "templates\\student_create.html",
+    "type": "url_for_fix",
+    "old": "students.view_students",
+    "new": "students.view_students"
+  },
+  {
+    "file": "templates\\student_details.html",
+    "type": "url_for_fix",
+    "old": "students.edit_student",
+    "new": "students.edit_student"
+  },
+  {
+    "file": "templates\\student_details.html",
+    "type": "url_for_fix",
+    "old": "files.view_attachment",
+    "new": "files.view_attachment"
+  },
+  {
+    "file": "templates\\student_details.html",
+    "type": "url_for_fix",
+    "old": "files.serve_attachment",
+    "new": "files.serve_attachment"
+  },
+  {
+    "file": "templates\\student_details_backup.html",
+    "type": "url_for_fix",
+    "old": "students.edit_student",
+    "new": "students.edit_student"
+  },
+  {
+    "file": "templates\\student_details_backup.html",
+    "type": "url_for_fix",
+    "old": "students.view_uploaded_contract",
+    "new": "students.view_uploaded_contract"
+  },
+  {
+    "file": "templates\\student_details_backup.html",
+    "type": "url_for_fix",
+    "old": "files.view_attachment",
+    "new": "files.view_attachment"
+  },
+  {
+    "file": "templates\\student_details_backup.html",
+    "type": "url_for_fix",
+    "old": "files.serve_attachment",
+    "new": "files.serve_attachment"
+  },
+  {
+    "file": "templates\\student_details_backup.html",
+    "type": "url_for_fix",
+    "old": "academic_year_transition.transition_dashboard",
+    "new": "academic_year_transition.transition_dashboard"
+  },
+  {
+    "file": "templates\\student_details_old.html",
+    "type": "url_for_fix",
+    "old": "students.edit_student",
+    "new": "students.edit_student"
+  },
+  {
+    "file": "templates\\student_details_old.html",
+    "type": "url_for_fix",
+    "old": "students.view_uploaded_contract",
+    "new": "students.view_uploaded_contract"
+  },
+  {
+    "file": "templates\\student_details_old.html",
+    "type": "url_for_fix",
+    "old": "files.view_attachment",
+    "new": "files.view_attachment"
+  },
+  {
+    "file": "templates\\student_details_old.html",
+    "type": "url_for_fix",
+    "old": "files.serve_attachment",
+    "new": "files.serve_attachment"
+  },
+  {
+    "file": "templates\\student_details_old.html",
+    "type": "url_for_fix",
+    "old": "academic_year_transition.transition_dashboard",
+    "new": "academic_year_transition.transition_dashboard"
+  },
+  {
+    "file": "templates\\student_edit.html",
+    "type": "url_for_fix",
+    "old": "students.view_students",
+    "new": "students.view_students"
+  },
+  {
+    "file": "templates\\student_financial.html",
+    "type": "url_for_fix",
+    "old": "students.student_details",
+    "new": "students.student_details"
+  },
+  {
+    "file": "templates\\student_financial.html",
+    "type": "url_for_fix",
+    "old": "static",
+    "new": "static"
+  },
+  {
+    "file": "templates\\student_tuition_components.html",
+    "type": "url_for_fix",
+    "old": "students.student_details",
+    "new": "students.student_details"
+  },
+  {
+    "file": "templates\\tuition_settings.html",
+    "type": "url_for_fix",
+    "old": "kollel.kollel_dashboard",
+    "new": "kollel.kollel_dashboard"
+  },
+  {
+    "file": "templates\\academic\\dashboard.html",
+    "type": "url_for_fix",
+    "old": "academic.shiurim_list",
+    "new": "academic.shiurim_list"
+  },
+  {
+    "file": "templates\\academic\\dashboard.html",
+    "type": "url_for_fix",
+    "old": "academic.attendance_dashboard",
+    "new": "academic.attendance_dashboard"
+  },
+  {
+    "file": "templates\\academic\\dashboard.html",
+    "type": "url_for_fix",
+    "old": "academic.matriculation_dashboard",
+    "new": "academic.matriculation_dashboard"
+  },
+  {
+    "file": "templates\\academic_year_transition\\dashboard.html",
+    "type": "url_for_fix",
+    "old": "academic.academic_dashboard",
+    "new": "academic.academic_dashboard"
+  },
+  {
+    "file": "templates\\auth\\create_user.html",
+    "type": "url_for_fix",
+    "old": "auth.create_user",
+    "new": "auth.create_user"
+  },
+  {
+    "file": "templates\\auth\\forgot_password.html",
+    "type": "url_for_fix",
+    "old": "auth.login",
+    "new": "auth.login"
+  },
+  {
+    "file": "templates\\auth\\forgot_password.html",
+    "type": "url_for_fix",
+    "old": "auth.forgot_password",
+    "new": "auth.forgot_password"
+  },
+  {
+    "file": "templates\\auth\\login.html",
+    "type": "url_for_fix",
+    "old": "auth.forgot_password",
+    "new": "auth.forgot_password"
+  },
+  {
+    "file": "templates\\auth\\manage_permissions.html",
+    "type": "url_for_fix",
+    "old": "auth.manage_permissions",
+    "new": "auth.manage_permissions"
+  },
+  {
+    "file": "templates\\auth\\users.html",
+    "type": "url_for_fix",
+    "old": "auth.create_user",
+    "new": "auth.create_user"
+  },
+  {
+    "file": "templates\\auth\\users.html",
+    "type": "url_for_fix",
+    "old": "auth.manage_permissions",
+    "new": "auth.manage_permissions"
+  },
+  {
+    "file": "templates\\enrollment\\dashboard.html",
+    "type": "url_for_fix",
+    "old": "email_templates.template_manager",
+    "new": "email_templates.template_manager"
+  },
+  {
+    "file": "templates\\enrollment\\dashboard.html",
+    "type": "url_for_fix",
+    "old": "academic_year_transition.transition_dashboard",
+    "new": "academic_year_transition.transition_dashboard"
+  },
+  {
+    "file": "templates\\enrollment_email\\dashboard.html",
+    "type": "url_for_fix",
+    "old": "academic_year_transition.transition_dashboard",
+    "new": "academic_year_transition.transition_dashboard"
+  },
+  {
+    "file": "templates\\kollel\\breaks.html",
+    "type": "url_for_fix",
+    "old": "academic.academic_dashboard",
+    "new": "academic.academic_dashboard"
+  },
+  {
+    "file": "templates\\kollel\\breaks.html",
+    "type": "url_for_fix",
+    "old": "kollel.kollel_dashboard",
+    "new": "kollel.kollel_dashboard"
+  },
+  {
+    "file": "templates\\kollel\\edit_student.html",
+    "type": "url_for_fix",
+    "old": "kollel.kollel_dashboard",
+    "new": "kollel.kollel_dashboard"
+  },
+  {
+    "file": "templates\\kollel\\edit_student.html",
+    "type": "url_for_fix",
+    "old": "kollel.kollel_dashboard",
+    "new": "kollel.kollel_dashboard"
+  },
+  {
+    "file": "templates\\kollel\\edit_student.html",
+    "type": "url_for_fix",
+    "old": "kollel.edit_kollel_student",
+    "new": "kollel.edit_kollel_student"
+  },
+  {
+    "file": "templates\\kollel\\edit_student.html",
+    "type": "url_for_fix",
+    "old": "kollel.student_history",
+    "new": "kollel.student_history"
+  },
+  {
+    "file": "templates\\kollel\\history.html",
+    "type": "url_for_fix",
+    "old": "kollel.kollel_dashboard",
+    "new": "kollel.kollel_dashboard"
+  },
+  {
+    "file": "templates\\kollel\\students.html",
+    "type": "url_for_fix",
+    "old": "kollel.kollel_dashboard",
+    "new": "kollel.kollel_dashboard"
+  },
+  {
+    "file": "templates\\kollel\\students.html",
+    "type": "url_for_fix",
+    "old": "kollel.edit_kollel_student",
+    "new": "kollel.edit_kollel_student"
+  },
+  {
+    "file": "templates\\reports\\dashboard.html",
+    "type": "hardcoded_url_fix",
+    "old": "/reports/builder",
+    "new": "reports.reports_builder"
+  },
+  {
+    "file": "templates\\secure_forms\\admin_manual_upload.html",
+    "type": "url_for_fix",
+    "old": "secure_forms.admin_secure_forms",
+    "new": "secure_forms.admin_secure_forms"
+  },
+  {
+    "file": "templates\\secure_forms\\admin_manual_upload.html",
+    "type": "url_for_fix",
+    "old": "secure_forms.admin_form_uploads",
+    "new": "secure_forms.admin_form_uploads"
+  },
+  {
+    "file": "templates\\secure_forms\\admin_uploads.html",
+    "type": "url_for_fix",
+    "old": "secure_forms.admin_secure_forms",
+    "new": "secure_forms.admin_secure_forms"
+  },
+  {
+    "file": "templates\\secure_forms\\admin_uploads.html",
+    "type": "url_for_fix",
+    "old": "secure_forms.admin_download_upload",
+    "new": "secure_forms.admin_download_upload"
+  }
+]

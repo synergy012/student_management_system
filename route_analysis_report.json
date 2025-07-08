@@ -1,0 +1,2826 @@
+{
+  "report": {
+    "routes": {
+      "auth.login": {
+        "path": "/profile",
+        "methods": [
+          "'GET'",
+          " 'POST'"
+        ],
+        "file": "auth.py",
+        "blueprint": "auth"
+      },
+      "academic.academic_dashboard": {
+        "path": "/api/students/<student_id>/email-attendance-report",
+        "methods": [
+          "'POST'"
+        ],
+        "file": "blueprints\\academic.py",
+        "blueprint": "academic"
+      },
+      "academic_year_transition.transition_dashboard": {
+        "path": "/api/academic-year-transition/finalize",
+        "methods": [
+          "'POST'"
+        ],
+        "file": "blueprints\\academic_year_transition.py",
+        "blueprint": "academic_year_transition"
+      },
+      "applications.applications_list": {
+        "path": "/applications/create",
+        "methods": [
+          "'GET'",
+          " 'POST'"
+        ],
+        "file": "blueprints\\applications.py",
+        "blueprint": "applications"
+      },
+      "backup.dashboard": {
+        "path": "/download/<backup_name>",
+        "methods": [
+          "GET"
+        ],
+        "file": "blueprints\\backup.py",
+        "blueprint": "backup"
+      },
+      "core.index": {
+        "path": "/test",
+        "methods": [
+          "GET"
+        ],
+        "file": "blueprints\\core.py",
+        "blueprint": "core"
+      },
+      "dormitories.dormitory_dashboard": {
+        "path": "/api/students/dormitory-without-beds",
+        "methods": [
+          "'GET'"
+        ],
+        "file": "blueprints\\dormitories.py",
+        "blueprint": "dormitories"
+      },
+      "email_templates.template_manager": {
+        "path": "/api/email-templates/<int:template_id>/restore/<int:history_id>",
+        "methods": [
+          "'POST'"
+        ],
+        "file": "blueprints\\email_templates.py",
+        "blueprint": "email_templates"
+      },
+      "enrollment.enrollment_dashboard": {
+        "path": "/api/academic-years",
+        "methods": [
+          "GET"
+        ],
+        "file": "blueprints\\enrollment.py",
+        "blueprint": "enrollment"
+      },
+      "enrollment_email.email_dashboard": {
+        "path": "/api/enrollment-emails/preview",
+        "methods": [
+          "'POST'"
+        ],
+        "file": "blueprints\\enrollment_email.py",
+        "blueprint": "enrollment_email"
+      },
+      "files.download_file": {
+        "path": "/attachments/<path:filename>/view",
+        "methods": [
+          "GET"
+        ],
+        "file": "blueprints\\files.py",
+        "blueprint": "files"
+      },
+      "financial.financial_debug": {
+        "path": "/api/financial/generate-contract",
+        "methods": [
+          "'POST'"
+        ],
+        "file": "blueprints\\financial_backup.py",
+        "blueprint": "financial"
+      },
+      "kollel.kollel_dashboard": {
+        "path": "/kollel/export/<int:month>/<int:school_year>",
+        "methods": [
+          "GET"
+        ],
+        "file": "blueprints\\kollel.py",
+        "blueprint": "kollel"
+      },
+      "monitoring.dashboard": {
+        "path": "/api/performance/slow-queries",
+        "methods": [
+          "GET"
+        ],
+        "file": "blueprints\\monitoring.py",
+        "blueprint": "monitoring"
+      },
+      "pdf_templates.template_manager": {
+        "path": "/api/pdf-templates/create-default-contract",
+        "methods": [
+          "'POST'"
+        ],
+        "file": "blueprints\\pdf_templates.py",
+        "blueprint": "pdf_templates"
+      },
+      "reports.reports_dashboard": {
+        "path": "/api/reports/initialize-fields",
+        "methods": [
+          "'POST'"
+        ],
+        "file": "blueprints\\reports.py",
+        "blueprint": "reports"
+      },
+      "secure_forms.upload_form": {
+        "path": "/enrollment-response/<token>/success",
+        "methods": [
+          "GET"
+        ],
+        "file": "blueprints\\secure_forms.py",
+        "blueprint": "secure_forms"
+      },
+      "settings.settings_page": {
+        "path": "/api/divisions/<division>/email-recipient-settings",
+        "methods": [
+          "'GET'",
+          " 'PUT'"
+        ],
+        "file": "blueprints\\settings.py",
+        "blueprint": "settings"
+      },
+      "students.view_students": {
+        "path": "/students/<student_id>/view-uploaded-contract",
+        "methods": [
+          "GET"
+        ],
+        "file": "blueprints\\students.py",
+        "blueprint": "students"
+      },
+      "tuition_components.get_tuition_components": {
+        "path": "/tuition-settings",
+        "methods": [
+          "GET"
+        ],
+        "file": "blueprints\\tuition_components.py",
+        "blueprint": "tuition_components"
+      },
+      "webhooks.gravity_forms_webhook": {
+        "path": "/api/opensign/webhook",
+        "methods": [
+          "'POST'"
+        ],
+        "file": "blueprints\\webhooks.py",
+        "blueprint": "webhooks"
+      },
+      "financial_aid.mark_fa_form_received": {
+        "path": "/api/students/<student_id>/financial-aid/status",
+        "methods": [
+          "'GET'"
+        ],
+        "file": "blueprints\\financial\\aid.py",
+        "blueprint": "financial_aid"
+      },
+      "financial_contracts.generate_tuition_contract": {
+        "path": "/api/tuition-contracts/<int:contract_id>/send-hybrid",
+        "methods": [
+          "'POST'"
+        ],
+        "file": "blueprints\\financial\\contracts_clean.py",
+        "blueprint": "financial_contracts"
+      },
+      "financial_core.financial_debug": {
+        "path": "/api/financial/records/<int:record_id>/mark-admire-setup",
+        "methods": [
+          "'POST'"
+        ],
+        "file": "blueprints\\financial\\core.py",
+        "blueprint": "financial_core"
+      },
+      "financial_divisions.division_financial_config": {
+        "path": "/api/divisions/<division>/export",
+        "methods": [
+          "'GET'"
+        ],
+        "file": "blueprints\\financial\\divisions.py",
+        "blueprint": "financial_divisions"
+      },
+      "financial_documents.upload_financial_document": {
+        "path": "/api/financial/records/<int:record_id>/documents",
+        "methods": [
+          "'GET'"
+        ],
+        "file": "blueprints\\financial\\documents.py",
+        "blueprint": "financial_documents"
+      },
+      "financial_tuition.update_student_financial": {
+        "path": "/api/students/<student_id>/unenroll",
+        "methods": [
+          "'POST'"
+        ],
+        "file": "blueprints\\financial\\tuition.py",
+        "blueprint": "financial_tuition"
+      }
+    },
+    "url_for_calls": [
+      {
+        "endpoint": "core.index",
+        "params": "",
+        "file": "templates\\404.html",
+        "line": 10
+      },
+      {
+        "endpoint": "core.index",
+        "params": "",
+        "file": "templates\\500.html",
+        "line": 20
+      },
+      {
+        "endpoint": "applications.applications_list",
+        "params": "",
+        "file": "templates\\applications.html",
+        "line": 29
+      },
+      {
+        "endpoint": "applications.applications_list",
+        "params": "status=request.args.get('status'",
+        "file": "templates\\applications.html",
+        "line": 29
+      },
+      {
+        "endpoint": "applications.applications_list",
+        "params": "status=request.args.get('status'",
+        "file": "templates\\applications.html",
+        "line": 29
+      },
+      {
+        "endpoint": "applications.applications_list",
+        "params": "division='YZA', status=request.args.get('status'",
+        "file": "templates\\applications.html",
+        "line": 29
+      },
+      {
+        "endpoint": "applications.applications_list",
+        "params": "division='YOH', status=request.args.get('status'",
+        "file": "templates\\applications.html",
+        "line": 29
+      },
+      {
+        "endpoint": "applications.applications_list",
+        "params": "division=request.args.get('division'",
+        "file": "templates\\applications.html",
+        "line": 29
+      },
+      {
+        "endpoint": "applications.applications_list",
+        "params": "status='pending', division=request.args.get('division'",
+        "file": "templates\\applications.html",
+        "line": 29
+      },
+      {
+        "endpoint": "applications.applications_list",
+        "params": "status='accepted', division=request.args.get('division'",
+        "file": "templates\\applications.html",
+        "line": 29
+      },
+      {
+        "endpoint": "applications.applications_list",
+        "params": "status='rejected', division=request.args.get('division'",
+        "file": "templates\\applications.html",
+        "line": 29
+      },
+      {
+        "endpoint": "files.view_attachment",
+        "params": "filename=attachment.local_filename",
+        "file": "templates\\applications.html",
+        "line": 703
+      },
+      {
+        "endpoint": "files.serve_attachment",
+        "params": "filename=attachment.local_filename",
+        "file": "templates\\applications.html",
+        "line": 709
+      },
+      {
+        "endpoint": "applications.applications_list",
+        "params": "",
+        "file": "templates\\application_create.html",
+        "line": 11
+      },
+      {
+        "endpoint": "applications.applications_list",
+        "params": "",
+        "file": "templates\\application_create.html",
+        "line": 11
+      },
+      {
+        "endpoint": "static",
+        "params": "filename='css/modern-ui.css'",
+        "file": "templates\\base.html",
+        "line": 15
+      },
+      {
+        "endpoint": "core.index",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 261
+      },
+      {
+        "endpoint": "applications.applications_list",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 272
+      },
+      {
+        "endpoint": "students.view_students",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 279
+      },
+      {
+        "endpoint": "academic.academic_dashboard",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 286
+      },
+      {
+        "endpoint": "enrollment.enrollment_dashboard",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 293
+      },
+      {
+        "endpoint": "kollel.kollel_dashboard",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 300
+      },
+      {
+        "endpoint": "dormitories.dormitory_dashboard",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 307
+      },
+      {
+        "endpoint": "financial.financial_dashboard",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 314
+      },
+      {
+        "endpoint": "reports.reports_dashboard",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 326
+      },
+      {
+        "endpoint": "academic_year_transition.transition_dashboard",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 339
+      },
+      {
+        "endpoint": "auth.users",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 346
+      },
+      {
+        "endpoint": "pdf_templates.template_manager",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 353
+      },
+      {
+        "endpoint": "email_templates.template_manager",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 360
+      },
+      {
+        "endpoint": "settings.settings_page",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 367
+      },
+      {
+        "endpoint": "core.index",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 261
+      },
+      {
+        "endpoint": "auth.profile",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 406
+      },
+      {
+        "endpoint": "settings.settings_page",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 367
+      },
+      {
+        "endpoint": "auth.logout",
+        "params": "",
+        "file": "templates\\base.html",
+        "line": 413
+      },
+      {
+        "endpoint": "static",
+        "params": "filename='js/modern-ui.js'",
+        "file": "templates\\base.html",
+        "line": 15
+      },
+      {
+        "endpoint": "static",
+        "params": "filename='js/email-confirmation.js'",
+        "file": "templates\\base.html",
+        "line": 15
+      },
+      {
+        "endpoint": "dormitories.dormitory_map",
+        "params": "",
+        "file": "templates\\dormitory_dashboard.html",
+        "line": 18
+      },
+      {
+        "endpoint": "dormitories.dormitory_dashboard",
+        "params": "",
+        "file": "templates\\dormitory_map.html",
+        "line": 18
+      },
+      {
+        "endpoint": "financial.division_financial_aid",
+        "params": "division='YZA'",
+        "file": "templates\\financial_dashboard.html",
+        "line": 35
+      },
+      {
+        "endpoint": "financial.division_tuition_contracts",
+        "params": "division='YZA'",
+        "file": "templates\\financial_dashboard.html",
+        "line": 38
+      },
+      {
+        "endpoint": "financial.division_financial_config",
+        "params": "division='YZA'",
+        "file": "templates\\financial_dashboard.html",
+        "line": 42
+      },
+      {
+        "endpoint": "financial.division_financial_aid",
+        "params": "division='YOH'",
+        "file": "templates\\financial_dashboard.html",
+        "line": 35
+      },
+      {
+        "endpoint": "financial.division_tuition_contracts",
+        "params": "division='YOH'",
+        "file": "templates\\financial_dashboard.html",
+        "line": 38
+      },
+      {
+        "endpoint": "financial.division_financial_config",
+        "params": "division='YOH'",
+        "file": "templates\\financial_dashboard.html",
+        "line": 42
+      },
+      {
+        "endpoint": "financial.division_financial_aid",
+        "params": "division='KOLLEL'",
+        "file": "templates\\financial_dashboard.html",
+        "line": 35
+      },
+      {
+        "endpoint": "financial.division_tuition_contracts",
+        "params": "division='KOLLEL'",
+        "file": "templates\\financial_dashboard.html",
+        "line": 38
+      },
+      {
+        "endpoint": "financial.division_financial_config",
+        "params": "division='KOLLEL'",
+        "file": "templates\\financial_dashboard.html",
+        "line": 42
+      },
+      {
+        "endpoint": "tuition_components.tuition_settings",
+        "params": "",
+        "file": "templates\\financial_dashboard.html",
+        "line": 1762
+      },
+      {
+        "endpoint": "kollel.kollel_students",
+        "params": "",
+        "file": "templates\\kollel_dashboard.html",
+        "line": 19
+      },
+      {
+        "endpoint": "kollel.manage_breaks",
+        "params": "",
+        "file": "templates\\kollel_dashboard.html",
+        "line": 22
+      },
+      {
+        "endpoint": "kollel.edit_kollel_student",
+        "params": "kollel_student_id=record.kollel_student.id",
+        "file": "templates\\kollel_dashboard.html",
+        "line": 266
+      },
+      {
+        "endpoint": "kollel.kollel_students",
+        "params": "",
+        "file": "templates\\kollel_dashboard.html",
+        "line": 19
+      },
+      {
+        "endpoint": "pdf_templates.template_manager",
+        "params": "",
+        "file": "templates\\settings.html",
+        "line": 114
+      },
+      {
+        "endpoint": "settings.settings",
+        "params": "",
+        "file": "templates\\settings.html",
+        "line": 129
+      },
+      {
+        "endpoint": "settings.update_division_email",
+        "params": "division='YZA'",
+        "file": "templates\\settings.html",
+        "line": 345
+      },
+      {
+        "endpoint": "settings.update_division_email",
+        "params": "division='YOH'",
+        "file": "templates\\settings.html",
+        "line": 345
+      },
+      {
+        "endpoint": "settings.update_division_email",
+        "params": "division='KOLLEL'",
+        "file": "templates\\settings.html",
+        "line": 345
+      },
+      {
+        "endpoint": "settings.settings",
+        "params": "",
+        "file": "templates\\settings.html",
+        "line": 129
+      },
+      {
+        "endpoint": "settings.settings",
+        "params": "",
+        "file": "templates\\settings.html",
+        "line": 129
+      },
+      {
+        "endpoint": "settings.settings",
+        "params": "",
+        "file": "templates\\settings.html",
+        "line": 129
+      },
+      {
+        "endpoint": "settings.settings",
+        "params": "",
+        "file": "templates\\settings.html",
+        "line": 129
+      },
+      {
+        "endpoint": "settings.update_division_email",
+        "params": "division='YZA'",
+        "file": "templates\\settings.html",
+        "line": 345
+      },
+      {
+        "endpoint": "settings.update_division_email",
+        "params": "division='YOH'",
+        "file": "templates\\settings.html",
+        "line": 345
+      },
+      {
+        "endpoint": "settings.update_acceptance_template",
+        "params": "division='YZA'",
+        "file": "templates\\settings.html",
+        "line": 965
+      },
+      {
+        "endpoint": "settings.update_acceptance_template",
+        "params": "division='YOH'",
+        "file": "templates\\settings.html",
+        "line": 965
+      },
+      {
+        "endpoint": "settings.update_pdf_template",
+        "params": "division='YZA'",
+        "file": "templates\\settings.html",
+        "line": 1065
+      },
+      {
+        "endpoint": "settings.update_pdf_template",
+        "params": "division='YOH'",
+        "file": "templates\\settings.html",
+        "line": 1065
+      },
+      {
+        "endpoint": "settings.download_division_form",
+        "params": "division='YZA', form_type='financial_aid'",
+        "file": "templates\\settings.html",
+        "line": 1495
+      },
+      {
+        "endpoint": "settings.upload_division_form",
+        "params": "division='YZA'",
+        "file": "templates\\settings.html",
+        "line": 1501
+      },
+      {
+        "endpoint": "settings.download_division_form",
+        "params": "division='YZA', form_type='tuition_contract'",
+        "file": "templates\\settings.html",
+        "line": 1495
+      },
+      {
+        "endpoint": "settings.upload_division_form",
+        "params": "division='YZA'",
+        "file": "templates\\settings.html",
+        "line": 1501
+      },
+      {
+        "endpoint": "settings.download_division_form",
+        "params": "division='YOH', form_type='financial_aid'",
+        "file": "templates\\settings.html",
+        "line": 1495
+      },
+      {
+        "endpoint": "settings.upload_division_form",
+        "params": "division='YOH'",
+        "file": "templates\\settings.html",
+        "line": 1501
+      },
+      {
+        "endpoint": "settings.download_division_form",
+        "params": "division='YOH', form_type='tuition_contract'",
+        "file": "templates\\settings.html",
+        "line": 1495
+      },
+      {
+        "endpoint": "settings.upload_division_form",
+        "params": "division='YOH'",
+        "file": "templates\\settings.html",
+        "line": 1501
+      },
+      {
+        "endpoint": "settings.download_division_form",
+        "params": "division='KOLLEL', form_type='financial_aid'",
+        "file": "templates\\settings.html",
+        "line": 1495
+      },
+      {
+        "endpoint": "settings.upload_division_form",
+        "params": "division='KOLLEL'",
+        "file": "templates\\settings.html",
+        "line": 1501
+      },
+      {
+        "endpoint": "settings.download_division_form",
+        "params": "division='KOLLEL', form_type='tuition_contract'",
+        "file": "templates\\settings.html",
+        "line": 1495
+      },
+      {
+        "endpoint": "settings.upload_division_form",
+        "params": "division='KOLLEL'",
+        "file": "templates\\settings.html",
+        "line": 1501
+      },
+      {
+        "endpoint": "pdf_templates.template_manager",
+        "params": "",
+        "file": "templates\\settings.html",
+        "line": 114
+      },
+      {
+        "endpoint": "kollel.kollel_settings",
+        "params": "",
+        "file": "templates\\settings.html",
+        "line": 1731
+      },
+      {
+        "endpoint": "settings.test_dropbox_connection",
+        "params": "",
+        "file": "templates\\settings.html",
+        "line": null
+      },
+      {
+        "endpoint": "settings.test_dropbox_sign_connection",
+        "params": "",
+        "file": "templates\\settings.html",
+        "line": null
+      },
+      {
+        "endpoint": "settings.dropbox_sign_quota",
+        "params": "",
+        "file": "templates\\settings.html",
+        "line": null
+      },
+      {
+        "endpoint": "students.create_student",
+        "params": "",
+        "file": "templates\\students.html",
+        "line": 13
+      },
+      {
+        "endpoint": "students.view_students",
+        "params": "division='all'",
+        "file": "templates\\students.html",
+        "line": 34
+      },
+      {
+        "endpoint": "students.view_students",
+        "params": "division='yza'",
+        "file": "templates\\students.html",
+        "line": 34
+      },
+      {
+        "endpoint": "students.view_students",
+        "params": "division='yoh'",
+        "file": "templates\\students.html",
+        "line": 34
+      },
+      {
+        "endpoint": "students.student_details",
+        "params": "student_id=student.id",
+        "file": "templates\\students.html",
+        "line": 73
+      },
+      {
+        "endpoint": "students.student_details",
+        "params": "student_id=student.id",
+        "file": "templates\\students.html",
+        "line": 73
+      },
+      {
+        "endpoint": "students.edit_student",
+        "params": "student_id=student.id",
+        "file": "templates\\students.html",
+        "line": 100
+      },
+      {
+        "endpoint": "students.student_details",
+        "params": "student_id=student.id",
+        "file": "templates\\students.html",
+        "line": 73
+      },
+      {
+        "endpoint": "students.student_details",
+        "params": "student_id=student.id",
+        "file": "templates\\students.html",
+        "line": 73
+      },
+      {
+        "endpoint": "students.edit_student",
+        "params": "student_id=student.id",
+        "file": "templates\\students.html",
+        "line": 100
+      },
+      {
+        "endpoint": "students.view_students",
+        "params": "",
+        "file": "templates\\student_create.html",
+        "line": 11
+      },
+      {
+        "endpoint": "students.view_students",
+        "params": "",
+        "file": "templates\\student_create.html",
+        "line": 11
+      },
+      {
+        "endpoint": "students.edit_student",
+        "params": "student_id=student.id",
+        "file": "templates\\student_details.html",
+        "line": 103
+      },
+      {
+        "endpoint": "financial.student_financial",
+        "params": "student_id=student.id",
+        "file": "templates\\student_details.html",
+        "line": 125
+      },
+      {
+        "endpoint": "financial.student_financial",
+        "params": "student_id=student.id",
+        "file": "templates\\student_details.html",
+        "line": 125
+      },
+      {
+        "endpoint": "files.view_attachment",
+        "params": "filename=attachment.local_filename",
+        "file": "templates\\student_details.html",
+        "line": 1200
+      },
+      {
+        "endpoint": "files.serve_attachment",
+        "params": "filename=attachment.local_filename",
+        "file": "templates\\student_details.html",
+        "line": 1206
+      },
+      {
+        "endpoint": "students.edit_student",
+        "params": "student_id=student.id",
+        "file": "templates\\student_details_backup.html",
+        "line": 10
+      },
+      {
+        "endpoint": "students.view_uploaded_contract",
+        "params": "student_id=student.id",
+        "file": "templates\\student_details_backup.html",
+        "line": 251
+      },
+      {
+        "endpoint": "financial.student_financial",
+        "params": "student_id=student.id",
+        "file": "templates\\student_details_backup.html",
+        "line": 305
+      },
+      {
+        "endpoint": "files.view_attachment",
+        "params": "filename=attachment.local_filename",
+        "file": "templates\\student_details_backup.html",
+        "line": 767
+      },
+      {
+        "endpoint": "files.serve_attachment",
+        "params": "filename=attachment.local_filename",
+        "file": "templates\\student_details_backup.html",
+        "line": 774
+      },
+      {
+        "endpoint": "academic_year_transition.transition_dashboard",
+        "params": "",
+        "file": "templates\\student_details_backup.html",
+        "line": 1576
+      },
+      {
+        "endpoint": "students.edit_student",
+        "params": "student_id=student.id",
+        "file": "templates\\student_details_old.html",
+        "line": 10
+      },
+      {
+        "endpoint": "students.view_uploaded_contract",
+        "params": "student_id=student.id",
+        "file": "templates\\student_details_old.html",
+        "line": 251
+      },
+      {
+        "endpoint": "financial.student_financial",
+        "params": "student_id=student.id",
+        "file": "templates\\student_details_old.html",
+        "line": 305
+      },
+      {
+        "endpoint": "files.view_attachment",
+        "params": "filename=attachment.local_filename",
+        "file": "templates\\student_details_old.html",
+        "line": 767
+      },
+      {
+        "endpoint": "files.serve_attachment",
+        "params": "filename=attachment.local_filename",
+        "file": "templates\\student_details_old.html",
+        "line": 774
+      },
+      {
+        "endpoint": "academic_year_transition.transition_dashboard",
+        "params": "",
+        "file": "templates\\student_details_old.html",
+        "line": 1576
+      },
+      {
+        "endpoint": "students.view_students",
+        "params": "",
+        "file": "templates\\student_edit.html",
+        "line": 11
+      },
+      {
+        "endpoint": "students.student_details",
+        "params": "student_id=student.id",
+        "file": "templates\\student_financial.html",
+        "line": 26
+      },
+      {
+        "endpoint": "static",
+        "params": "filename='js/email-confirmation.js'",
+        "file": "templates\\student_financial.html",
+        "line": 2200
+      },
+      {
+        "endpoint": "students.student_details",
+        "params": "student_id=student.id",
+        "file": "templates\\student_tuition_components.html",
+        "line": 16
+      },
+      {
+        "endpoint": "kollel.kollel_dashboard",
+        "params": "",
+        "file": "templates\\tuition_settings.html",
+        "line": 119
+      },
+      {
+        "endpoint": "academic.shiurim_list",
+        "params": "",
+        "file": "templates\\academic\\dashboard.html",
+        "line": 28
+      },
+      {
+        "endpoint": "academic.attendance_dashboard",
+        "params": "",
+        "file": "templates\\academic\\dashboard.html",
+        "line": 31
+      },
+      {
+        "endpoint": "academic.matriculation_dashboard",
+        "params": "",
+        "file": "templates\\academic\\dashboard.html",
+        "line": 34
+      },
+      {
+        "endpoint": "academic.attendance_dashboard",
+        "params": "",
+        "file": "templates\\academic\\dashboard.html",
+        "line": 31
+      },
+      {
+        "endpoint": "academic.shiurim_list",
+        "params": "",
+        "file": "templates\\academic\\dashboard.html",
+        "line": 28
+      },
+      {
+        "endpoint": "academic.shiurim_list",
+        "params": "",
+        "file": "templates\\academic\\dashboard.html",
+        "line": 28
+      },
+      {
+        "endpoint": "academic.attendance_dashboard",
+        "params": "",
+        "file": "templates\\academic\\dashboard.html",
+        "line": 31
+      },
+      {
+        "endpoint": "academic.academic_dashboard",
+        "params": "",
+        "file": "templates\\academic_year_transition\\dashboard.html",
+        "line": 19
+      },
+      {
+        "endpoint": "auth.users",
+        "params": "",
+        "file": "templates\\auth\\create_user.html",
+        "line": 12
+      },
+      {
+        "endpoint": "auth.create_user",
+        "params": "",
+        "file": "templates\\auth\\create_user.html",
+        "line": 28
+      },
+      {
+        "endpoint": "auth.users",
+        "params": "",
+        "file": "templates\\auth\\create_user.html",
+        "line": 12
+      },
+      {
+        "endpoint": "auth.forgot_password",
+        "params": "",
+        "file": "templates\\auth\\forgot_password.html",
+        "line": 29
+      },
+      {
+        "endpoint": "auth.login",
+        "params": "",
+        "file": "templates\\auth\\forgot_password.html",
+        "line": 41
+      },
+      {
+        "endpoint": "auth.forgot_password",
+        "params": "",
+        "file": "templates\\auth\\login.html",
+        "line": 43
+      },
+      {
+        "endpoint": "auth.users",
+        "params": "",
+        "file": "templates\\auth\\manage_permissions.html",
+        "line": 12
+      },
+      {
+        "endpoint": "auth.manage_permissions",
+        "params": "user_id=user.id",
+        "file": "templates\\auth\\manage_permissions.html",
+        "line": 38
+      },
+      {
+        "endpoint": "auth.users",
+        "params": "",
+        "file": "templates\\auth\\manage_permissions.html",
+        "line": 12
+      },
+      {
+        "endpoint": "auth.create_user",
+        "params": "",
+        "file": "templates\\auth\\users.html",
+        "line": 9
+      },
+      {
+        "endpoint": "auth.manage_permissions",
+        "params": "user_id=user.id",
+        "file": "templates\\auth\\users.html",
+        "line": 58
+      },
+      {
+        "endpoint": "academic_year_transition.transition_dashboard",
+        "params": "",
+        "file": "templates\\enrollment\\dashboard.html",
+        "line": 23
+      },
+      {
+        "endpoint": "email_templates.template_manager",
+        "params": "",
+        "file": "templates\\enrollment\\dashboard.html",
+        "line": 26
+      },
+      {
+        "endpoint": "email_templates.template_manager",
+        "params": "",
+        "file": "templates\\enrollment\\dashboard.html",
+        "line": 26
+      },
+      {
+        "endpoint": "academic_year_transition.transition_dashboard",
+        "params": "",
+        "file": "templates\\enrollment_email\\dashboard.html",
+        "line": 19
+      },
+      {
+        "endpoint": "secure_forms.enrollment_response_success",
+        "params": "token=token",
+        "file": "templates\\enrollment_email\\response_form.html",
+        "line": 269
+      },
+      {
+        "endpoint": "financial.financial_dashboard",
+        "params": "",
+        "file": "templates\\financial\\division_config.html",
+        "line": 19
+      },
+      {
+        "endpoint": "financial.financial_dashboard",
+        "params": "",
+        "file": "templates\\financial\\division_financial_aid.html",
+        "line": 32
+      },
+      {
+        "endpoint": "financial.financial_dashboard",
+        "params": "",
+        "file": "templates\\financial\\division_tuition_contracts.html",
+        "line": 32
+      },
+      {
+        "endpoint": "financial.download_contract",
+        "params": "contract_id=contract.id",
+        "file": "templates\\financial\\division_tuition_contracts.html",
+        "line": 202
+      },
+      {
+        "endpoint": "financial.financial_dashboard",
+        "params": "",
+        "file": "templates\\financial\\documents.html",
+        "line": 17
+      },
+      {
+        "endpoint": "kollel.kollel_dashboard",
+        "params": "",
+        "file": "templates\\kollel\\breaks.html",
+        "line": 18
+      },
+      {
+        "endpoint": "academic.academic_dashboard",
+        "params": "",
+        "file": "templates\\kollel\\breaks.html",
+        "line": 130
+      },
+      {
+        "endpoint": "kollel.kollel_dashboard",
+        "params": "",
+        "file": "templates\\kollel\\edit_student.html",
+        "line": 18
+      },
+      {
+        "endpoint": "kollel.student_history",
+        "params": "kollel_student_id=kollel_student.id",
+        "file": "templates\\kollel\\edit_student.html",
+        "line": 21
+      },
+      {
+        "endpoint": "kollel.kollel_dashboard",
+        "params": "",
+        "file": "templates\\kollel\\edit_student.html",
+        "line": 18
+      },
+      {
+        "endpoint": "kollel.edit_kollel_student",
+        "params": "kollel_student_id=kollel_student.id",
+        "file": "templates\\kollel\\edit_student.html",
+        "line": null
+      },
+      {
+        "endpoint": "kollel.kollel_dashboard",
+        "params": "",
+        "file": "templates\\kollel\\edit_student.html",
+        "line": 18
+      },
+      {
+        "endpoint": "kollel.kollel_dashboard",
+        "params": "",
+        "file": "templates\\kollel\\history.html",
+        "line": 17
+      },
+      {
+        "endpoint": "kollel.kollel_dashboard",
+        "params": "",
+        "file": "templates\\kollel\\students.html",
+        "line": 14
+      },
+      {
+        "endpoint": "kollel.edit_kollel_student",
+        "params": "kollel_student_id=kollel_student_map[student.id]",
+        "file": "templates\\kollel\\students.html",
+        "line": 69
+      },
+      {
+        "endpoint": "reports.reports_builder",
+        "params": "",
+        "file": "templates\\reports\\dashboard.html",
+        "line": 16
+      },
+      {
+        "endpoint": "secure_forms.admin_form_uploads",
+        "params": "",
+        "file": "templates\\secure_forms\\admin_manual_upload.html",
+        "line": 15
+      },
+      {
+        "endpoint": "secure_forms.admin_secure_forms",
+        "params": "",
+        "file": "templates\\secure_forms\\admin_manual_upload.html",
+        "line": 18
+      },
+      {
+        "endpoint": "secure_forms.admin_secure_forms",
+        "params": "",
+        "file": "templates\\secure_forms\\admin_uploads.html",
+        "line": 14
+      },
+      {
+        "endpoint": "secure_forms.admin_download_upload",
+        "params": "upload_id=upload.id",
+        "file": "templates\\secure_forms\\admin_uploads.html",
+        "line": 78
+      }
+    ],
+    "hardcoded_urls": [
+      {
+        "url": "/applications/",
+        "file": "templates\\application_create.html",
+        "line": null
+      },
+      {
+        "url": "/students/",
+        "file": "templates\\application_create.html",
+        "line": null
+      },
+      {
+        "url": "/students/new",
+        "file": "templates\\index.html",
+        "line": null
+      },
+      {
+        "url": "/attendance",
+        "file": "templates\\index.html",
+        "line": null
+      },
+      {
+        "url": "/applications",
+        "file": "templates\\index.html",
+        "line": null
+      },
+      {
+        "url": "/reports",
+        "file": "templates\\index.html",
+        "line": null
+      },
+      {
+        "url": "/students",
+        "file": "templates\\student_details_backup.html",
+        "line": null
+      },
+      {
+        "url": "/students/${studentId}/view-uploaded-contract",
+        "file": "templates\\student_details_backup.html",
+        "line": 1487
+      },
+      {
+        "url": "/students",
+        "file": "templates\\student_details_old.html",
+        "line": null
+      },
+      {
+        "url": "/students/${studentId}/view-uploaded-contract",
+        "file": "templates\\student_details_old.html",
+        "line": 1487
+      },
+      {
+        "url": "/students/{{ student.id }}",
+        "file": "templates\\student_edit.html",
+        "line": 12
+      },
+      {
+        "url": "/students/{{ student.id }}",
+        "file": "templates\\student_edit.html",
+        "line": 12
+      },
+      {
+        "url": "/reports/builder?template=${template.id}",
+        "file": "templates\\reports\\dashboard.html",
+        "line": 390
+      },
+      {
+        "url": "/api/reports/download/${report.id}",
+        "file": "templates\\reports\\dashboard.html",
+        "line": 438
+      },
+      {
+        "url": "/api/reports/download/${report.id}",
+        "file": "templates\\reports\\dashboard.html",
+        "line": 438
+      },
+      {
+        "url": "/download-form/{{ secure_link.token }}",
+        "file": "templates\\secure_forms\\upload_form.html",
+        "line": 145
+      }
+    ],
+    "broken_links": [
+      {
+        "endpoint": "files.view_attachment",
+        "file": "templates\\applications.html",
+        "line": 703,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "files.serve_attachment",
+        "file": "templates\\applications.html",
+        "line": 709,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "static",
+        "file": "templates\\base.html",
+        "line": 15,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.financial_dashboard",
+        "file": "templates\\base.html",
+        "line": 314,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "auth.users",
+        "file": "templates\\base.html",
+        "line": 346,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "auth.profile",
+        "file": "templates\\base.html",
+        "line": 406,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "auth.logout",
+        "file": "templates\\base.html",
+        "line": 413,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "static",
+        "file": "templates\\base.html",
+        "line": 15,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "static",
+        "file": "templates\\base.html",
+        "line": 15,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "dormitories.dormitory_map",
+        "file": "templates\\dormitory_dashboard.html",
+        "line": 18,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.division_financial_aid",
+        "file": "templates\\financial_dashboard.html",
+        "line": 35,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.division_tuition_contracts",
+        "file": "templates\\financial_dashboard.html",
+        "line": 38,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.division_financial_config",
+        "file": "templates\\financial_dashboard.html",
+        "line": 42,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.division_financial_aid",
+        "file": "templates\\financial_dashboard.html",
+        "line": 35,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.division_tuition_contracts",
+        "file": "templates\\financial_dashboard.html",
+        "line": 38,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.division_financial_config",
+        "file": "templates\\financial_dashboard.html",
+        "line": 42,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.division_financial_aid",
+        "file": "templates\\financial_dashboard.html",
+        "line": 35,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.division_tuition_contracts",
+        "file": "templates\\financial_dashboard.html",
+        "line": 38,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.division_financial_config",
+        "file": "templates\\financial_dashboard.html",
+        "line": 42,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "tuition_components.tuition_settings",
+        "file": "templates\\financial_dashboard.html",
+        "line": 1762,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "kollel.kollel_students",
+        "file": "templates\\kollel_dashboard.html",
+        "line": 19,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "kollel.manage_breaks",
+        "file": "templates\\kollel_dashboard.html",
+        "line": 22,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "kollel.edit_kollel_student",
+        "file": "templates\\kollel_dashboard.html",
+        "line": 266,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "kollel.kollel_students",
+        "file": "templates\\kollel_dashboard.html",
+        "line": 19,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.settings",
+        "file": "templates\\settings.html",
+        "line": 129,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.update_division_email",
+        "file": "templates\\settings.html",
+        "line": 345,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.update_division_email",
+        "file": "templates\\settings.html",
+        "line": 345,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.update_division_email",
+        "file": "templates\\settings.html",
+        "line": 345,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.settings",
+        "file": "templates\\settings.html",
+        "line": 129,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.settings",
+        "file": "templates\\settings.html",
+        "line": 129,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.settings",
+        "file": "templates\\settings.html",
+        "line": 129,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.settings",
+        "file": "templates\\settings.html",
+        "line": 129,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.update_division_email",
+        "file": "templates\\settings.html",
+        "line": 345,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.update_division_email",
+        "file": "templates\\settings.html",
+        "line": 345,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.update_acceptance_template",
+        "file": "templates\\settings.html",
+        "line": 965,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.update_acceptance_template",
+        "file": "templates\\settings.html",
+        "line": 965,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.update_pdf_template",
+        "file": "templates\\settings.html",
+        "line": 1065,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.update_pdf_template",
+        "file": "templates\\settings.html",
+        "line": 1065,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.download_division_form",
+        "file": "templates\\settings.html",
+        "line": 1495,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.upload_division_form",
+        "file": "templates\\settings.html",
+        "line": 1501,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.download_division_form",
+        "file": "templates\\settings.html",
+        "line": 1495,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.upload_division_form",
+        "file": "templates\\settings.html",
+        "line": 1501,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.download_division_form",
+        "file": "templates\\settings.html",
+        "line": 1495,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.upload_division_form",
+        "file": "templates\\settings.html",
+        "line": 1501,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.download_division_form",
+        "file": "templates\\settings.html",
+        "line": 1495,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.upload_division_form",
+        "file": "templates\\settings.html",
+        "line": 1501,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.download_division_form",
+        "file": "templates\\settings.html",
+        "line": 1495,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.upload_division_form",
+        "file": "templates\\settings.html",
+        "line": 1501,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.download_division_form",
+        "file": "templates\\settings.html",
+        "line": 1495,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.upload_division_form",
+        "file": "templates\\settings.html",
+        "line": 1501,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "kollel.kollel_settings",
+        "file": "templates\\settings.html",
+        "line": 1731,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.test_dropbox_connection",
+        "file": "templates\\settings.html",
+        "line": null,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.test_dropbox_sign_connection",
+        "file": "templates\\settings.html",
+        "line": null,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "settings.dropbox_sign_quota",
+        "file": "templates\\settings.html",
+        "line": null,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "students.create_student",
+        "file": "templates\\students.html",
+        "line": 13,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "students.student_details",
+        "file": "templates\\students.html",
+        "line": 73,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "students.student_details",
+        "file": "templates\\students.html",
+        "line": 73,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "students.edit_student",
+        "file": "templates\\students.html",
+        "line": 100,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "students.student_details",
+        "file": "templates\\students.html",
+        "line": 73,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "students.student_details",
+        "file": "templates\\students.html",
+        "line": 73,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "students.edit_student",
+        "file": "templates\\students.html",
+        "line": 100,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "students.edit_student",
+        "file": "templates\\student_details.html",
+        "line": 103,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.student_financial",
+        "file": "templates\\student_details.html",
+        "line": 125,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.student_financial",
+        "file": "templates\\student_details.html",
+        "line": 125,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "files.view_attachment",
+        "file": "templates\\student_details.html",
+        "line": 1200,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "files.serve_attachment",
+        "file": "templates\\student_details.html",
+        "line": 1206,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "students.edit_student",
+        "file": "templates\\student_details_backup.html",
+        "line": 10,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "students.view_uploaded_contract",
+        "file": "templates\\student_details_backup.html",
+        "line": 251,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.student_financial",
+        "file": "templates\\student_details_backup.html",
+        "line": 305,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "files.view_attachment",
+        "file": "templates\\student_details_backup.html",
+        "line": 767,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "files.serve_attachment",
+        "file": "templates\\student_details_backup.html",
+        "line": 774,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "students.edit_student",
+        "file": "templates\\student_details_old.html",
+        "line": 10,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "students.view_uploaded_contract",
+        "file": "templates\\student_details_old.html",
+        "line": 251,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.student_financial",
+        "file": "templates\\student_details_old.html",
+        "line": 305,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "files.view_attachment",
+        "file": "templates\\student_details_old.html",
+        "line": 767,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "files.serve_attachment",
+        "file": "templates\\student_details_old.html",
+        "line": 774,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "students.student_details",
+        "file": "templates\\student_financial.html",
+        "line": 26,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "static",
+        "file": "templates\\student_financial.html",
+        "line": 2200,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "students.student_details",
+        "file": "templates\\student_tuition_components.html",
+        "line": 16,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "academic.shiurim_list",
+        "file": "templates\\academic\\dashboard.html",
+        "line": 28,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "academic.attendance_dashboard",
+        "file": "templates\\academic\\dashboard.html",
+        "line": 31,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "academic.matriculation_dashboard",
+        "file": "templates\\academic\\dashboard.html",
+        "line": 34,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "academic.attendance_dashboard",
+        "file": "templates\\academic\\dashboard.html",
+        "line": 31,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "academic.shiurim_list",
+        "file": "templates\\academic\\dashboard.html",
+        "line": 28,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "academic.shiurim_list",
+        "file": "templates\\academic\\dashboard.html",
+        "line": 28,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "academic.attendance_dashboard",
+        "file": "templates\\academic\\dashboard.html",
+        "line": 31,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "auth.users",
+        "file": "templates\\auth\\create_user.html",
+        "line": 12,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "auth.create_user",
+        "file": "templates\\auth\\create_user.html",
+        "line": 28,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "auth.users",
+        "file": "templates\\auth\\create_user.html",
+        "line": 12,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "auth.forgot_password",
+        "file": "templates\\auth\\forgot_password.html",
+        "line": 29,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "auth.forgot_password",
+        "file": "templates\\auth\\login.html",
+        "line": 43,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "auth.users",
+        "file": "templates\\auth\\manage_permissions.html",
+        "line": 12,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "auth.manage_permissions",
+        "file": "templates\\auth\\manage_permissions.html",
+        "line": 38,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "auth.users",
+        "file": "templates\\auth\\manage_permissions.html",
+        "line": 12,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "auth.create_user",
+        "file": "templates\\auth\\users.html",
+        "line": 9,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "auth.manage_permissions",
+        "file": "templates\\auth\\users.html",
+        "line": 58,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "secure_forms.enrollment_response_success",
+        "file": "templates\\enrollment_email\\response_form.html",
+        "line": 269,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.financial_dashboard",
+        "file": "templates\\financial\\division_config.html",
+        "line": 19,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.financial_dashboard",
+        "file": "templates\\financial\\division_financial_aid.html",
+        "line": 32,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.financial_dashboard",
+        "file": "templates\\financial\\division_tuition_contracts.html",
+        "line": 32,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.download_contract",
+        "file": "templates\\financial\\division_tuition_contracts.html",
+        "line": 202,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "financial.financial_dashboard",
+        "file": "templates\\financial\\documents.html",
+        "line": 17,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "kollel.student_history",
+        "file": "templates\\kollel\\edit_student.html",
+        "line": 21,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "kollel.edit_kollel_student",
+        "file": "templates\\kollel\\edit_student.html",
+        "line": null,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "kollel.edit_kollel_student",
+        "file": "templates\\kollel\\students.html",
+        "line": 69,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "reports.reports_builder",
+        "file": "templates\\reports\\dashboard.html",
+        "line": 16,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "secure_forms.admin_form_uploads",
+        "file": "templates\\secure_forms\\admin_manual_upload.html",
+        "line": 15,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "secure_forms.admin_secure_forms",
+        "file": "templates\\secure_forms\\admin_manual_upload.html",
+        "line": 18,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "secure_forms.admin_secure_forms",
+        "file": "templates\\secure_forms\\admin_uploads.html",
+        "line": 14,
+        "issue": "Route not found"
+      },
+      {
+        "endpoint": "secure_forms.admin_download_upload",
+        "file": "templates\\secure_forms\\admin_uploads.html",
+        "line": 78,
+        "issue": "Route not found"
+      }
+    ],
+    "inconsistencies": []
+  },
+  "suggestions": [
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\applications.html",
+      "line": 703,
+      "issue": "url_for('files.view_attachment') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\applications.html",
+      "line": 709,
+      "issue": "url_for('files.serve_attachment') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\base.html",
+      "line": 15,
+      "issue": "url_for('static') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\base.html",
+      "line": 314,
+      "issue": "url_for('financial.financial_dashboard') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\base.html",
+      "line": 346,
+      "issue": "url_for('auth.users') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\base.html",
+      "line": 406,
+      "issue": "url_for('auth.profile') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\base.html",
+      "line": 413,
+      "issue": "url_for('auth.logout') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\base.html",
+      "line": 15,
+      "issue": "url_for('static') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\base.html",
+      "line": 15,
+      "issue": "url_for('static') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\dormitory_dashboard.html",
+      "line": 18,
+      "issue": "url_for('dormitories.dormitory_map') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial_dashboard.html",
+      "line": 35,
+      "issue": "url_for('financial.division_financial_aid') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial_dashboard.html",
+      "line": 38,
+      "issue": "url_for('financial.division_tuition_contracts') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial_dashboard.html",
+      "line": 42,
+      "issue": "url_for('financial.division_financial_config') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial_dashboard.html",
+      "line": 35,
+      "issue": "url_for('financial.division_financial_aid') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial_dashboard.html",
+      "line": 38,
+      "issue": "url_for('financial.division_tuition_contracts') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial_dashboard.html",
+      "line": 42,
+      "issue": "url_for('financial.division_financial_config') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial_dashboard.html",
+      "line": 35,
+      "issue": "url_for('financial.division_financial_aid') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial_dashboard.html",
+      "line": 38,
+      "issue": "url_for('financial.division_tuition_contracts') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial_dashboard.html",
+      "line": 42,
+      "issue": "url_for('financial.division_financial_config') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial_dashboard.html",
+      "line": 1762,
+      "issue": "url_for('tuition_components.tuition_settings') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\kollel_dashboard.html",
+      "line": 19,
+      "issue": "url_for('kollel.kollel_students') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\kollel_dashboard.html",
+      "line": 22,
+      "issue": "url_for('kollel.manage_breaks') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\kollel_dashboard.html",
+      "line": 266,
+      "issue": "url_for('kollel.edit_kollel_student') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\kollel_dashboard.html",
+      "line": 19,
+      "issue": "url_for('kollel.kollel_students') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 129,
+      "issue": "url_for('settings.settings') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 345,
+      "issue": "url_for('settings.update_division_email') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 345,
+      "issue": "url_for('settings.update_division_email') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 345,
+      "issue": "url_for('settings.update_division_email') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 129,
+      "issue": "url_for('settings.settings') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 129,
+      "issue": "url_for('settings.settings') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 129,
+      "issue": "url_for('settings.settings') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 129,
+      "issue": "url_for('settings.settings') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 345,
+      "issue": "url_for('settings.update_division_email') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 345,
+      "issue": "url_for('settings.update_division_email') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 965,
+      "issue": "url_for('settings.update_acceptance_template') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 965,
+      "issue": "url_for('settings.update_acceptance_template') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1065,
+      "issue": "url_for('settings.update_pdf_template') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1065,
+      "issue": "url_for('settings.update_pdf_template') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1495,
+      "issue": "url_for('settings.download_division_form') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1501,
+      "issue": "url_for('settings.upload_division_form') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1495,
+      "issue": "url_for('settings.download_division_form') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1501,
+      "issue": "url_for('settings.upload_division_form') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1495,
+      "issue": "url_for('settings.download_division_form') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1501,
+      "issue": "url_for('settings.upload_division_form') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1495,
+      "issue": "url_for('settings.download_division_form') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1501,
+      "issue": "url_for('settings.upload_division_form') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1495,
+      "issue": "url_for('settings.download_division_form') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1501,
+      "issue": "url_for('settings.upload_division_form') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1495,
+      "issue": "url_for('settings.download_division_form') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1501,
+      "issue": "url_for('settings.upload_division_form') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": 1731,
+      "issue": "url_for('kollel.kollel_settings') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": null,
+      "issue": "url_for('settings.test_dropbox_connection') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": null,
+      "issue": "url_for('settings.test_dropbox_sign_connection') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\settings.html",
+      "line": null,
+      "issue": "url_for('settings.dropbox_sign_quota') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\students.html",
+      "line": 13,
+      "issue": "url_for('students.create_student') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\students.html",
+      "line": 73,
+      "issue": "url_for('students.student_details') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\students.html",
+      "line": 73,
+      "issue": "url_for('students.student_details') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\students.html",
+      "line": 100,
+      "issue": "url_for('students.edit_student') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\students.html",
+      "line": 73,
+      "issue": "url_for('students.student_details') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\students.html",
+      "line": 73,
+      "issue": "url_for('students.student_details') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\students.html",
+      "line": 100,
+      "issue": "url_for('students.edit_student') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details.html",
+      "line": 103,
+      "issue": "url_for('students.edit_student') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details.html",
+      "line": 125,
+      "issue": "url_for('financial.student_financial') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details.html",
+      "line": 125,
+      "issue": "url_for('financial.student_financial') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details.html",
+      "line": 1200,
+      "issue": "url_for('files.view_attachment') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details.html",
+      "line": 1206,
+      "issue": "url_for('files.serve_attachment') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details_backup.html",
+      "line": 10,
+      "issue": "url_for('students.edit_student') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details_backup.html",
+      "line": 251,
+      "issue": "url_for('students.view_uploaded_contract') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details_backup.html",
+      "line": 305,
+      "issue": "url_for('financial.student_financial') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details_backup.html",
+      "line": 767,
+      "issue": "url_for('files.view_attachment') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details_backup.html",
+      "line": 774,
+      "issue": "url_for('files.serve_attachment') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details_old.html",
+      "line": 10,
+      "issue": "url_for('students.edit_student') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details_old.html",
+      "line": 251,
+      "issue": "url_for('students.view_uploaded_contract') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details_old.html",
+      "line": 305,
+      "issue": "url_for('financial.student_financial') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details_old.html",
+      "line": 767,
+      "issue": "url_for('files.view_attachment') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_details_old.html",
+      "line": 774,
+      "issue": "url_for('files.serve_attachment') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_financial.html",
+      "line": 26,
+      "issue": "url_for('students.student_details') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_financial.html",
+      "line": 2200,
+      "issue": "url_for('static') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\student_tuition_components.html",
+      "line": 16,
+      "issue": "url_for('students.student_details') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\academic\\dashboard.html",
+      "line": 28,
+      "issue": "url_for('academic.shiurim_list') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\academic\\dashboard.html",
+      "line": 31,
+      "issue": "url_for('academic.attendance_dashboard') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\academic\\dashboard.html",
+      "line": 34,
+      "issue": "url_for('academic.matriculation_dashboard') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\academic\\dashboard.html",
+      "line": 31,
+      "issue": "url_for('academic.attendance_dashboard') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\academic\\dashboard.html",
+      "line": 28,
+      "issue": "url_for('academic.shiurim_list') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\academic\\dashboard.html",
+      "line": 28,
+      "issue": "url_for('academic.shiurim_list') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\academic\\dashboard.html",
+      "line": 31,
+      "issue": "url_for('academic.attendance_dashboard') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\auth\\create_user.html",
+      "line": 12,
+      "issue": "url_for('auth.users') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\auth\\create_user.html",
+      "line": 28,
+      "issue": "url_for('auth.create_user') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\auth\\create_user.html",
+      "line": 12,
+      "issue": "url_for('auth.users') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\auth\\forgot_password.html",
+      "line": 29,
+      "issue": "url_for('auth.forgot_password') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\auth\\login.html",
+      "line": 43,
+      "issue": "url_for('auth.forgot_password') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\auth\\manage_permissions.html",
+      "line": 12,
+      "issue": "url_for('auth.users') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\auth\\manage_permissions.html",
+      "line": 38,
+      "issue": "url_for('auth.manage_permissions') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\auth\\manage_permissions.html",
+      "line": 12,
+      "issue": "url_for('auth.users') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\auth\\users.html",
+      "line": 9,
+      "issue": "url_for('auth.create_user') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\auth\\users.html",
+      "line": 58,
+      "issue": "url_for('auth.manage_permissions') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\enrollment_email\\response_form.html",
+      "line": 269,
+      "issue": "url_for('secure_forms.enrollment_response_success') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial\\division_config.html",
+      "line": 19,
+      "issue": "url_for('financial.financial_dashboard') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial\\division_financial_aid.html",
+      "line": 32,
+      "issue": "url_for('financial.financial_dashboard') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial\\division_tuition_contracts.html",
+      "line": 32,
+      "issue": "url_for('financial.financial_dashboard') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial\\division_tuition_contracts.html",
+      "line": 202,
+      "issue": "url_for('financial.download_contract') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\financial\\documents.html",
+      "line": 17,
+      "issue": "url_for('financial.financial_dashboard') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\kollel\\edit_student.html",
+      "line": 21,
+      "issue": "url_for('kollel.student_history') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\kollel\\edit_student.html",
+      "line": null,
+      "issue": "url_for('kollel.edit_kollel_student') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\kollel\\students.html",
+      "line": 69,
+      "issue": "url_for('kollel.edit_kollel_student') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\reports\\dashboard.html",
+      "line": 16,
+      "issue": "url_for('reports.reports_builder') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\secure_forms\\admin_manual_upload.html",
+      "line": 15,
+      "issue": "url_for('secure_forms.admin_form_uploads') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\secure_forms\\admin_manual_upload.html",
+      "line": 18,
+      "issue": "url_for('secure_forms.admin_secure_forms') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\secure_forms\\admin_uploads.html",
+      "line": 14,
+      "issue": "url_for('secure_forms.admin_secure_forms') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    },
+    {
+      "type": "broken_link",
+      "priority": "high",
+      "file": "templates\\secure_forms\\admin_uploads.html",
+      "line": 78,
+      "issue": "url_for('secure_forms.admin_download_upload') not found",
+      "suggestion": "Check if route exists or fix endpoint name"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "backups": [
+    {
+      "name": "backup_manual_20250617_134846",
+      "type": "manual",
+      "timestamp": "2025-06-17T13:48:46.630460",
+      "file_path": "backups\\backup_manual_20250617_134846.db.gz",
+      "file_size": 10810,
+      "original_size": 229376,
+      "compressed": true,
+      "hash": "1ae44a978c4e334a6006adde61935f404ab32c5920d19a1eda10432ccb2f8893",
+      "integrity_verified": true,
+      "source_db_path": "student_management.db"
+    }
+  ],
+  "last_full_backup": null,
+  "backup_schedule": {
+    "daily": "02:00",
+    "weekly": "Sunday",
+    "monthly": 1
+  }
+}

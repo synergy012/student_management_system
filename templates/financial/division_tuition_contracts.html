@@ -29,7 +29,7 @@
                     <button class="btn btn-primary" onclick="createNewContract()">
                         <i class="fas fa-plus"></i> New Contract
                     </button>
-                    <a href="{{ url_for('financial.financial_dashboard') }}" class="btn btn-outline-secondary">
+                    <a href="{{ url_for('financial.financial_core.financial_dashboard') }}" class="btn btn-outline-secondary">
                         <i class="fas fa-arrow-left"></i> Back to Financial Dashboard
                     </a>
                 </div>
@@ -199,7 +199,7 @@
                                         </button>
                                     {% endif %}
                                     {% if contract.contract_pdf_path %}
-                                        <a href="/download/contract/{{ contract.id }}" class="btn btn-outline-secondary" title="Download PDF">
+                                        <a href="{{ url_for('financial.download_contract', contract_id=contract.id) }}" class="btn btn-outline-secondary" title="Download PDF">
                                             <i class="fas fa-download"></i>
                                         </a>
                                     {% endif %}

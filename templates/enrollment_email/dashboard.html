@@ -1,0 +1,671 @@
+{% extends "base.html" %}
+
+{% block title %}Enrollment Decision Emails{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-envelope text-primary me-2"></i>
+                        Enrollment Decision Emails
+                    </h1>
+                    <p class="text-muted mb-0">Send enrollment decision requests to students</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('academic_year_transition.transition_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        Year Transition
+                    </a>
+                </div>
+            </div>
+
+            <!-- Academic Year Selection -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-calendar me-2"></i>
+                                Academic Year
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <select class="form-select" id="academicYearSelect">
+                                {% for year in academic_years %}
+                                <option value="{{ year.id }}" {% if current_year and year.id == current_year.id %}selected{% endif %}>
+                                    {{ year.year_label }}
+                                    {% if year.is_active %} (Active){% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-calendar-plus me-2"></i>
+                                Response Deadline
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <input type="date" class="form-control" id="responseDeadline" 
+                                   value="{{ (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d') }}">
+                            <small class="text-muted">Students must respond by this date</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Statistics -->
+            <div class="row mb-4" id="statisticsSection" style="display: none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Email Statistics
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <div class="h3 mb-0 text-info" id="totalSent">0</div>
+                                        <div class="text-muted small">Total Sent</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <div class="h3 mb-0 text-warning" id="pendingResponses">0</div>
+                                        <div class="text-muted small">Pending</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <div class="h3 mb-0 text-success" id="responsesReceived">0</div>
+                                        <div class="text-muted small">Responded</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <div class="h3 mb-0 text-success" id="enrolledResponses">0</div>
+                                        <div class="text-muted small">Enrolled</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <div class="h3 mb-0 text-danger" id="withdrawnResponses">0</div>
+                                        <div class="text-muted small">Withdrawn</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="mb-3">
+                                        <div class="h3 mb-0 text-secondary" id="expiredTokens">0</div>
+                                        <div class="text-muted small">Expired</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-paper-plane me-2"></i>
+                                Email Actions
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <button class="btn btn-primary w-100" id="loadStudentsBtn">
+                                        <i class="fas fa-search me-2"></i>
+                                        Load Students
+                                    </button>
+                                    <small class="text-muted">Find students pending emails</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-info w-100" id="createTemplatesBtn">
+                                        <i class="fas fa-file-alt me-2"></i>
+                                        Create Templates
+                                    </button>
+                                    <small class="text-muted">Create default email templates</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-success w-100" id="sendBulkBtn" disabled>
+                                        <i class="fas fa-paper-plane me-2"></i>
+                                        Send Bulk Emails
+                                    </button>
+                                    <small class="text-muted">Send to selected students</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-outline-secondary w-100" id="refreshStatsBtn">
+                                        <i class="fas fa-sync me-2"></i>
+                                        Refresh Statistics
+                                    </button>
+                                    <small class="text-muted">Update email statistics</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students List -->
+            <div class="row" id="studentsSection" style="display: none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-users me-2"></i>
+                                Students Pending Enrollment Emails
+                            </h5>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-secondary" id="filterAll">
+                                    All (<span id="allCount">0</span>)
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning" id="filterNoEmail">
+                                    No Email Sent (<span id="noEmailCount">0</span>)
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" id="filterEmailSent">
+                                    Email Sent (<span id="emailSentCount">0</span>)
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Bulk Actions -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <button class="btn btn-outline-secondary" type="button" id="selectAllBtn">
+                                            <i class="fas fa-check-square me-1"></i>
+                                            Select All
+                                        </button>
+                                        <button class="btn btn-primary" type="button" id="sendSelectedBtn" disabled>
+                                            <i class="fas fa-paper-plane me-1"></i>
+                                            Send to Selected
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="searchStudents" placeholder="Search students...">
+                                        <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Students Table -->
+                            <div class="table-responsive">
+                                <table class="table table-striped" id="studentsTable">
+                                    <thead>
+                                        <tr>
+                                            <th><input type="checkbox" id="selectAllCheckbox"></th>
+                                            <th>Student Name</th>
+                                            <th>Division</th>
+                                            <th>Email</th>
+                                            <th>Enrollment Status</th>
+                                            <th>Email Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="studentsTableBody">
+                                        <!-- Students will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>
+                    Email Preview
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                        <p class="mt-2">Loading preview...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="sendAfterPreview">
+                    <i class="fas fa-paper-plane me-1"></i>
+                    Send Email
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let selectedAcademicYear = null;
+let allStudents = [];
+let filteredStudents = [];
+let selectedStudents = [];
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Set initial academic year
+    const academicYearSelect = document.getElementById('academicYearSelect');
+    if (academicYearSelect.value) {
+        selectedAcademicYear = parseInt(academicYearSelect.value);
+        loadStatistics();
+    }
+    
+    // Event listeners
+    academicYearSelect.addEventListener('change', onAcademicYearChange);
+    document.getElementById('loadStudentsBtn').addEventListener('click', loadStudents);
+    document.getElementById('createTemplatesBtn').addEventListener('click', createEmailTemplates);
+    document.getElementById('sendBulkBtn').addEventListener('click', sendBulkEmails);
+    document.getElementById('refreshStatsBtn').addEventListener('click', loadStatistics);
+    document.getElementById('sendSelectedBtn').addEventListener('click', sendToSelected);
+    document.getElementById('selectAllBtn').addEventListener('click', toggleSelectAll);
+    document.getElementById('selectAllCheckbox').addEventListener('change', toggleSelectAll);
+    
+    // Filter buttons
+    document.getElementById('filterAll').addEventListener('click', () => filterStudents(null));
+    document.getElementById('filterNoEmail').addEventListener('click', () => filterStudents('no_email'));
+    document.getElementById('filterEmailSent').addEventListener('click', () => filterStudents('email_sent'));
+    
+    // Search
+    document.getElementById('searchStudents').addEventListener('input', searchStudents);
+});
+
+function onAcademicYearChange() {
+    selectedAcademicYear = parseInt(document.getElementById('academicYearSelect').value);
+    loadStatistics();
+    // Clear students list
+    document.getElementById('studentsSection').style.display = 'none';
+}
+
+function loadStatistics() {
+    if (!selectedAcademicYear) return;
+    
+    fetch(`/api/enrollment-emails/statistics?academic_year_id=${selectedAcademicYear}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading statistics:', data.error);
+                return;
+            }
+            
+            // Update statistics display
+            document.getElementById('totalSent').textContent = data.total_sent || 0;
+            document.getElementById('pendingResponses').textContent = data.pending_responses || 0;
+            document.getElementById('responsesReceived').textContent = data.responses_received || 0;
+            document.getElementById('enrolledResponses').textContent = data.enrolled_responses || 0;
+            document.getElementById('withdrawnResponses').textContent = data.withdrawn_responses || 0;
+            document.getElementById('expiredTokens').textContent = data.expired_tokens || 0;
+            
+            // Show statistics section
+            document.getElementById('statisticsSection').style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error loading statistics:', error);
+        });
+}
+
+function loadStudents() {
+    if (!selectedAcademicYear) {
+        alert('Please select an academic year first');
+        return;
+    }
+    
+    const btn = document.getElementById('loadStudentsBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Loading...';
+    
+    fetch(`/api/enrollment-emails/students-pending?academic_year_id=${selectedAcademicYear}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error loading students: ' + data.error);
+                return;
+            }
+            
+            allStudents = data;
+            filteredStudents = [...allStudents];
+            renderStudentsTable();
+            updateFilterCounts();
+            document.getElementById('studentsSection').style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error loading students:', error);
+            alert('Error loading students: ' + error.message);
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-search me-2"></i>Load Students';
+        });
+}
+
+function renderStudentsTable() {
+    const tbody = document.getElementById('studentsTableBody');
+    tbody.innerHTML = '';
+    
+    filteredStudents.forEach(student => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="checkbox" class="student-checkbox" value="${student.id}"></td>
+            <td>${student.student_name}</td>
+            <td><span class="badge bg-${student.division === 'YZA' ? 'primary' : 'success'}">${student.division}</span></td>
+            <td>${student.email || '<span class="text-muted">No email</span>'}</td>
+            <td><span class="badge bg-warning">${student.enrollment_status}</span></td>
+            <td>
+                ${student.has_active_email ? 
+                    `<span class="badge bg-info">Email Sent</span>
+                     <small class="text-muted d-block">Expires: ${new Date(student.token_expires).toLocaleDateString()}</small>` :
+                    '<span class="badge bg-secondary">No Email</span>'
+                }
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="previewEmail('${student.id}', '${student.student_name}')">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-primary" onclick="sendSingleEmail('${student.id}', '${student.student_name}')" 
+                        ${!student.email ? 'disabled title="No email address"' : ''}>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    // Update selected students tracking
+    updateSelectedStudents();
+}
+
+function updateFilterCounts() {
+    const allCount = allStudents.length;
+    const noEmailCount = allStudents.filter(s => !s.has_active_email).length;
+    const emailSentCount = allStudents.filter(s => s.has_active_email).length;
+    
+    document.getElementById('allCount').textContent = allCount;
+    document.getElementById('noEmailCount').textContent = noEmailCount;
+    document.getElementById('emailSentCount').textContent = emailSentCount;
+}
+
+function filterStudents(filter) {
+    if (filter === null) {
+        filteredStudents = [...allStudents];
+    } else if (filter === 'no_email') {
+        filteredStudents = allStudents.filter(s => !s.has_active_email);
+    } else if (filter === 'email_sent') {
+        filteredStudents = allStudents.filter(s => s.has_active_email);
+    }
+    
+    renderStudentsTable();
+}
+
+function searchStudents() {
+    const searchTerm = document.getElementById('searchStudents').value.toLowerCase();
+    if (searchTerm) {
+        filteredStudents = allStudents.filter(s => 
+            s.student_name.toLowerCase().includes(searchTerm) ||
+            s.division.toLowerCase().includes(searchTerm) ||
+            (s.email && s.email.toLowerCase().includes(searchTerm))
+        );
+    } else {
+        filteredStudents = [...allStudents];
+    }
+    renderStudentsTable();
+}
+
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const checkboxes = document.querySelectorAll('.student-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateSelectedStudents();
+}
+
+function updateSelectedStudents() {
+    const checkboxes = document.querySelectorAll('.student-checkbox:checked');
+    selectedStudents = Array.from(checkboxes).map(cb => cb.value);
+    
+    // Update send buttons
+    const hasSelection = selectedStudents.length > 0;
+    document.getElementById('sendBulkBtn').disabled = !hasSelection;
+    document.getElementById('sendSelectedBtn').disabled = !hasSelection;
+}
+
+function createEmailTemplates() {
+    if (!confirm('Create default enrollment decision email templates for all divisions?')) {
+        return;
+    }
+    
+    const btn = document.getElementById('createTemplatesBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
+    
+    fetch('/api/enrollment-emails/create-templates', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Email templates created successfully!');
+        } else {
+            alert('Error creating templates: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error creating templates:', error);
+        alert('Error creating templates: ' + error.message);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-file-alt me-2"></i>Create Templates';
+    });
+}
+
+function previewEmail(studentId, studentName) {
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    
+    // Set up preview
+    document.getElementById('previewContent').innerHTML = `
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p class="mt-2">Loading preview for ${studentName}...</p>
+        </div>
+    `;
+    
+    // Store student ID for sending after preview
+    document.getElementById('sendAfterPreview').setAttribute('data-student-id', studentId);
+    
+    modal.show();
+    
+    // Load preview
+    fetch('/api/enrollment-emails/preview', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            student_id: studentId,
+            academic_year_id: selectedAcademicYear
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('previewContent').innerHTML = `
+                <div class="alert alert-info">
+                    <strong>To:</strong> ${data.recipients.join(', ')}<br>
+                    <strong>Subject:</strong> ${data.subject}
+                </div>
+                <div class="border p-3" style="max-height: 400px; overflow-y: auto;">
+                    ${data.html_content}
+                </div>
+            `;
+        } else {
+            document.getElementById('previewContent').innerHTML = `
+                <div class="alert alert-danger">
+                    Error loading preview: ${data.error}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        console.error('Error loading preview:', error);
+        document.getElementById('previewContent').innerHTML = `
+            <div class="alert alert-danger">
+                Error loading preview: ${error.message}
+            </div>
+        `;
+    });
+}
+
+function sendSingleEmail(studentId, studentName) {
+    if (!confirm(`Send enrollment decision email to ${studentName}?`)) {
+        return;
+    }
+    
+    const responseDeadline = document.getElementById('responseDeadline').value;
+    
+    fetch('/api/enrollment-emails/send-single', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            student_id: studentId,
+            academic_year_id: selectedAcademicYear,
+            response_deadline: responseDeadline
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Email sent successfully to ${data.student_name}!`);
+            loadStudents(); // Refresh the list
+            loadStatistics(); // Refresh stats
+        } else {
+            alert('Error sending email: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error sending email:', error);
+        alert('Error sending email: ' + error.message);
+    });
+}
+
+function sendToSelected() {
+    if (selectedStudents.length === 0) {
+        alert('Please select at least one student');
+        return;
+    }
+    
+    if (!confirm(`Send enrollment decision emails to ${selectedStudents.length} selected students?`)) {
+        return;
+    }
+    
+    sendBulkEmails();
+}
+
+function sendBulkEmails() {
+    if (selectedStudents.length === 0) {
+        alert('Please select students first');
+        return;
+    }
+    
+    const responseDeadline = document.getElementById('responseDeadline').value;
+    const btn = document.getElementById('sendBulkBtn');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
+    
+    fetch('/api/enrollment-emails/send-bulk', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            student_ids: selectedStudents,
+            academic_year_id: selectedAcademicYear,
+            response_deadline: responseDeadline
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Bulk email sent!\nSuccess: ${data.sent_count}\nFailed: ${data.failed_count}`);
+            loadStudents(); // Refresh the list
+            loadStatistics(); // Refresh stats
+            
+            // Clear selections
+            selectedStudents = [];
+            document.getElementById('selectAllCheckbox').checked = false;
+            updateSelectedStudents();
+        } else {
+            alert('Error sending bulk emails: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error sending bulk emails:', error);
+        alert('Error sending bulk emails: ' + error.message);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Send Bulk Emails';
+    });
+}
+
+// Send after preview
+document.getElementById('sendAfterPreview').addEventListener('click', function() {
+    const studentId = this.getAttribute('data-student-id');
+    if (studentId) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
+        modal.hide();
+        
+        // Find student name
+        const student = allStudents.find(s => s.id === studentId);
+        const studentName = student ? student.student_name : 'Unknown';
+        
+        sendSingleEmail(studentId, studentName);
+    }
+});
+
+// Update selected students when checkboxes change
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('student-checkbox')) {
+        updateSelectedStudents();
+    }
+});
+</script>
+{% endblock %} 

@@ -45,9 +45,9 @@ def generate_tuition_contract(student_id):
         pdf_path = pdf_service.generate_tuition_contract(contract_data)
         
         # Update financial record
-        financial_record.contract_generated = True
-        financial_record.contract_generated_date = datetime.utcnow()
-        financial_record.contract_file_path = pdf_path
+        financial_record.enhanced_contract_generated = True
+        financial_record.enhanced_contract_generated_date = datetime.utcnow()
+        financial_record.enhanced_contract_pdf_path = pdf_path
         
         db.session.commit()
         
@@ -83,11 +83,11 @@ def download_tuition_contract(student_id):
             academic_year_id=active_year.id
         ).first()
         
-        if not financial_record or not financial_record.contract_file_path:
+        if not financial_record or not financial_record.enhanced_contract_pdf_path:
             return jsonify({'error': 'Contract not found'}), 404
         
         filename = f"{student.full_name}_tuition_contract_{active_year.year}.pdf"
-        return send_file(financial_record.contract_file_path, 
+        return send_file(financial_record.enhanced_contract_pdf_path, 
                         as_attachment=True, 
                         download_name=filename)
         
@@ -203,7 +203,7 @@ def check_contract_status():
             needs_regeneration = financial_record.check_needs_regeneration()
         
         return jsonify({
-            'contract_status': 'generated' if financial_record.contract_generated else 'not_generated',
+            'contract_status': 'generated' if financial_record.enhanced_contract_generated else 'not_generated',
             'needs_regeneration': needs_regeneration
         })
         
@@ -255,7 +255,7 @@ def batch_contract_status():
             
             results.append({
                 'student_id': student_id,
-                'contract_status': 'generated' if financial_record.contract_generated else 'not_generated',
+                'contract_status': 'generated' if financial_record.enhanced_contract_generated else 'not_generated',
                 'needs_regeneration': needs_regeneration
             })
         
@@ -348,7 +348,7 @@ def resend_contract(student_id):
         if not student:
             return jsonify({'error': 'Student not found'}), 404
         
-        if not student.tuition_contract_path:
+        if not student.tuition_contract_pdf_path:
             return jsonify({'error': 'No contract generated yet'}), 400
         
         # TODO: Implement OpenSign integration

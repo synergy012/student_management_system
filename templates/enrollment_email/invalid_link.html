@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invalid Enrollment Link</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .error-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin-top: 50px;
+            margin-bottom: 50px;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: shake 0.5s ease-in-out infinite alternate;
+        }
+        @keyframes shake {
+            0% { transform: translateX(0px); }
+            100% { transform: translateX(-5px); }
+        }
+        .info-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .contact-section {
+            background: linear-gradient(135deg, #17a2b8, #007bff);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .possible-reasons {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card error-card">
+                    <!-- Header -->
+                    <div class="header-section">
+                        <div class="error-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h1>Invalid or Expired Link</h1>
+                        <p class="mb-0 lead">This enrollment response link is not valid</p>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <h3>Sorry, we couldn't process your request</h3>
+                            <p class="text-muted">{{ error if error else 'This enrollment decision link is invalid or has expired.' }}</p>
+                        </div>
+
+                        <!-- Possible Reasons -->
+                        <div class="possible-reasons">
+                            <h5><i class="fas fa-question-circle text-warning me-2"></i>Possible Reasons:</h5>
+                            <ul class="mb-0">
+                                <li><strong>Link Expired:</strong> The response deadline has passed</li>
+                                <li><strong>Already Responded:</strong> You have already submitted your enrollment decision</li>
+                                <li><strong>Invalid Link:</strong> The link may have been corrupted or copied incorrectly</li>
+                                <li><strong>Technical Issue:</strong> There may be a temporary system problem</li>
+                            </ul>
+                        </div>
+
+                        <!-- What to Do -->
+                        <div class="info-section">
+                            <h5><i class="fas fa-lightbulb text-primary me-2"></i>What You Can Do:</h5>
+                            <ol>
+                                <li><strong>Check your email:</strong> Look for the most recent enrollment decision email</li>
+                                <li><strong>Try the original link:</strong> Make sure you're using the complete, unmodified link</li>
+                                <li><strong>Contact the office:</strong> Our staff can help you submit your enrollment decision</li>
+                                <li><strong>Check deadlines:</strong> Verify that the response deadline hasn't passed</li>
+                            </ol>
+                        </div>
+
+                        <!-- Urgent Notice -->
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Important:</h6>
+                            <p class="mb-0">If the enrollment deadline is approaching or has passed, please contact our office immediately to ensure your enrollment decision is recorded.</p>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="contact-section">
+                            <h5><i class="fas fa-phone me-2"></i>Contact Our Office</h5>
+                            <p>Our staff can help you submit your enrollment decision or resolve any issues with your response link.</p>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <p><i class="fas fa-envelope me-1"></i> <strong>Email:</strong><br>
+                                    <a href="mailto:office@school.edu" class="text-white">office@school.edu</a></p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p><i class="fas fa-phone me-1"></i> <strong>Phone:</strong><br>
+                                    (555) 123-4567</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <p><i class="fas fa-clock me-1"></i> <strong>Office Hours:</strong><br>
+                                    Mon-Fri 9:00 AM - 5:00 PM</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Information to Provide -->
+                        <div class="info-section">
+                            <h6><i class="fas fa-info-circle text-info me-2"></i>When You Contact Us, Please Provide:</h6>
+                            <ul class="mb-0">
+                                <li>Your full name</li>
+                                <li>Your division (YZA, YOH, KOLLEL)</li>
+                                <li>The academic year you're responding about</li>
+                                <li>Your enrollment decision (Enroll or Withdraw)</li>
+                                <li>Any error messages you received</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="card-footer text-center text-muted">
+                        <small>
+                            <i class="fas fa-shield-alt me-1"></i>
+                            For security reasons, enrollment decision links are time-limited and single-use.<br>
+                            Contact our office for assistance with enrollment decisions.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

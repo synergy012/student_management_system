@@ -83,7 +83,7 @@ def financial_dashboard():
         # Calculate summary statistics
         total_students = len(students)
         total_tuition = sum(record.tuition_amount or 0 for record in financial_records)
-        total_paid = sum(record.amount_paid or 0 for record in financial_records)
+        total_paid = sum(record.total_paid or 0 for record in financial_records)
         total_balance = total_tuition - total_paid
         
         # Get unique divisions for filter

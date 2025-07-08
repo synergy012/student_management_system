@@ -111,7 +111,7 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <a class="nav-link" href="/pdf-templates">
+            <a class="nav-link" href="{{ url_for('pdf_templates.template_manager') }}">
                 <i class="fas fa-file-pdf"></i> PDF Templates
             </a>
         </li>
@@ -2933,7 +2933,7 @@ async function showApiQuota() {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
     
     try {
-        const response = await fetch('{{ url_for("settings.get_dropbox_sign_quota") }}', {
+                                const response = await fetch('{{ url_for("settings.get_dropbox_sign_quota") }}', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

@@ -1,0 +1,701 @@
+{% extends "base.html" %}
+
+{% block title %}Academic Year Transition{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-calendar-alt text-info me-2"></i>
+                        Academic Year Transition
+                    </h1>
+                    <p class="text-muted mb-0">Manage student enrollment for the next academic year</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('academic.academic_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        Back to Academic Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Academic Year Selection -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-calendar-minus me-2"></i>
+                                Current Academic Year
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <select class="form-select" id="currentYearSelect">
+                                {% if current_year %}
+                                <option value="{{ current_year.id }}" selected>
+                                    {{ current_year.year_label }} (Active)
+                                </option>
+                                {% endif %}
+                                {% for year in all_years %}
+                                {% if not current_year or year.id != current_year.id %}
+                                <option value="{{ year.id }}">
+                                    {{ year.year_label }}
+                                </option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-calendar-plus me-2"></i>
+                                Next Academic Year
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <select class="form-select" id="nextYearSelect">
+                                <option value="">Select Next Year</option>
+                                {% for year in all_years %}
+                                <option value="{{ year.id }}">
+                                    {{ year.year_label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transition Summary -->
+            <div class="row mb-4" id="transitionSummary" style="display: none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>
+                                Transition Summary
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <div class="h2 mb-0 text-info" id="totalStudents">0</div>
+                                        <div class="text-muted">Total Students</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <div class="h2 mb-0 text-warning" id="pendingStudents">0</div>
+                                        <div class="text-muted">Pending</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <div class="h2 mb-0 text-success" id="enrolledStudents">0</div>
+                                        <div class="text-muted">Enrolled</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <div class="h2 mb-0 text-danger" id="withdrawnStudents">0</div>
+                                        <div class="text-muted">Withdrawn</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transition Actions -->
+            <div class="row mb-4" id="transitionActions" style="display: none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-cogs me-2"></i>
+                                Transition Actions
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <button class="btn btn-primary w-100" id="initializeBtn">
+                                        <i class="fas fa-play me-2"></i>
+                                        Initialize Next Year
+                                    </button>
+                                    <small class="text-muted">Set all current students to 'Pending' status</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-success w-100" id="viewStudentsBtn">
+                                        <i class="fas fa-users me-2"></i>
+                                        Manage Students
+                                    </button>
+                                    <small class="text-muted">Review and update student enrollment</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <button class="btn btn-warning w-100" id="finalizeBtn" disabled>
+                                        <i class="fas fa-check me-2"></i>
+                                        Finalize Transition
+                                    </button>
+                                    <small class="text-muted">Complete the transition process</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Management -->
+            <div class="row" id="studentManagement" style="display: none;">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-users me-2"></i>
+                                Student Enrollment Management
+                            </h5>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-secondary" id="filterPending">
+                                    Pending (<span id="pendingCount">0</span>)
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" id="filterEnrolled">
+                                    Enrolled (<span id="enrolledCount">0</span>)
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" id="filterWithdrawn">
+                                    Withdrawn (<span id="withdrawnCount">0</span>)
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" id="filterAll">
+                                    All
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Bulk Actions -->
+                            <div class="row mb-3">
+                                <div class="col-md-8">
+                                    <div class="input-group">
+                                        <button class="btn btn-outline-secondary" type="button" id="selectAllBtn">
+                                            <i class="fas fa-check-square me-1"></i>
+                                            Select All
+                                        </button>
+                                        <select class="form-select" id="bulkActionSelect">
+                                            <option value="">Bulk Actions</option>
+                                            <option value="Enrolled">Enroll Selected</option>
+                                            <option value="Withdrawn">Withdraw Selected</option>
+                                            <option value="Pending">Mark as Pending</option>
+                                        </select>
+                                        <button class="btn btn-primary" type="button" id="applyBulkAction">
+                                            Apply
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="searchStudents" placeholder="Search students...">
+                                        <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Students Table -->
+                            <div class="table-responsive">
+                                <table class="table table-striped" id="studentsTable">
+                                    <thead>
+                                        <tr>
+                                            <th><input type="checkbox" id="selectAllCheckbox"></th>
+                                            <th>Student Name</th>
+                                            <th>Division</th>
+                                            <th>Current Status</th>
+                                            <th>College Program</th>
+                                            <th>Last Updated</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="studentsTableBody">
+                                        <!-- Students will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Student Action Modal -->
+<div class="modal fade" id="studentActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Student Enrollment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="studentActionForm">
+                    <input type="hidden" id="studentId">
+                    <div class="mb-3">
+                        <label for="studentName" class="form-label">Student Name</label>
+                        <input type="text" class="form-control" id="studentName" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="enrollmentStatus" class="form-label">Enrollment Status</label>
+                        <select class="form-select" id="enrollmentStatus" required>
+                            <option value="">Select Status</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Enrolled">Enrolled</option>
+                            <option value="Withdrawn">Withdrawn</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="collegeProgramStatus" class="form-label">College Program Status</label>
+                        <select class="form-select" id="collegeProgramStatus">
+                            <option value="">No Change</option>
+                            <option value="Ineligible">Ineligible</option>
+                            <option value="Enrolled">Enrolled</option>
+                            <option value="Graduated">Graduated</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="decisionReason" class="form-label">Decision Reason</label>
+                        <textarea class="form-control" id="decisionReason" rows="3" placeholder="Optional reason for this decision"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveStudentAction">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let currentYearId = null;
+let nextYearId = null;
+let allStudents = [];
+let filteredStudents = [];
+let selectedStudents = [];
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default current year
+    const currentYearSelect = document.getElementById('currentYearSelect');
+    if (currentYearSelect.value) {
+        currentYearId = parseInt(currentYearSelect.value);
+    }
+    
+    // Event listeners
+    document.getElementById('currentYearSelect').addEventListener('change', onCurrentYearChange);
+    document.getElementById('nextYearSelect').addEventListener('change', onNextYearChange);
+    document.getElementById('initializeBtn').addEventListener('click', initializeNextYear);
+    document.getElementById('viewStudentsBtn').addEventListener('click', loadStudents);
+    document.getElementById('finalizeBtn').addEventListener('click', finalizeTransition);
+    document.getElementById('applyBulkAction').addEventListener('click', applyBulkAction);
+    document.getElementById('saveStudentAction').addEventListener('click', saveStudentAction);
+    
+    // Filter buttons
+    document.getElementById('filterPending').addEventListener('click', () => filterStudents('Pending'));
+    document.getElementById('filterEnrolled').addEventListener('click', () => filterStudents('Enrolled'));
+    document.getElementById('filterWithdrawn').addEventListener('click', () => filterStudents('Withdrawn'));
+    document.getElementById('filterAll').addEventListener('click', () => filterStudents(null));
+    
+    // Search functionality
+    document.getElementById('searchStudents').addEventListener('input', searchStudents);
+    document.getElementById('selectAllCheckbox').addEventListener('change', toggleSelectAll);
+    
+    // Load initial data if both years are selected
+    if (currentYearId) {
+        loadTransitionSummary();
+    }
+});
+
+function onCurrentYearChange() {
+    currentYearId = parseInt(document.getElementById('currentYearSelect').value);
+    if (currentYearId && nextYearId) {
+        loadTransitionSummary();
+    }
+}
+
+function onNextYearChange() {
+    nextYearId = parseInt(document.getElementById('nextYearSelect').value);
+    if (currentYearId && nextYearId) {
+        loadTransitionSummary();
+    }
+}
+
+function loadTransitionSummary() {
+    if (!currentYearId || !nextYearId) return;
+    
+    fetch(`/api/academic-year-transition/summary?current_year_id=${currentYearId}&next_year_id=${nextYearId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading transition summary:', data.error);
+                return;
+            }
+            
+            // Update summary display
+            document.getElementById('totalStudents').textContent = data.student_counts.total;
+            document.getElementById('pendingStudents').textContent = data.student_counts.pending;
+            document.getElementById('enrolledStudents').textContent = data.student_counts.enrolled;
+            document.getElementById('withdrawnStudents').textContent = data.student_counts.withdrawn;
+            
+            // Show sections
+            document.getElementById('transitionSummary').style.display = 'block';
+            document.getElementById('transitionActions').style.display = 'block';
+            
+            // Update finalize button
+            document.getElementById('finalizeBtn').disabled = !data.transition_ready;
+        })
+        .catch(error => {
+            console.error('Error loading transition summary:', error);
+        });
+}
+
+function initializeNextYear() {
+    if (!currentYearId || !nextYearId) {
+        alert('Please select both current and next academic years');
+        return;
+    }
+    
+    if (!confirm('Initialize all current students as "Pending" for the next academic year?')) {
+        return;
+    }
+    
+    const btn = document.getElementById('initializeBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Initializing...';
+    
+    fetch('/api/academic-year-transition/initialize', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            current_year_id: currentYearId,
+            next_year_id: nextYearId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error initializing next year: ' + data.error);
+            return;
+        }
+        
+        alert(`Successfully initialized ${data.initialized_count} students for the next academic year`);
+        loadTransitionSummary();
+    })
+    .catch(error => {
+        console.error('Error initializing next year:', error);
+        alert('Error initializing next year: ' + error.message);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play me-2"></i>Initialize Next Year';
+    });
+}
+
+function loadStudents() {
+    if (!nextYearId) {
+        alert('Please select the next academic year');
+        return;
+    }
+    
+    fetch(`/api/academic-year-transition/students?academic_year_id=${nextYearId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading students:', data.error);
+                return;
+            }
+            
+            allStudents = data;
+            filteredStudents = [...allStudents];
+            renderStudentsTable();
+            document.getElementById('studentManagement').style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error loading students:', error);
+        });
+}
+
+function renderStudentsTable() {
+    const tbody = document.getElementById('studentsTableBody');
+    tbody.innerHTML = '';
+    
+    filteredStudents.forEach(student => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="checkbox" class="student-checkbox" value="${student.id}"></td>
+            <td>${student.student_name}</td>
+            <td><span class="badge bg-${student.division === 'YZA' ? 'primary' : 'success'}">${student.division}</span></td>
+            <td><span class="badge bg-${getStatusColor(student.enrollment_status)}">${student.enrollment_status || 'Not Set'}</span></td>
+            <td><span class="badge bg-${getCollegeProgramColor(student.college_program_status)}">${student.college_program_status || 'Not Set'}</span></td>
+            <td>${student.last_decision_date ? new Date(student.last_decision_date).toLocaleDateString() : 'Never'}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="editStudent('${student.id}', '${student.student_name}', '${student.enrollment_status}', '${student.college_program_status}')">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    // Update filter button counts
+    updateFilterCounts();
+}
+
+function getStatusColor(status) {
+    switch(status) {
+        case 'Pending': return 'warning';
+        case 'Enrolled': return 'success';
+        case 'Withdrawn': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+function getCollegeProgramColor(status) {
+    switch(status) {
+        case 'Ineligible': return 'secondary';
+        case 'Enrolled': return 'info';
+        case 'Graduated': return 'success';
+        default: return 'secondary';
+    }
+}
+
+// Function removed - semester levels are not shown in academic year transition
+
+function updateFilterCounts() {
+    const counts = {
+        pending: allStudents.filter(s => s.enrollment_status === 'Pending').length,
+        enrolled: allStudents.filter(s => s.enrollment_status === 'Enrolled').length,
+        withdrawn: allStudents.filter(s => s.enrollment_status === 'Withdrawn').length
+    };
+    
+    document.getElementById('pendingCount').textContent = counts.pending;
+    document.getElementById('enrolledCount').textContent = counts.enrolled;
+    document.getElementById('withdrawnCount').textContent = counts.withdrawn;
+}
+
+function filterStudents(status) {
+    if (status) {
+        filteredStudents = allStudents.filter(s => s.enrollment_status === status);
+    } else {
+        filteredStudents = [...allStudents];
+    }
+    renderStudentsTable();
+}
+
+function searchStudents() {
+    const searchTerm = document.getElementById('searchStudents').value.toLowerCase();
+    if (searchTerm) {
+        filteredStudents = allStudents.filter(s => 
+            s.student_name.toLowerCase().includes(searchTerm) ||
+            s.division.toLowerCase().includes(searchTerm)
+        );
+    } else {
+        filteredStudents = [...allStudents];
+    }
+    renderStudentsTable();
+}
+
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const checkboxes = document.querySelectorAll('.student-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateSelectedStudents();
+}
+
+function updateSelectedStudents() {
+    const checkboxes = document.querySelectorAll('.student-checkbox:checked');
+    selectedStudents = Array.from(checkboxes).map(cb => cb.value);
+}
+
+function applyBulkAction() {
+    updateSelectedStudents();
+    
+    if (selectedStudents.length === 0) {
+        alert('Please select at least one student');
+        return;
+    }
+    
+    const bulkAction = document.getElementById('bulkActionSelect').value;
+    if (!bulkAction) {
+        alert('Please select a bulk action');
+        return;
+    }
+    
+    const reason = prompt('Enter reason for this bulk action (optional):');
+    if (reason === null) return; // User cancelled
+    
+    if (!confirm(`Apply "${bulkAction}" to ${selectedStudents.length} selected students?`)) {
+        return;
+    }
+    
+    const btn = document.getElementById('applyBulkAction');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+    
+    fetch('/api/academic-year-transition/bulk-enroll', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            student_ids: selectedStudents,
+            academic_year_id: nextYearId,
+            enrollment_status: bulkAction,
+            decision_reason: reason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error applying bulk action: ' + data.error);
+            return;
+        }
+        
+        alert(`Successfully updated ${data.updated_count} students`);
+        if (data.errors.length > 0) {
+            console.error('Bulk action errors:', data.errors);
+        }
+        
+        loadStudents();
+        loadTransitionSummary();
+    })
+    .catch(error => {
+        console.error('Error applying bulk action:', error);
+        alert('Error applying bulk action: ' + error.message);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = 'Apply';
+    });
+}
+
+function editStudent(studentId, studentName, enrollmentStatus, collegeProgramStatus) {
+    document.getElementById('studentId').value = studentId;
+    document.getElementById('studentName').value = studentName;
+    document.getElementById('enrollmentStatus').value = enrollmentStatus || '';
+    document.getElementById('collegeProgramStatus').value = collegeProgramStatus || '';
+    document.getElementById('decisionReason').value = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('studentActionModal'));
+    modal.show();
+}
+
+function saveStudentAction() {
+    const studentId = document.getElementById('studentId').value;
+    const enrollmentStatus = document.getElementById('enrollmentStatus').value;
+    const collegeProgramStatus = document.getElementById('collegeProgramStatus').value;
+    const decisionReason = document.getElementById('decisionReason').value;
+    
+    if (!enrollmentStatus) {
+        alert('Please select an enrollment status');
+        return;
+    }
+    
+    const btn = document.getElementById('saveStudentAction');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+    
+    fetch(`/api/academic-year-transition/student/${studentId}/enroll`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            academic_year_id: nextYearId,
+            enrollment_status: enrollmentStatus,
+            college_program_status: collegeProgramStatus || null,
+            decision_reason: decisionReason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error updating student: ' + data.error);
+            return;
+        }
+        
+        alert(`Successfully updated ${data.student_name}`);
+        const modal = bootstrap.Modal.getInstance(document.getElementById('studentActionModal'));
+        modal.hide();
+        
+        loadStudents();
+        loadTransitionSummary();
+    })
+    .catch(error => {
+        console.error('Error updating student:', error);
+        alert('Error updating student: ' + error.message);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = 'Save Changes';
+    });
+}
+
+function finalizeTransition() {
+    if (!currentYearId || !nextYearId) {
+        alert('Please select both current and next academic years');
+        return;
+    }
+    
+    if (!confirm('FINALIZE the academic year transition?\n\nThis will:\n- Set the next year as active\n- Archive the current year\n- Cannot be undone')) {
+        return;
+    }
+    
+    const btn = document.getElementById('finalizeBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Finalizing...';
+    
+    fetch('/api/academic-year-transition/finalize', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            current_year_id: currentYearId,
+            next_year_id: nextYearId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Error finalizing transition: ' + data.error);
+            return;
+        }
+        
+        alert(data.message);
+        window.location.reload();
+    })
+    .catch(error => {
+        console.error('Error finalizing transition:', error);
+        alert('Error finalizing transition: ' + error.message);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check me-2"></i>Finalize Transition';
+    });
+}
+</script>
+{% endblock %} 

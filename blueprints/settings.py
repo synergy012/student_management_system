@@ -418,7 +418,7 @@ def test_dropbox_connection():
 @settings.route('/upload-division-form/<division>', methods=['POST'])
 @login_required
 @permission_required('manage_users')
-def upload_division_form():
+def upload_division_form(division):
     """Redirect to new PDF Templates system."""
     flash('Form template management has been moved to the PDF Templates system. Please upload your forms there.', 'info')
     return redirect(url_for('pdf_templates.template_manager'))

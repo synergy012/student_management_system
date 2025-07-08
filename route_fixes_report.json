@@ -1,0 +1,387 @@
+[
+  {
+    "old": "files.view_attachment",
+    "new": "files.view_attachment",
+    "file": "templates\\applications.html"
+  },
+  {
+    "old": "files.serve_attachment",
+    "new": "files.serve_attachment",
+    "file": "templates\\applications.html"
+  },
+  {
+    "old": "static",
+    "new": "static",
+    "file": "templates\\base.html"
+  },
+  {
+    "old": "financial.financial_core.financial_dashboard",
+    "new": "financial.financial_dashboard",
+    "file": "templates\\base.html"
+  },
+  {
+    "old": "auth.users_list",
+    "new": "auth.users",
+    "file": "templates\\base.html"
+  },
+  {
+    "old": "static",
+    "new": "static",
+    "file": "templates\\base.html"
+  },
+  {
+    "old": "static",
+    "new": "static",
+    "file": "templates\\base.html"
+  },
+  {
+    "old": "dormitories.dormitory_map",
+    "new": "dormitories.dormitory_map",
+    "file": "templates\\dormitory_dashboard.html"
+  },
+  {
+    "old": "financial.financial_aid.division_financial_aid",
+    "new": "financial.division_financial_aid",
+    "file": "templates\\financial_dashboard.html"
+  },
+  {
+    "old": "financial.financial_divisions.division_tuition_contracts",
+    "new": "financial.division_tuition_contracts",
+    "file": "templates\\financial_dashboard.html"
+  },
+  {
+    "old": "financial.financial_divisions.division_financial_config",
+    "new": "financial.division_financial_config",
+    "file": "templates\\financial_dashboard.html"
+  },
+  {
+    "old": "tuition_components.tuition_settings",
+    "new": "tuition_components.tuition_settings",
+    "file": "templates\\financial_dashboard.html"
+  },
+  {
+    "old": "kollel.kollel_students",
+    "new": "kollel.kollel_students",
+    "file": "templates\\kollel_dashboard.html"
+  },
+  {
+    "old": "kollel.manage_breaks",
+    "new": "kollel.manage_breaks",
+    "file": "templates\\kollel_dashboard.html"
+  },
+  {
+    "old": "kollel.edit_kollel_student",
+    "new": "kollel.edit_kollel_student",
+    "file": "templates\\kollel_dashboard.html"
+  },
+  {
+    "old": "kollel.kollel_students",
+    "new": "kollel.kollel_students",
+    "file": "templates\\kollel_dashboard.html"
+  },
+  {
+    "old": "settings.update_email_settings",
+    "new": "settings.settings",
+    "file": "templates\\settings.html"
+  },
+  {
+    "old": "settings.update_webhook_settings",
+    "new": "settings.settings",
+    "file": "templates\\settings.html"
+  },
+  {
+    "old": "settings.update_security_settings",
+    "new": "settings.settings",
+    "file": "templates\\settings.html"
+  },
+  {
+    "old": "settings.update_storage_settings",
+    "new": "settings.settings",
+    "file": "templates\\settings.html"
+  },
+  {
+    "old": "settings.update_dropbox_sign_settings",
+    "new": "settings.settings",
+    "file": "templates\\settings.html"
+  },
+  {
+    "old": "kollel.kollel_settings",
+    "new": "kollel.kollel_settings",
+    "file": "templates\\settings.html"
+  },
+  {
+    "old": "settings.test_dropbox_connection",
+    "new": "settings.test_dropbox_connection",
+    "file": "templates\\settings.html"
+  },
+  {
+    "old": "settings.test_dropbox_sign_connection",
+    "new": "settings.test_dropbox_sign_connection",
+    "file": "templates\\settings.html"
+  },
+  {
+    "old": "settings.get_dropbox_sign_quota",
+    "new": "settings.dropbox_sign_quota",
+    "file": "templates\\settings.html"
+  },
+  {
+    "old": "students.create_student",
+    "new": "students.create_student",
+    "file": "templates\\students.html"
+  },
+  {
+    "old": "students.student_details",
+    "new": "students.student_details",
+    "file": "templates\\students.html"
+  },
+  {
+    "old": "students.student_details",
+    "new": "students.student_details",
+    "file": "templates\\students.html"
+  },
+  {
+    "old": "students.edit_student",
+    "new": "students.edit_student",
+    "file": "templates\\students.html"
+  },
+  {
+    "old": "students.student_details",
+    "new": "students.student_details",
+    "file": "templates\\students.html"
+  },
+  {
+    "old": "students.student_details",
+    "new": "students.student_details",
+    "file": "templates\\students.html"
+  },
+  {
+    "old": "students.edit_student",
+    "new": "students.edit_student",
+    "file": "templates\\students.html"
+  },
+  {
+    "old": "students.edit_student",
+    "new": "students.edit_student",
+    "file": "templates\\student_details.html"
+  },
+  {
+    "old": "financial.financial_core.student_financial",
+    "new": "financial.student_financial",
+    "file": "templates\\student_details.html"
+  },
+  {
+    "old": "files.view_attachment",
+    "new": "files.view_attachment",
+    "file": "templates\\student_details.html"
+  },
+  {
+    "old": "files.serve_attachment",
+    "new": "files.serve_attachment",
+    "file": "templates\\student_details.html"
+  },
+  {
+    "old": "students.edit_student",
+    "new": "students.edit_student",
+    "file": "templates\\student_details_backup.html"
+  },
+  {
+    "old": "students.view_uploaded_contract",
+    "new": "students.view_uploaded_contract",
+    "file": "templates\\student_details_backup.html"
+  },
+  {
+    "old": "financial.financial_core.student_financial",
+    "new": "financial.student_financial",
+    "file": "templates\\student_details_backup.html"
+  },
+  {
+    "old": "files.view_attachment",
+    "new": "files.view_attachment",
+    "file": "templates\\student_details_backup.html"
+  },
+  {
+    "old": "files.serve_attachment",
+    "new": "files.serve_attachment",
+    "file": "templates\\student_details_backup.html"
+  },
+  {
+    "old": "students.edit_student",
+    "new": "students.edit_student",
+    "file": "templates\\student_details_old.html"
+  },
+  {
+    "old": "students.view_uploaded_contract",
+    "new": "students.view_uploaded_contract",
+    "file": "templates\\student_details_old.html"
+  },
+  {
+    "old": "financial.financial_core.student_financial",
+    "new": "financial.student_financial",
+    "file": "templates\\student_details_old.html"
+  },
+  {
+    "old": "files.view_attachment",
+    "new": "files.view_attachment",
+    "file": "templates\\student_details_old.html"
+  },
+  {
+    "old": "files.serve_attachment",
+    "new": "files.serve_attachment",
+    "file": "templates\\student_details_old.html"
+  },
+  {
+    "old": "students.student_details",
+    "new": "students.student_details",
+    "file": "templates\\student_financial.html"
+  },
+  {
+    "old": "static",
+    "new": "static",
+    "file": "templates\\student_financial.html"
+  },
+  {
+    "old": "students.student_details",
+    "new": "students.student_details",
+    "file": "templates\\student_tuition_components.html"
+  },
+  {
+    "old": "academic.shiurim_list",
+    "new": "academic.shiurim_list",
+    "file": "templates\\academic\\dashboard.html"
+  },
+  {
+    "old": "academic.attendance_dashboard",
+    "new": "academic.attendance_dashboard",
+    "file": "templates\\academic\\dashboard.html"
+  },
+  {
+    "old": "academic.matriculation_dashboard",
+    "new": "academic.matriculation_dashboard",
+    "file": "templates\\academic\\dashboard.html"
+  },
+  {
+    "old": "academic.attendance_dashboard",
+    "new": "academic.attendance_dashboard",
+    "file": "templates\\academic\\dashboard.html"
+  },
+  {
+    "old": "academic.shiurim_list",
+    "new": "academic.shiurim_list",
+    "file": "templates\\academic\\dashboard.html"
+  },
+  {
+    "old": "academic.shiurim_list",
+    "new": "academic.shiurim_list",
+    "file": "templates\\academic\\dashboard.html"
+  },
+  {
+    "old": "academic.attendance_dashboard",
+    "new": "academic.attendance_dashboard",
+    "file": "templates\\academic\\dashboard.html"
+  },
+  {
+    "old": "auth.users_list",
+    "new": "auth.users",
+    "file": "templates\\auth\\create_user.html"
+  },
+  {
+    "old": "auth.users_list",
+    "new": "auth.users",
+    "file": "templates\\auth\\manage_permissions.html"
+  },
+  {
+    "old": "financial.financial_core.financial_dashboard",
+    "new": "financial.financial_dashboard",
+    "file": "templates\\financial\\division_config.html"
+  },
+  {
+    "old": "financial.financial_core.financial_dashboard",
+    "new": "financial.financial_dashboard",
+    "file": "templates\\financial\\division_financial_aid.html"
+  },
+  {
+    "old": "financial.financial_core.financial_dashboard",
+    "new": "financial.financial_dashboard",
+    "file": "templates\\financial\\division_tuition_contracts.html"
+  },
+  {
+    "old": "financial.financial_core.financial_dashboard",
+    "new": "financial.financial_dashboard",
+    "file": "templates\\financial\\documents.html"
+  },
+  {
+    "old": "kollel.student_history",
+    "new": "kollel.student_history",
+    "file": "templates\\kollel\\edit_student.html"
+  },
+  {
+    "old": "kollel.edit_kollel_student",
+    "new": "kollel.edit_kollel_student",
+    "file": "templates\\kollel\\edit_student.html"
+  },
+  {
+    "old": "kollel.edit_kollel_student",
+    "new": "kollel.edit_kollel_student",
+    "file": "templates\\kollel\\students.html"
+  },
+  {
+    "old": "secure_forms.admin_form_uploads",
+    "new": "secure_forms.admin_form_uploads",
+    "file": "templates\\secure_forms\\admin_manual_upload.html"
+  },
+  {
+    "old": "secure_forms.admin_secure_forms",
+    "new": "secure_forms.admin_secure_forms",
+    "file": "templates\\secure_forms\\admin_manual_upload.html"
+  },
+  {
+    "old": "secure_forms.admin_secure_forms",
+    "new": "secure_forms.admin_secure_forms",
+    "file": "templates\\secure_forms\\admin_uploads.html"
+  },
+  {
+    "old": "secure_forms.admin_download_upload",
+    "new": "secure_forms.admin_download_upload",
+    "file": "templates\\secure_forms\\admin_uploads.html"
+  },
+  {
+    "old": "/",
+    "new": "core.index",
+    "file": "templates\\404.html"
+  },
+  {
+    "old": "/applications",
+    "new": "applications.applications_list",
+    "file": "templates\\application_create.html"
+  },
+  {
+    "old": "/pdf-templates",
+    "new": "pdf_templates.template_manager",
+    "file": "templates\\settings.html"
+  },
+  {
+    "old": "/students",
+    "new": "students.view_students",
+    "file": "templates\\student_create.html"
+  },
+  {
+    "old": "/academic-year-transition",
+    "new": "academic_year_transition.transition_dashboard",
+    "file": "templates\\student_details_backup.html"
+  },
+  {
+    "old": "/academic-year-transition",
+    "new": "academic_year_transition.transition_dashboard",
+    "file": "templates\\student_details_old.html"
+  },
+  {
+    "old": "/students",
+    "new": "students.view_students",
+    "file": "templates\\student_edit.html"
+  },
+  {
+    "old": "/kollel",
+    "new": "kollel.kollel_dashboard",
+    "file": "templates\\tuition_settings.html"
+  }
+]

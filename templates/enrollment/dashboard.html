@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+
+{% block title %}Enrollment Management{% endblock %}
+
+{% block breadcrumb %}
+<span class="breadcrumb-item active">Enrollment Management</span>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-graduation-cap text-success me-2"></i>
+                        Enrollment Management
+                    </h1>
+                    <p class="text-muted mb-0">Manage student enrollment communications and decisions</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('academic_year_transition.transition_dashboard') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-calendar-alt me-1"></i>Year Transition
+                    </a>
+                    <a href="{{ url_for('email_templates.template_manager') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-envelope-open-text me-1"></i>Email Templates
+                    </a>
+                </div>
+            </div>
+
+            <!-- Manual Control Alert -->
+            <div class="alert alert-info border-info mb-4">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Manual Control:</strong> Enrollment emails are sent only when you manually select students. 
+                This ensures full administrative control over who receives enrollment communications - 
+                especially important for students who may not be re-accepted.
+            </div>
+
+            <!-- Statistics Dashboard -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-light h-100">
+                        <div class="card-body text-center">
+                            <h3 class="text-primary mb-1" id="enrollmentEmailStats">-</h3>
+                            <p class="text-muted mb-0">Emails Sent</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card bg-light h-100">
+                        <div class="card-body text-center">
+                            <h3 class="text-warning mb-1" id="pendingResponses">-</h3>
+                            <p class="text-muted mb-0">Pending Responses</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card bg-light h-100">
+                        <div class="card-body text-center">
+                            <h3 class="text-success mb-1" id="responseRate">-</h3>
+                            <p class="text-muted mb-0">Response Rate</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Actions -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="card border-primary h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="fas fa-users me-2"></i>Bulk Email Actions</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Manually send enrollment decision emails to selected students</p>
+                            <button class="btn btn-primary w-100" onclick="showBulkEnrollmentModal()">
+                                <i class="fas fa-paper-plane me-2"></i>Manual Bulk Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card border-info h-100">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="fas fa-user me-2"></i>Individual Actions</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Manually send enrollment email to a specific student</p>
+                            <button class="btn btn-info w-100" onclick="showIndividualEnrollmentModal()">
+                                <i class="fas fa-envelope me-2"></i>Manual Individual Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Template Management -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-alt me-2"></i>
+                        Template Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Ensure enrollment email templates are set up for all divisions before sending emails.</p>
+                    <button class="btn btn-outline-success" onclick="createEnrollmentTemplates()">
+                        <i class="fas fa-plus me-2"></i>Create Default Templates
+                    </button>
+                    <a href="{{ url_for('email_templates.template_manager') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-2"></i>Edit Templates
+                    </a>
+                </div>
+            </div>
+
+            <!-- Students Available for Email -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Students Available for Enrollment Emails
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Students listed below have "Pending" enrollment status. Review each student's acceptance status before sending enrollment emails.
+                    </p>
+                    <div id="pendingStudentsList">
+                        <div class="text-center p-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 mb-0">Loading pending students...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Enrollment Modal (will be created dynamically) -->
+<!-- Individual Enrollment Modal (will be created dynamically) -->
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Load initial data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadEnrollmentEmailStats();
+    loadPendingStudents();
+});
+
+// Enrollment Email Functions
+function loadEnrollmentEmailStats() {
+    fetch('/api/enrollment-emails/statistics')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('enrollmentEmailStats').textContent = data.emails_sent || 0;
+                document.getElementById('pendingResponses').textContent = data.pending_responses || 0;
+                const responseRate = data.response_rate ? Math.round(data.response_rate) + '%' : '0%';
+                document.getElementById('responseRate').textContent = responseRate;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading enrollment email stats:', error);
+        });
+}
+
+function loadPendingStudents() {
+    fetch('/api/enrollment-emails/students-pending')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('pendingStudentsList');
+            
+            if (data.success && data.students.length > 0) {
+                let html = '<div class="table-responsive"><table class="table table-sm table-hover">';
+                html += '<thead class="table-light"><tr><th>Student</th><th>Division</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+                
+                data.students.forEach(student => {
+                    html += `
+                        <tr>
+                            <td><strong>${student.student_name}</strong></td>
+                            <td><span class="badge bg-${student.division === 'YZA' ? 'primary' : student.division === 'YOH' ? 'success' : 'info'}">${student.division}</span></td>
+                            <td><span class="badge bg-warning">${student.enrollment_status}</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="sendIndividualEnrollmentEmail('${student.id}')" title="Send Enrollment Email">
+                                    <i class="fas fa-envelope"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table></div>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '<p class="text-muted text-center py-4">No students pending enrollment emails.</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading pending students:', error);
+            document.getElementById('pendingStudentsList').innerHTML = 
+                '<div class="alert alert-danger">Error loading pending students.</div>';
+        });
+}
+
+function showBulkEnrollmentModal() {
+    // Create a modal for bulk enrollment emails
+    const modalHtml = `
+        <div class="modal fade" id="bulkEnrollmentModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Manual Bulk Enrollment Emails</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Caution:</strong> Only send enrollment emails to students who have been accepted for re-enrollment. 
+                            Review student acceptance status before sending.
+                        </div>
+                        
+                        <form id="bulkEnrollmentForm">
+                            <div class="mb-3">
+                                <label class="form-label">Academic Year</label>
+                                <select class="form-select" id="bulkAcademicYear" required>
+                                    <option value="">Select Academic Year</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Division (Optional)</label>
+                                <select class="form-select" id="bulkDivision">
+                                    <option value="">All Divisions</option>
+                                    <option value="YZA">YZA</option>
+                                    <option value="YOH">YOH</option>
+                                    <option value="KOLLEL">KOLLEL</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Student Status</label>
+                                <select class="form-select" id="bulkStatus">
+                                    <option value="Pending">Pending Only</option>
+                                    <option value="">All Students</option>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="sendBulkEnrollmentEmails()">Send Selected Emails</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if any
+    const existingModal = document.getElementById('bulkEnrollmentModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to DOM
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Load academic years
+    fetch('/api/academic-years')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('bulkAcademicYear');
+            data.academic_years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year.id;
+                option.textContent = year.year_label;
+                if (year.is_active) option.selected = true;
+                select.appendChild(option);
+            });
+        });
+    
+    // Show modal
+    new bootstrap.Modal(document.getElementById('bulkEnrollmentModal')).show();
+}
+
+function showIndividualEnrollmentModal() {
+    alert('Individual enrollment email functionality - redirect to student selection');
+}
+
+function sendBulkEnrollmentEmails() {
+    const form = document.getElementById('bulkEnrollmentForm');
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    if (!data.academic_year_id) {
+        alert('Please select an academic year');
+        return;
+    }
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('bulkEnrollmentModal'));
+    modal.hide();
+    
+    // Show progress
+    alert('Manually sending selected enrollment emails... This may take a few moments.');
+    
+    fetch('/api/enrollment-emails/send-bulk', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            academic_year_id: data.academic_year_id,
+            division: data.division || null,
+            enrollment_status: data.status || null
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Successfully sent ${data.emails_sent} enrollment emails to selected students!`);
+            loadEnrollmentEmailStats();
+            loadPendingStudents();
+        } else {
+            alert('Error sending emails: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error sending bulk emails:', error);
+        alert('Error sending bulk emails. Please try again.');
+    });
+}
+
+function sendIndividualEnrollmentEmail(studentId) {
+    if (!confirm('Send enrollment email to this student?')) {
+        return;
+    }
+    
+    fetch(`/api/enrollment-emails/send-single`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            student_id: studentId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Enrollment email sent successfully!');
+            loadEnrollmentEmailStats();
+            loadPendingStudents();
+        } else {
+            alert('Error sending email: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error sending individual email:', error);
+        alert('Error sending email. Please try again.');
+    });
+}
+
+function createEnrollmentTemplates() {
+    if (!confirm('Create default enrollment decision email templates for all divisions? This will only create templates that don\'t already exist.')) {
+        return;
+    }
+    
+    const btn = event.target;
+    const originalContent = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
+    
+    fetch('/api/enrollment-emails/create-templates', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Enrollment email templates created successfully!');
+        } else {
+            alert('Error creating templates: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error creating templates:', error);
+        alert('Error creating templates: ' + error.message);
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+    });
+}
+</script>
+{% endblock %} 

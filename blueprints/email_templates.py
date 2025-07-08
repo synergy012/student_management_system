@@ -617,4 +617,6 @@ def restore_template_version(template_id, history_id):
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f'Error restoring template version: {str(e)}')
-        return jsonify({'success': False, 'error': str(e)}), 500 
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+ 

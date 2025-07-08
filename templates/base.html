@@ -14,6 +14,9 @@
     <!-- Modern UI Styles -->
     <link href="{{ url_for('static', filename='css/modern-ui.css') }}" rel="stylesheet">
     
+    <!-- TinyMCE CDN for WYSIWYG email editing -->
+    <script src="https://cdn.tiny.cloud/1/hjefznrwogj1wh2gde460dwyvqwsd8q3i8x50lwbu4uq1m7u/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    
     <style>
         /* Modern Sidebar Layout */
         .sidebar {
@@ -287,6 +290,13 @@
                 </div>
                 
                 <div class="nav-item">
+                    <a href="{{ url_for('enrollment.enrollment_dashboard') }}" class="nav-link">
+                        <i class="nav-icon fas fa-user-graduate"></i>
+                        <span class="nav-text">Enrollment</span>
+                    </a>
+                </div>
+                
+                <div class="nav-item">
                     <a href="{{ url_for('kollel.kollel_dashboard') }}" class="nav-link">
                         <i class="nav-icon fas fa-scroll"></i>
                         <span class="nav-text">Kollel</span>
@@ -301,7 +311,7 @@
                 </div>
                 
                 <div class="nav-item">
-                    <a href="{{ url_for('financial.financial_dashboard') }}" class="nav-link">
+                    <a href="{{ url_for('financial.financial_core.financial_dashboard') }}" class="nav-link">
                         <i class="nav-icon fas fa-dollar-sign"></i>
                         <span class="nav-text">Financial</span>
                     </a>
@@ -324,6 +334,13 @@
             {% if current_user.is_admin %}
             <div class="nav-group">
                 <div class="nav-group-title">Administration</div>
+                
+                <div class="nav-item">
+                    <a href="{{ url_for('academic_year_transition.transition_dashboard') }}" class="nav-link">
+                        <i class="nav-icon fas fa-calendar-alt"></i>
+                        <span class="nav-text">Year Transition</span>
+                    </a>
+                </div>
                 
                 <div class="nav-item">
                     <a href="{{ url_for('auth.users_list') }}" class="nav-link">

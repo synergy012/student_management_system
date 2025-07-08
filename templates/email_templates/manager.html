@@ -6,6 +6,9 @@
 {% endblock %}
 
 {% block extra_head %}
+<!-- TinyMCE CDN -->
+<script src="https://cdn.tiny.cloud/1/hjefznrwogj1wh2gde460dwyvqwsd8q3i8x50lwbu4uq1m7u/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
 <style>
 /* Clean Email Templates Layout System v3.0 */
 
@@ -312,6 +315,92 @@ div.templates-grid,
 .templates-grid * {
     box-sizing: border-box;
 }
+
+/* Template Variables in Form */
+.template-variable {
+    display: inline-block;
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    font-family: monospace;
+    margin-right: 0.5rem;
+    margin-bottom: 0.25rem;
+    border: 1px solid #90caf9;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.template-variable:hover {
+    background: #1976d2;
+    color: white;
+    border-color: #1976d2;
+    text-decoration: none;
+}
+
+/* TinyMCE customization */
+.tox-tinymce {
+    border: 1px solid #ced4da !important;
+    border-radius: 0.375rem !important;
+}
+
+.tox-editor-header {
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+/* Variables modal */
+.variables-modal .modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.variables-modal .variable-category {
+    margin-bottom: 1.5rem;
+}
+
+.variables-modal .variable-category h6 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 0.5rem;
+}
+
+.variables-modal .variable-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.variables-modal .variable-item:last-child {
+    border-bottom: none;
+}
+
+.variables-modal .variable-code {
+    font-family: monospace;
+    background: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.9rem;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.variables-modal .variable-code:hover {
+    background: #e9ecef;
+}
+
+.variables-modal .variable-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    flex: 1;
+    margin-left: 1rem;
+}
 </style>
 {% endblock %}
 
@@ -352,6 +441,7 @@ div.templates-grid,
                         <option value="">All Categories</option>
                         <option value="acceptance">Acceptance Letters</option>
                         <option value="enrollment_contract">Enrollment Contracts</option>
+                        <option value="enrollment_decision">Enrollment Decisions</option>
                         <option value="financial_aid">Financial Aid</option>
                         <option value="reminder">Reminders</option>
                         <option value="general">General</option>
@@ -414,6 +504,29 @@ div.templates-grid,
             </div>
         </div>
 
+        <!-- Enrollment Decisions -->
+        <div class="accordion-item mb-3 border rounded shadow-sm">
+            <h2 class="accordion-header" id="enrollmentDecisionHeading">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#enrollmentDecisionCollapse" aria-expanded="false" aria-controls="enrollmentDecisionCollapse">
+                    <i class="fas fa-user-check text-primary me-2"></i>
+                    <strong>Enrollment Decisions</strong>
+                    <span class="badge bg-secondary ms-2">{{ template_counts.get('enrollment_decision', 0) }}</span>
+                </button>
+            </h2>
+            <div id="enrollmentDecisionCollapse" class="accordion-collapse collapse" aria-labelledby="enrollmentDecisionHeading" data-bs-parent="#templatesAccordion">
+                <div class="accordion-body">
+                    <div id="enrollment_decisionTemplates">
+                        <div class="text-center p-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 mb-0">Loading enrollment decision templates...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Financial Aid -->
         <div class="accordion-item mb-3 border rounded shadow-sm">
             <h2 class="accordion-header" id="financialHeading">
@@ -459,6 +572,8 @@ div.templates-grid,
                 </div>
             </div>
         </div>
+
+
 
         <!-- General -->
         <div class="accordion-item mb-3 border rounded shadow-sm">
@@ -557,6 +672,7 @@ div.templates-grid,
                                     <option value="">Select Category</option>
                                     <option value="acceptance">Acceptance Letters</option>
                                     <option value="enrollment_contract">Enrollment Contracts</option>
+                                    <option value="enrollment_decision">Enrollment Decisions</option>
                                     <option value="financial_aid">Financial Aid</option>
                                     <option value="reminder">Reminders</option>
                                     <option value="general">General</option>
@@ -586,6 +702,17 @@ div.templates-grid,
                         <label for="templateBody" class="form-label">Email Body Template *</label>
                         <textarea class="form-control" id="templateBody" name="body" rows="12" required 
                                   placeholder="Dear {{student_name}},&#10;&#10;We are pleased to inform you..."></textarea>
+                        <div class="form-text">
+                            <strong>Available Variables:</strong> 
+                            <span class="template-variable" onclick="insertVariable('{{student_name}}')">{{student_name}}</span>,
+                            <span class="template-variable" onclick="insertVariable('{{student_email}}')">{{student_email}}</span>,
+                            <span class="template-variable" onclick="insertVariable('{{academic_year}}')">{{academic_year}}</span>,
+                            <span class="template-variable" onclick="insertVariable('{{school_name}}')">{{school_name}}</span>,
+                            <span class="template-variable" onclick="insertVariable('{{current_date}}')">{{current_date}}</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" onclick="showAllVariables()">
+                                <i class="fas fa-list"></i> View All Variables
+                            </button>
+                        </div>
                     </div>
 
                     <div class="row">
@@ -653,6 +780,43 @@ div.templates-grid,
         </div>
     </div>
 </div>
+
+<!-- Variables Modal -->
+<div class="modal fade variables-modal" id="variablesModal" tabindex="-1" aria-labelledby="variablesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-code me-2"></i>Template Variables
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Click on any variable to insert it into your template at the cursor position.
+                </div>
+                
+                {% for category, vars in common_variables.items() %}
+                <div class="variable-category">
+                    <h6>{{ category.replace('_', ' ').title() }}</h6>
+                    {% for var, desc in vars.items() %}
+                    <div class="variable-item">
+                        <span class="variable-code" onclick="insertVariable('{{ '{{' }}{{ var }}{{ '}}' }}')">
+                            {{ '{{' }}{{ var }}{{ '}}' }}
+                        </span>
+                        <span class="variable-description">{{ desc }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -660,9 +824,13 @@ div.templates-grid,
 let currentTemplates = [];
 let currentTemplateId = null;
 let currentCategory = 'acceptance';
+let tinyMCEInstance = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Email Templates Manager - Accordion Version Loaded');
+    
+    // Initialize TinyMCE
+    initializeTinyMCE();
     
     // Load initial templates for acceptance (default open)
     loadTemplates('acceptance');
@@ -692,10 +860,136 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('categoryFilter').addEventListener('change', filterTemplates);
 });
 
+function initializeTinyMCE() {
+    if (typeof tinymce !== 'undefined') {
+        tinymce.init({
+            selector: '#templateBody',
+            height: 400,
+            menubar: false,
+            plugins: [
+                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                'insertdatetime', 'media', 'table', 'help', 'wordcount'
+            ],
+            toolbar: 'undo redo | blocks | ' +
+                'bold italic forecolor backcolor | alignleft aligncenter ' +
+                'alignright alignjustify | bullist numlist outdent indent | ' +
+                'removeformat | help | variables',
+            content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
+            setup: function(editor) {
+                tinyMCEInstance = editor;
+                
+                // Handle form validation - sync content before validation
+                editor.on('init', function() {
+                    const textarea = document.getElementById('templateBody');
+                    // Remove required attribute from hidden textarea to prevent validation issues
+                    textarea.removeAttribute('required');
+                    
+                    // Add form submission handler to sync content
+                    const form = document.getElementById('templateForm');
+                    form.addEventListener('submit', function(e) {
+                        // Sync TinyMCE content to textarea before submission
+                        textarea.value = editor.getContent();
+                    });
+                });
+                
+                // Add custom button for variables
+                editor.ui.registry.addButton('variables', {
+                    text: 'Variables',
+                    tooltip: 'Insert template variables',
+                    onAction: function() {
+                        showAllVariables();
+                    }
+                });
+                
+                // Preserve template variables (double curly braces) - simplified approach
+                editor.on('BeforeSetContent', function(e) {
+                    // Only replace when setting content programmatically, not during typing
+                    if (e.format !== 'raw' && !e.paste) {
+                        // Use string building to avoid Jinja2 template conflicts
+                        var varRegex = new RegExp('\\{\\{([a-zA-Z_][a-zA-Z0-9_]*)\\}\\}', 'g');
+                        e.content = e.content.replace(varRegex, function(match, p1) {
+                            return '<span class="mce-template-var" contenteditable="false" data-var="' + p1 + '">{{' + p1 + '}}</span>';
+                        });
+                    }
+                });
+                
+                editor.on('GetContent', function(e) {
+                    // Convert template variable spans back to simple {{variable}} format
+                    // Use a more straightforward approach to avoid regex complexity
+                    var content = e.content;
+                    
+                    // Find all template variable spans and replace them
+                    var spanRegex = /<span[^>]*class="[^"]*mce-template-var[^"]*"[^>]*data-var="([^"]*)"[^>]*>[^<]*<\/span>/g;
+                    content = content.replace(spanRegex, function(match, varName) {
+                        return '{{' + varName + '}}';
+                    });
+                    
+                    e.content = content;
+                });
+                
+                // Add minimal CSS for template variables in editor
+                editor.on('init', function() {
+                    editor.dom.addStyle(`
+                        .mce-template-var {
+                            background-color: #e3f2fd;
+                            color: #1976d2;
+                            padding: 1px 3px;
+                            border-radius: 2px;
+                            font-family: monospace;
+                            font-size: 0.95em;
+                            border: 1px solid #bbdefb;
+                            white-space: nowrap;
+                            user-select: all;
+                        }
+                        .mce-template-var:hover {
+                            background-color: #bbdefb;
+                        }
+                    `);
+                });
+                
+                // Process manually typed variables after a delay
+                let typingTimer;
+                editor.on('KeyUp', function(e) {
+                    clearTimeout(typingTimer);
+                    typingTimer = setTimeout(function() {
+                        // Get current content
+                        const content = editor.getContent();
+                        
+                        // Check if there are any unprocessed variables
+                        if (content.includes('{{') && content.includes('}}')) {
+                            // Process the content - using RegExp constructor to avoid Jinja2 conflicts
+                            const varRegex = new RegExp('\\{\\{([a-zA-Z_][a-zA-Z0-9_]*)\\}\\}', 'g');
+                            const processedContent = content.replace(varRegex, function(match, p1) {
+                                // Only replace if it's not already wrapped
+                                if (!content.includes('<span class="mce-template-var"') || !content.includes('data-var="' + p1 + '"')) {
+                                    return '<span class="mce-template-var" contenteditable="false" data-var="' + p1 + '">{{' + p1 + '}}</span>';
+                                }
+                                return match;
+                            });
+                            
+                            // Only update if content changed
+                            if (processedContent !== content) {
+                                editor.setContent(processedContent);
+                            }
+                        }
+                    }, 1000); // Wait 1 second after typing stops
+                });
+            },
+            init_instance_callback: function(editor) {
+                console.log('TinyMCE initialized successfully');
+            }
+        });
+    } else {
+        console.error('TinyMCE not loaded');
+    }
+}
+
 function getCategoryFromTarget(target) {
     const targetMap = {
         '#acceptanceCollapse': 'acceptance',
         '#enrollmentCollapse': 'enrollment_contract',
+        '#enrollmentDecisionCollapse': 'enrollment_decision',
         '#financialCollapse': 'financial_aid',
         '#reminderCollapse': 'reminder',
         '#generalCollapse': 'general',
@@ -894,6 +1188,11 @@ function showCreateModal(category = null) {
     document.getElementById('templateForm').reset();
     document.getElementById('templateId').value = '';
     
+    // Clear TinyMCE content
+    if (tinyMCEInstance) {
+        tinyMCEInstance.setContent('');
+    }
+    
     if (category && category !== 'all') {
         document.getElementById('templateCategory').value = category;
     }
@@ -913,7 +1212,21 @@ function editTemplate(templateId) {
                 document.getElementById('templateCategory').value = template.category;
                 document.getElementById('templateDivision').value = template.division || '';
                 document.getElementById('templateSubject').value = template.subject_template;
-                document.getElementById('templateBody').value = template.body_template;
+                
+                // Set content in TinyMCE
+                if (tinyMCEInstance && tinyMCEInstance.initialized) {
+                    tinyMCEInstance.setContent(template.body_template);
+                } else {
+                    // If TinyMCE is not ready, set the textarea value and wait for TinyMCE to sync
+                    document.getElementById('templateBody').value = template.body_template;
+                    // Try to set content after a short delay if TinyMCE is initializing
+                    setTimeout(function() {
+                        if (tinyMCEInstance && tinyMCEInstance.initialized) {
+                            tinyMCEInstance.setContent(template.body_template);
+                        }
+                    }, 500);
+                }
+                
                 document.getElementById('templateActive').checked = template.is_active;
                 
                 if (template.pdf_template_name) {
@@ -930,47 +1243,99 @@ function editTemplate(templateId) {
 }
 
 function saveTemplate(event) {
+    console.log('saveTemplate function called');
     event.preventDefault();
     
-    const form = document.getElementById('templateForm');
-    const formData = new FormData(form);
-    const templateData = Object.fromEntries(formData.entries());
-    
-    // Handle checkbox
-    templateData.is_active = document.getElementById('templateActive').checked;
-    templateData.include_secure_upload = document.getElementById('includeSecureUpload').checked;
-    
-    const templateId = document.getElementById('templateId').value;
-    const isEdit = templateId && templateId !== '';
-    
-    const url = isEdit ? `/api/email-templates/${templateId}` : '/api/email-templates';
-    const method = isEdit ? 'PUT' : 'POST';
-    
-    fetch(url, {
-        method: method,
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(templateData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            bootstrap.Modal.getInstance(document.getElementById('templateModal')).hide();
-            
-            // Reload the appropriate category
-            const category = templateData.category;
-            loadTemplates(category);
-            
-            alert(isEdit ? 'Template updated successfully!' : 'Template created successfully!');
+    try {
+        const form = document.getElementById('templateForm');
+        const formData = new FormData(form);
+        const templateData = Object.fromEntries(formData.entries());
+        
+        console.log('Form data collected:', templateData);
+        
+        // Get content from TinyMCE
+        if (tinyMCEInstance) {
+            templateData.body = tinyMCEInstance.getContent();
+            console.log('TinyMCE content retrieved');
         } else {
-            alert('Error saving template: ' + data.error);
+            console.warn('TinyMCE instance not found, using textarea value');
+            templateData.body = document.getElementById('templateBody').value;
         }
-    })
-    .catch(error => {
-        console.error('Error saving template:', error);
-        alert('Error saving template. Please try again.');
-    });
+        
+        // Manual validation for required fields since we removed HTML5 validation
+        if (!templateData.name || !templateData.category || !templateData.subject || !templateData.body || templateData.body.trim() === '' || templateData.body === '<p></p>' || templateData.body === '<p><br></p>') {
+            let missingFields = [];
+            if (!templateData.name) missingFields.push('Template Name');
+            if (!templateData.category) missingFields.push('Category');
+            if (!templateData.subject) missingFields.push('Subject');
+            if (!templateData.body || templateData.body.trim() === '' || templateData.body === '<p></p>' || templateData.body === '<p><br></p>') missingFields.push('Email Body');
+            
+            alert('Please fill in the following required fields: ' + missingFields.join(', '));
+            return;
+        }
+        
+        // Handle checkbox
+        templateData.is_active = document.getElementById('templateActive').checked;
+        templateData.include_secure_upload = document.getElementById('includeSecureUpload').checked;
+        
+        // Map frontend field names to backend field names
+        templateData.subject_template = templateData.subject;
+        templateData.body_template = templateData.body;
+        delete templateData.subject;
+        delete templateData.body;
+        
+        const templateId = document.getElementById('templateId').value;
+        const isEdit = templateId && templateId !== '';
+        
+        const url = isEdit ? `/api/email-templates/${templateId}` : '/api/email-templates';
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        console.log('About to make request:', { url, method, templateData });
+        
+        // Show loading state
+        const submitButton = document.querySelector('#templateForm button[type="submit"]');
+        const originalText = submitButton.innerHTML;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+        submitButton.disabled = true;
+        
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(templateData)
+        })
+        .then(response => {
+            console.log('Response received:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('templateModal')).hide();
+                
+                // Reload the appropriate category
+                const category = templateData.category;
+                loadTemplates(category);
+                
+                alert(isEdit ? 'Template updated successfully!' : 'Template created successfully!');
+            } else {
+                alert('Error saving template: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error saving template:', error);
+            alert('Error saving template. Please try again.');
+        })
+        .finally(() => {
+            // Restore button state
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
+        });
+    } catch (error) {
+        console.error('Error in saveTemplate function:', error);
+        alert('An error occurred while saving the template. Please check the console for details.');
+    }
 }
 
 function deleteTemplate(templateId) {
@@ -1109,7 +1474,7 @@ function previewTemplate() {
     // Get current template data from the form
     const templateId = document.getElementById('templateId').value;
     const subjectTemplate = document.getElementById('templateSubject').value;
-    const bodyTemplate = document.getElementById('templateBody').value;
+    const bodyTemplate = tinyMCEInstance ? tinyMCEInstance.getContent() : document.getElementById('templateBody').value;
     const division = document.getElementById('templateDivision').value;
     
     if (!subjectTemplate || !bodyTemplate) {
@@ -1206,6 +1571,38 @@ function loadPDFTemplates() {
     console.log('Loading PDF templates');
 }
 
+// Variable insertion functions
+function insertVariable(variable) {
+    if (tinyMCEInstance) {
+        // Insert the variable as plain text with a space after it
+        tinyMCEInstance.insertContent(variable + ' ');
+        
+        // Focus back on the editor
+        tinyMCEInstance.focus();
+    } else {
+        // Fallback for textarea
+        const textarea = document.getElementById('templateBody');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        
+        textarea.value = text.substring(0, start) + variable + text.substring(end);
+        textarea.focus();
+        textarea.setSelectionRange(start + variable.length, start + variable.length);
+    }
+    
+    // Close variables modal if open
+    const modal = bootstrap.Modal.getInstance(document.getElementById('variablesModal'));
+    if (modal) {
+        modal.hide();
+    }
+}
+
+function showAllVariables() {
+    const modal = new bootstrap.Modal(document.getElementById('variablesModal'));
+    modal.show();
+}
+
 function createDefaultTemplates() {
     if (!confirm('This will create default email templates for all divisions. Continue?')) {
         return;
@@ -1231,5 +1628,7 @@ function createDefaultTemplates() {
         alert('Error creating default templates. Please try again.');
     });
 }
+
+
 </script>
 {% endblock %}

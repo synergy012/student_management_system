@@ -1,804 +1,1368 @@
 {% extends "base.html" %}
 
-{% block title %}{{ student.full_name }} - Details{% endblock %}
+{% block title %}{{ student.full_name }} - Student Details{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Student Details</h1>
-        <div>
-            <a href="{{ url_for('students.edit_student', student_id=student.id) }}" class="btn btn-primary">
-                <i class="fas fa-edit"></i> Edit
-            </a>
-            <button class="btn btn-danger" onclick="deleteStudent('{{ student.id }}')">
-                <i class="fas fa-trash"></i> Delete
-            </button>
-        </div>
-    </div>
-
-    <!-- Personal Information -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="card-title mb-0">Personal Information</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Full Name:</strong> {{ student.full_name }}</p>
-                    {% if student.hebrew_name %}<p><strong>Hebrew Name:</strong> {{ student.hebrew_name }}</p>{% endif %}
-                    {% if student.informal_name %}<p><strong>Informal Name:</strong> {{ student.informal_name }}</p>{% endif %}
-                    <p><strong>Phone:</strong> {{ student.phone_number }}</p>
-                    <p><strong>Email:</strong> {{ student.email }}</p>
-                    {% if student.ssn %}<p><strong>SSN:</strong> {{ student.ssn }}</p>{% endif %}
-                    <p><strong>Date of Birth:</strong> {{ student.date_of_birth }}</p>
-                    <p><strong>Citizenship:</strong> {{ student.citizenship }}</p>
-                    <p><strong>High School Graduate:</strong> {{ student.high_school_graduate }}</p>
-                    <p><strong>Status:</strong> 
-                        <span class="badge bg-{{ student.status_color }}">{{ student.status }}</span>
-                    </p>
-                    <p><strong>Matriculation:</strong> 
-                        <span class="badge bg-{{ student.matriculation_status_badge_color }}">
-                            {{ student.computed_matriculation_status }}
-                            {% if student.matriculation_override %}<i class="fas fa-edit ms-1" title="Manual Override"></i>{% endif %}
-                        </span>
-                        {% if student.high_school_graduation_date %}
-                        <small class="text-muted d-block">HS Grad: {{ student.high_school_graduation_date.strftime('%m/%Y') }}</small>
-                        {% endif %}
-                    </p>
-                    <p><strong>Marital Status:</strong> {{ student.marital_status }}</p>
-                    {% if student.division %}<p><strong>Division:</strong> {{ student.division }}</p>{% endif %}
-                    {% if student.accepted_date %}<p><strong>Accepted Date:</strong> {{ student.accepted_date }}</p>{% endif %}
+<div class="container-fluid px-4 py-3">
+    <!-- Student Overview Header -->
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <!-- Student Info -->
+                <div class="col-lg-8">
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" 
+                             style="width: 64px; height: 64px; font-size: 24px; color: white;">
+                            {{ student.full_name[0] }}{{ student.full_name.split(' ')[-1][0] if ' ' in student.full_name else '' }}
+                        </div>
+                        <div>
+                            <h1 class="h3 mb-1 fw-bold">{{ student.full_name }}</h1>
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <span class="badge bg-{{ student.division_color }} fs-6">{{ student.division }}</span>
+                                <span class="badge bg-{{ student.status_color }} fs-6">{{ student.status }}</span>
+                                <span class="badge bg-{{ student.enrollment_status_color }} fs-6">
+                                    {{ student.enrollment_status_current_year or 'Not Enrolled' }}
+                                </span>
+                                <span class="badge bg-{{ student.matriculation_status_badge_color }} fs-6">
+                                    {{ student.computed_matriculation_status }}
+                                </span>
+                            </div>
+                            <div class="text-muted small">
+                                <i class="fas fa-envelope me-1"></i>{{ student.email }}
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-phone me-1"></i>{{ student.phone_number }}
+                                {% if student.accepted_date %}
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-calendar me-1"></i>Accepted {{ student.accepted_date.strftime('%m/%d/%Y') }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <h6>Primary Address</h6>
-                    <p>{{ student.address.line1 }}{% if student.address.line2 %}<br>{{ student.address.line2 }}{% endif %}<br>
-                    {{ student.address.city }}, {{ student.address.state }} {{ student.address.zip }}<br>
-                    {{ student.address.country }}</p>
+
+                <!-- Quick Status & Actions -->
+                <div class="col-lg-4">
+                    <div class="row g-2 mb-3">
+                        <!-- Acceptance Email Status -->
+                        <div class="col-6">
+                            <div class="text-center p-2 rounded" style="background-color: #f8f9fa;">
+                                <div class="small text-muted mb-1">Acceptance Email</div>
+                                <span class="badge {% if student.acceptance_email_sent %}bg-success{% else %}bg-warning{% endif %}">
+                                    {% if student.acceptance_email_sent %}Sent{% else %}Pending{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Financial Status -->
+                        <div class="col-6">
+                            <div class="text-center p-2 rounded" style="background-color: #f8f9fa;">
+                                <div class="small text-muted mb-1">Financial Aid</div>
+                                <span class="badge {% if student.financial_aid.financial_aid_app_received %}bg-success{% elif student.financial_aid.financial_aid_app_sent %}bg-warning{% else %}bg-secondary{% endif %}">
+                                    {% if student.financial_aid.financial_aid_app_received %}
+                                        Received
+                                    {% elif student.financial_aid.financial_aid_app_sent %}
+                                        Sent
+                                    {% else %}
+                                        Not Sent
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Contract Status -->
+                        <div class="col-6">
+                            <div class="text-center p-2 rounded" style="background-color: #f8f9fa;">
+                                <div class="small text-muted mb-1">Contract</div>
+                                <span id="contract-status-badge" class="badge {% if student.financial_aid.tuition_contract_signed %}bg-success{% elif student.financial_aid.tuition_contract_generated %}bg-info{% else %}bg-secondary{% endif %}">
+                                    {% if student.financial_aid.tuition_contract_signed %}
+                                        Signed
+                                    {% elif student.financial_aid.tuition_contract_generated %}
+                                        Generated
+                                    {% else %}
+                                        Not Generated
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Tuition Amount -->
+                        <div class="col-6">
+                            <div class="text-center p-2 rounded" style="background-color: #f8f9fa;">
+                                <div class="small text-muted mb-1">Tuition</div>
+                                {% if student.financial_aid.tuition_determination > 0 %}
+                                    <span class="badge bg-success fs-6">${{ "%.0f"|format(student.financial_aid.tuition_determination) }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Not Set</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                     
-                    {% if student.alt_address.line1 %}
-                    <h6>Alternative Address</h6>
-                    <p>{{ student.alt_address.line1 }}{% if student.alt_address.line2 %}<br>{{ student.alt_address.line2 }}{% endif %}<br>
-                    {{ student.alt_address.city }}, {{ student.alt_address.state }} {{ student.alt_address.zip }}<br>
-                    {{ student.alt_address.country }}</p>
-                    {% endif %}
-                    
-                    <h6>Basic Financial Info</h6>
-                    <p><strong>Status:</strong> {{ student.financial_aid.payment_status }}</p>
-                    <p><strong>Amount Can Pay:</strong> ${{ student.financial_aid.amount_can_pay }}</p>
-                    <p><strong>Scholarship Amount:</strong> ${{ student.financial_aid.scholarship_requested }}</p>
+                    <!-- Action Buttons -->
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ url_for('students.edit_student', student_id=student.id) }}" 
+                           class="btn btn-primary btn-sm">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary btn-sm dropdown-toggle" 
+                                    type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-bolt"></i> Actions
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="sendAcceptanceEmail('{{ student.id }}', {% if student.acceptance_email_sent %}true{% else %}false{% endif %})">
+                                    <i class="fas fa-paper-plane"></i> {% if student.acceptance_email_sent %}Resend{% else %}Send{% endif %} Acceptance Email
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="sendFinancialAidApp('{{ student.id }}')">
+                                    <i class="fas fa-dollar-sign"></i> Send Financial Aid Form
+                                </a></li>
+                                {% if student.financial_aid.tuition_determination > 0 %}
+                                <li><a class="dropdown-item" href="#" onclick="generateTuitionContract('{{ student.id }}')">
+                                    <i class="fas fa-file-signature"></i> Send Contract for Signature
+                                </a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('financial.financial_core.student_financial', student_id=student.id) }}">
+                                    <i class="fas fa-chart-line"></i> Full Financial Management
+                                </a></li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm" onclick="deleteStudent('{{ student.id }}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Financial Management Section -->
-    <div class="card mb-4">
-        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-dollar-sign me-2"></i>Financial Management
-            </h5>
-            <button class="btn btn-sm btn-light" onclick="editFinancialInfo('{{ student.id }}')">
-                <i class="fas fa-edit"></i> Edit
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs mb-4" id="studentTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" 
+                    data-bs-target="#overview" type="button" role="tab">
+                <i class="fas fa-home me-2"></i>Overview
             </button>
-        </div>
-        <div class="card-body">
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="financial-tab" data-bs-toggle="tab" 
+                    data-bs-target="#financial" type="button" role="tab">
+                <i class="fas fa-dollar-sign me-2"></i>Financial
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="academic-tab" data-bs-toggle="tab" 
+                    data-bs-target="#academic" type="button" role="tab">
+                <i class="fas fa-graduation-cap me-2"></i>Academic
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="personal-tab" data-bs-toggle="tab" 
+                    data-bs-target="#personal" type="button" role="tab">
+                <i class="fas fa-user me-2"></i>Personal
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="family-tab" data-bs-toggle="tab" 
+                    data-bs-target="#family" type="button" role="tab">
+                <i class="fas fa-users me-2"></i>Family
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="documents-tab" data-bs-toggle="tab" 
+                    data-bs-target="#documents" type="button" role="tab">
+                <i class="fas fa-file-alt me-2"></i>Documents
+                {% if attachments %}
+                <span class="badge bg-primary ms-1">{{ attachments|length }}</span>
+                {% endif %}
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="studentTabsContent">
+
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
             <div class="row">
-                <!-- Financial Aid Type and Application -->
-                <div class="col-md-6">
-                    <h6><i class="fas fa-graduation-cap text-success me-2"></i>Financial Aid Type</h6>
-                    <p><strong>Type:</strong> 
-                        <span class="badge {% if student.financial_aid.financial_aid_type == 'Full Tuition' %}bg-primary{% else %}bg-warning{% endif %}">
-                            {{ student.financial_aid.financial_aid_type }}
-                        </span>
-                    </p>
-                    
-                    <h6 class="mt-3"><i class="fas fa-file-alt text-info me-2"></i>Financial Aid Application</h6>
-                    <div class="row">
-                        <div class="col-6">
-                            <p class="mb-1"><strong>Sent:</strong> 
-                                <span class="badge {% if student.financial_aid.financial_aid_app_sent %}bg-success{% else %}bg-secondary{% endif %}">
-                                    {% if student.financial_aid.financial_aid_app_sent %}Yes{% else %}No{% endif %}
-                                </span>
-                            </p>
-                            {% if student.financial_aid_app_sent_date %}
-                            <p class="small text-muted">{{ student.financial_aid_app_sent_date.strftime('%m/%d/%Y') }}</p>
-                            {% endif %}
+                <!-- Recent Activity & Quick Actions -->
+                <div class="col-lg-8">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0"><i class="fas fa-clock me-2"></i>Recent Activity</h5>
                         </div>
-                        <div class="col-6">
-                            <p class="mb-1"><strong>Received:</strong> 
-                                <span class="badge {% if student.financial_aid.financial_aid_app_received %}bg-success{% else %}bg-secondary{% endif %}">
-                                    {% if student.financial_aid.financial_aid_app_received %}Yes{% else %}No{% endif %}
-                                </span>
-                            </p>
-                            {% if student.financial_aid_app_received_date %}
-                            <p class="small text-muted">{{ student.financial_aid_app_received_date.strftime('%m/%d/%Y') }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="mt-2">
-                        {% if not student.financial_aid.financial_aid_app_sent %}
-                        <button class="btn btn-sm btn-primary me-2" onclick="sendFinancialAidApp('{{ student.id }}')">
-                            <i class="fas fa-paper-plane"></i> Send Application
-                        </button>
-                        {% else %}
-                        <button class="btn btn-sm btn-outline-primary me-2" onclick="resendFinancialAidApp('{{ student.id }}')">
-                            <i class="fas fa-redo"></i> Resend Application
-                        </button>
-                        {% endif %}
-                        
-                        {% if student.financial_aid.financial_aid_app_sent and not student.financial_aid.financial_aid_app_received %}
-                        <button class="btn btn-sm btn-success" onclick="markFinancialAidReceived('{{ student.id }}')">
-                            <i class="fas fa-check"></i> Mark Received
-                        </button>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <!-- Tuition Determination -->
-                <div class="col-md-6">
-                    <h6><i class="fas fa-calculator text-warning me-2"></i>Tuition Determination</h6>
-                    <p><strong>Amount:</strong> 
-                        {% if student.financial_aid.tuition_determination > 0 %}
-                            <span class="badge bg-success fs-6">${{ "%.0f"|format(student.financial_aid.tuition_determination) }}</span>
-                        {% else %}
-                            <span class="text-muted">Not determined</span>
-                        {% endif %}
-                    </p>
-                    {% if student.financial_aid.tuition_determination_notes %}
-                    <p><strong>Notes:</strong> {{ student.financial_aid.tuition_determination_notes }}</p>
-                    {% endif %}
-                    
-                    <h6 class="mt-3"><i class="fas fa-file-contract text-primary me-2"></i>Tuition Contract</h6>
-                    <div class="row">
-                        <div class="col-4">
-                            <p class="mb-1 small"><strong>Generated:</strong></p>
-                            <span class="badge {% if student.financial_aid.tuition_contract_generated %}bg-success{% else %}bg-secondary{% endif %}">
-                                {% if student.financial_aid.tuition_contract_generated %}Yes{% else %}No{% endif %}
-                            </span>
-                        </div>
-                        <div class="col-4">
-                            <p class="mb-1 small"><strong>Sent:</strong></p>
-                            <span class="badge {% if student.financial_aid.tuition_contract_sent %}bg-success{% else %}bg-secondary{% endif %}">
-                                {% if student.financial_aid.tuition_contract_sent %}Yes{% else %}No{% endif %}
-                            </span>
-                        </div>
-                        <div class="col-4">
-                            <p class="mb-1 small"><strong>Signed:</strong></p>
-                            <span class="badge {% if student.financial_aid.tuition_contract_signed %}bg-success{% else %}bg-secondary{% endif %}">
-                                {% if student.financial_aid.tuition_contract_signed %}Yes{% else %}No{% endif %}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <!-- OpenSign E-Signature Status -->
-                    {% if student.financial_aid.opensign_document_id %}
-                    <div class="row mt-2">
-                        <div class="col-md-6">
-                            <p><strong>E-Signature Status:</strong></p>
-                            <span id="opensign-status" class="badge 
-                                {% if student.financial_aid.opensign_document_status == 'completed' %}bg-success
-                                {% elif student.financial_aid.opensign_document_status == 'pending' %}bg-warning
-                                {% elif student.financial_aid.opensign_document_status == 'declined' %}bg-danger
-                                {% elif student.financial_aid.opensign_document_status == 'expired' %}bg-secondary
-                                {% else %}bg-info{% endif %}">
-                                {{ student.financial_aid.opensign_document_status|title if student.financial_aid.opensign_document_status else 'Unknown' }}
-                            </span>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Document ID:</strong></p>
-                            <small class="text-muted">{{ student.financial_aid.opensign_document_id[:20] }}...</small>
-                        </div>
-                    </div>
-                    
-                    {% if student.financial_aid.opensign_signed_url %}
-                    <div class="row mt-1">
-                        <div class="col-md-12">
-                            <a href="{{ student.financial_aid.opensign_signed_url }}" target="_blank" class="btn btn-sm btn-success me-2">
-                                <i class="fas fa-file-signature"></i> View Signed Contract
-                            </a>
-                            {% if student.financial_aid.opensign_certificate_url %}
-                            <a href="{{ student.financial_aid.opensign_certificate_url }}" target="_blank" class="btn btn-sm btn-info me-2">
-                                <i class="fas fa-certificate"></i> View Certificate
-                            </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endif %}
-                    {% endif %}
-                    
-                    <!-- Uploaded Contract (Print & Upload Method) -->
-                    {% if student.financial_aid.uploaded_contract_id %}
-                    <div class="row mt-2">
-                        <div class="col-md-12">
-                            <div class="alert alert-success py-2">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong><i class="fas fa-check-circle"></i> Contract Received via Upload</strong>
-                                        <div class="small text-muted">
-                                            Uploaded: {{ student.financial_aid.uploaded_contract_date.strftime('%B %d, %Y at %I:%M %p') }}
-                                            <br>File: {{ student.financial_aid.uploaded_contract_filename }}
-                                        </div>
+                        <div class="card-body">
+                            <div class="timeline">
+                                {% if student.acceptance_email_sent_date %}
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-success"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="mb-1">Acceptance Email Sent</h6>
+                                        <p class="text-muted small mb-0">{{ student.acceptance_email_sent_date.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                                        {% if student.acceptance_email_sent_by %}
+                                        <p class="text-muted small">by {{ student.acceptance_email_sent_by }}</p>
+                                        {% endif %}
                                     </div>
-                                    <div>
-                                        <a href="{{ url_for('students.view_uploaded_contract', student_id=student.id) }}" 
-                                           target="_blank" class="btn btn-sm btn-success">
-                                            <i class="fas fa-file-pdf"></i> View Signed Contract
-                                        </a>
+                                </div>
+                                {% endif %}
+                                
+                                {% if student.financial_aid_app_sent_date %}
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-info"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="mb-1">Financial Aid Application Sent</h6>
+                                        <p class="text-muted small mb-0">{{ student.financial_aid_app_sent_date.strftime('%B %d, %Y') }}</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if student.accepted_date %}
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-primary"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="mb-1">Student Accepted</h6>
+                                        <p class="text-muted small mb-0">{{ student.accepted_date.strftime('%B %d, %Y') }}</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-secondary"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="mb-1">Application Created</h6>
+                                        <p class="text-muted small mb-0">Application ID: {{ student.application_id or 'N/A' }}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    {% endif %}
                     
-                    <!-- Quick Tuition History Summary -->
-                    {% set tuition_history = student.get_tuition_history() %}
-                    {% if tuition_history %}
-                    <div class="small text-muted mb-2">
-                        <strong>Tuition History:</strong>
-                        {% for record in tuition_history[:3] %}
-                            <span class="badge bg-{{ record.academic_year.status_color }} me-1">{{ record.academic_year.year_label }}</span>
-                        {% endfor %}
-                        {% if tuition_history|length > 3 %}
-                            <span class="text-muted">+{{ tuition_history|length - 3 }} more</span>
-                        {% endif %}
+                    <!-- Key Information Summary -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2"></i>Key Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Status:</dt>
+                                        <dd class="col-sm-8">
+                                            <span class="badge bg-{{ student.status_color }}">{{ student.status }}</span>
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Division:</dt>
+                                        <dd class="col-sm-8">{{ student.division }}</dd>
+                                        
+                                        <dt class="col-sm-4">Phone:</dt>
+                                        <dd class="col-sm-8">{{ student.phone_number }}</dd>
+                                        
+                                        <dt class="col-sm-4">Date of Birth:</dt>
+                                        <dd class="col-sm-8">{{ student.date_of_birth }}</dd>
+                                    </dl>
+                                </div>
+                                <div class="col-md-6">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Enrollment:</dt>
+                                        <dd class="col-sm-8">
+                                            <span class="badge bg-{{ student.enrollment_status_color }}">
+                                                {{ student.enrollment_status_current_year or 'Not Set' }}
+                                            </span>
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Marital Status:</dt>
+                                        <dd class="col-sm-8">{{ student.marital_status }}</dd>
+                                        
+                                        <dt class="col-sm-4">Citizenship:</dt>
+                                        <dd class="col-sm-8">{{ student.citizenship }}</dd>
+                                        
+                                        <dt class="col-sm-4">HS Graduate:</dt>
+                                        <dd class="col-sm-8">{{ student.high_school_graduate }}</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    {% endif %}
+                </div>
+                
+                <!-- Quick Stats Sidebar -->
+                <div class="col-lg-4">
+                    <!-- Financial Summary -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="card-title mb-0"><i class="fas fa-chart-pie me-2"></i>Financial Summary</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="small text-muted">Financial Aid Type</label>
+                                <div class="fw-bold">{{ student.financial_aid.financial_aid_type }}</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="small text-muted">Amount Can Pay</label>
+                                <div class="fw-bold">${{ student.financial_aid.amount_can_pay }}</div>
+                            </div>
+                            
+                            {% if student.financial_aid.tuition_determination > 0 %}
+                            <div class="mb-3">
+                                <label class="small text-muted">Tuition Determination</label>
+                                <div class="fw-bold text-success">${{ "%.0f"|format(student.financial_aid.tuition_determination) }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="d-grid">
+                                <a href="{{ url_for('financial.financial_core.student_financial', student_id=student.id) }}" 
+                                   class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-arrow-right me-1"></i>View Full Financial
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                     
-                    <div class="mt-2">
-                        {% if student.financial_aid.tuition_determination > 0 %}
-                            {% if not student.financial_aid.tuition_contract_generated %}
-                            <button class="btn btn-sm btn-primary me-2" onclick="generateTuitionContract('{{ student.id }}')">
-                                <i class="fas fa-file-signature"></i> Send for E-Signature
-                            </button>
-                            {% else %}
-                                {% if student.financial_aid.tuition_contract_pdf_path %}
-                                <button class="btn btn-sm btn-outline-primary me-2" onclick="downloadTuitionContract('{{ student.id }}')">
-                                    <i class="fas fa-download"></i> Download PDF
+                    <!-- Address Summary -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="card-title mb-0"><i class="fas fa-map-marker-alt me-2"></i>Primary Address</h6>
+                        </div>
+                        <div class="card-body">
+                            <address class="mb-0">
+                                {{ student.address.line1 }}<br>
+                                {% if student.address.line2 %}{{ student.address.line2 }}<br>{% endif %}
+                                {{ student.address.city }}, {{ student.address.state }} {{ student.address.zip }}<br>
+                                {{ student.address.country }}
+                            </address>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="card-title mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary btn-sm" 
+                                        onclick="previewAcceptanceEmail('{{ student.id }}')">
+                                    <i class="fas fa-eye me-2"></i>Preview Acceptance Email
+                                </button>
+                                
+                                <button class="btn btn-outline-info btn-sm" 
+                                        onclick="showEnrollmentHistory('{{ student.id }}')">
+                                    <i class="fas fa-history me-2"></i>Enrollment History
+                                </button>
+                                
+                                {% if student.financial_aid.tuition_determination > 0 and student.financial_aid.tuition_contract_pdf_path %}
+                                <button class="btn btn-outline-success btn-sm" 
+                                        onclick="downloadTuitionContract('{{ student.id }}')">
+                                    <i class="fas fa-download me-2"></i>Download Contract
                                 </button>
                                 {% endif %}
                                 
-                                {% if student.financial_aid.opensign_document_id %}
-                                    {% if student.financial_aid.opensign_document_status == 'pending' %}
-                                    <button class="btn btn-sm btn-outline-warning me-2" onclick="resendOpenSignContract('{{ student.id }}')">
-                                        <i class="fas fa-redo"></i> Resend Request
-                                    </button>
-                                    {% endif %}
-                                    <button class="btn btn-sm btn-outline-info me-2" onclick="checkOpenSignStatus('{{ student.id }}')">
-                                        <i class="fas fa-sync"></i> Check Status
-                                    </button>
-                                {% endif %}
-                            {% endif %}
-                        {% else %}
-                        <p class="small text-muted">Set tuition amount to generate contract</p>
-                        {% endif %}
-                        
-                        <!-- Link to full financial management page -->
-                        <a href="{{ url_for('financial.student_financial', student_id=student.id) }}" class="btn btn-sm btn-success">
-                            <i class="fas fa-history"></i> Manage Tuition & Years
-                        </a>
+                                <button class="btn btn-outline-secondary btn-sm" 
+                                        onclick="editMatriculationInfo('{{ student.id }}')">
+                                    <i class="fas fa-graduation-cap me-2"></i>Edit Matriculation
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- FAFSA Information -->
-            <hr class="my-4">
-            <div class="row">
-                <div class="col-md-12">
-                    <h6><i class="fas fa-university text-info me-2"></i>FAFSA Information</h6>
-                </div>
-                <div class="col-md-3">
-                    <p><strong>Eligibility:</strong></p>
-                    <span class="badge {% if student.financial_aid.fafsa_eligible == 'Eligible' %}bg-success{% elif student.financial_aid.fafsa_eligible == 'Not Eligible' %}bg-danger{% else %}bg-secondary{% endif %}">
-                        {{ student.financial_aid.fafsa_eligible }}
-                    </span>
-                </div>
-                <div class="col-md-3">
-                    <p><strong>Required:</strong></p>
-                    <span class="badge {% if student.financial_aid.fafsa_required %}bg-warning{% else %}bg-secondary{% endif %}">
-                        {% if student.financial_aid.fafsa_required %}Yes{% else %}No{% endif %}
-                    </span>
-                </div>
-                <div class="col-md-3">
-                    <p><strong>Applied:</strong></p>
-                    <span class="badge {% if student.financial_aid.fafsa_applied %}bg-success{% else %}bg-secondary{% endif %}">
-                        {% if student.financial_aid.fafsa_applied %}Yes{% else %}No{% endif %}
-                    </span>
-                </div>
-                <div class="col-md-3">
-                    <p><strong>Status:</strong></p>
-                    <span class="badge {% if student.financial_aid.fafsa_status == 'Accepted' %}bg-success{% elif student.financial_aid.fafsa_status == 'Rejected' %}bg-danger{% else %}bg-warning{% endif %}">
-                        {{ student.financial_aid.fafsa_status }}
-                    </span>
-                </div>
-            </div>
-            
-            {% if student.financial_aid.fafsa_amount_awarded > 0 %}
-            <div class="row mt-2">
-                <div class="col-md-6">
-                    <p><strong>FAFSA Amount Awarded:</strong> <span class="badge bg-success fs-6">${{ "%.0f"|format(student.financial_aid.fafsa_amount_awarded) }}</span></p>
-                </div>
-            </div>
-            {% endif %}
-            
-            {% if student.financial_aid.fafsa_notes %}
-            <div class="row mt-2">
-                <div class="col-md-12">
-                    <p><strong>FAFSA Notes:</strong> {{ student.financial_aid.fafsa_notes }}</p>
-                </div>
-            </div>
-            {% endif %}
         </div>
-    </div>
 
-    <!-- Matriculation Status Section -->
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-graduation-cap me-2"></i>Matriculation Status
-            </h5>
-            <button class="btn btn-sm btn-light" onclick="editMatriculationInfo('{{ student.id }}')">
-                <i class="fas fa-edit"></i> Edit
-            </button>
-        </div>
-        <div class="card-body">
+        <!-- Financial Tab -->
+        <div class="tab-pane fade" id="financial" role="tabpanel">
             <div class="row">
-                <div class="col-md-6">
-                    <h6><i class="fas fa-user-graduate text-success me-2"></i>Current Status</h6>
-                    <p><strong>Matriculation Status:</strong>
-                        <span class="badge bg-{{ student.matriculation_status_badge_color }} fs-6">
-                            {{ student.computed_matriculation_status }}
-                            {% if student.matriculation_override %}
-                            <i class="fas fa-edit ms-1" title="Manual Override"></i>
-                            {% endif %}
-                        </span>
-                    </p>
-                    
-                    {% if student.matriculation_override %}
-                    <div class="alert alert-warning py-2 small">
-                        <i class="fas fa-exclamation-triangle me-1"></i>
-                        Status has been manually overridden
+                <!-- Financial Aid Section -->
+                <div class="col-lg-6">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0"><i class="fas fa-graduation-cap me-2"></i>Financial Aid</h5>
+                            <button class="btn btn-sm btn-light" onclick="editFinancialInfo('{{ student.id }}')">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <!-- Financial Aid Type -->
+                            <div class="mb-3">
+                                <label class="small text-muted fw-bold">Financial Aid Type</label>
+                                <div>
+                                    <span class="badge {% if student.financial_aid.financial_aid_type == 'Full Tuition' %}bg-primary{% else %}bg-warning{% endif %} fs-6">
+                                        {{ student.financial_aid.financial_aid_type }}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Application Status -->
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Application Sent</label>
+                                    <div>
+                                        <span class="badge {% if student.financial_aid.financial_aid_app_sent %}bg-success{% else %}bg-secondary{% endif %}">
+                                            {% if student.financial_aid.financial_aid_app_sent %}Yes{% else %}No{% endif %}
+                                        </span>
+                                        {% if student.financial_aid_app_sent_date %}
+                                        <div class="small text-muted">{{ student.financial_aid_app_sent_date.strftime('%m/%d/%Y') }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Application Received</label>
+                                    <div>
+                                        <span class="badge {% if student.financial_aid.financial_aid_app_received %}bg-success{% else %}bg-secondary{% endif %}">
+                                            {% if student.financial_aid.financial_aid_app_received %}Yes{% else %}No{% endif %}
+                                        </span>
+                                        {% if student.financial_aid_app_received_date %}
+                                        <div class="small text-muted">{{ student.financial_aid_app_received_date.strftime('%m/%d/%Y') }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div class="d-flex gap-2 flex-wrap">
+                                {% if not student.financial_aid.financial_aid_app_sent %}
+                                <button class="btn btn-primary btn-sm" onclick="sendFinancialAidApp('{{ student.id }}')">
+                                    <i class="fas fa-paper-plane"></i> Send Application
+                                </button>
+                                {% else %}
+                                <button class="btn btn-outline-primary btn-sm" onclick="resendFinancialAidApp('{{ student.id }}')">
+                                    <i class="fas fa-redo"></i> Resend Application
+                                </button>
+                                {% endif %}
+                                
+                                {% if student.financial_aid.financial_aid_app_sent and not student.financial_aid.financial_aid_app_received %}
+                                <button class="btn btn-success btn-sm" onclick="markFinancialAidReceived('{{ student.id }}')">
+                                    <i class="fas fa-check"></i> Mark Received
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
-                    {% endif %}
                     
-                    {% if student.matriculation_notes %}
-                    <p><strong>Notes:</strong> {{ student.matriculation_notes }}</p>
-                    {% endif %}
+                    <!-- FAFSA Information -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="card-title mb-0"><i class="fas fa-university me-2"></i>FAFSA Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Eligibility</label>
+                                    <div>
+                                        <span class="badge {% if student.financial_aid.fafsa_eligible == 'Eligible' %}bg-success{% elif student.financial_aid.fafsa_eligible == 'Not Eligible' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                            {{ student.financial_aid.fafsa_eligible }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Required</label>
+                                    <div>
+                                        <span class="badge {% if student.financial_aid.fafsa_required %}bg-warning{% else %}bg-secondary{% endif %}">
+                                            {% if student.financial_aid.fafsa_required %}Yes{% else %}No{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Applied</label>
+                                    <div>
+                                        <span class="badge {% if student.financial_aid.fafsa_applied %}bg-success{% else %}bg-secondary{% endif %}">
+                                            {% if student.financial_aid.fafsa_applied %}Yes{% else %}No{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Status</label>
+                                    <div>
+                                        <span class="badge {% if student.financial_aid.fafsa_status == 'Accepted' %}bg-success{% elif student.financial_aid.fafsa_status == 'Rejected' %}bg-danger{% else %}bg-warning{% endif %}">
+                                            {{ student.financial_aid.fafsa_status }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% if student.financial_aid.fafsa_amount_awarded > 0 %}
+                                <div class="col-12">
+                                    <label class="small text-muted fw-bold">FAFSA Amount Awarded</label>
+                                    <div class="fw-bold text-success">${{ "%.0f"|format(student.financial_aid.fafsa_amount_awarded) }}</div>
+                                </div>
+                                {% endif %}
+                                {% if student.financial_aid.fafsa_notes %}
+                                <div class="col-12">
+                                    <label class="small text-muted fw-bold">Notes</label>
+                                    <div class="small">{{ student.financial_aid.fafsa_notes }}</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="col-md-6">
-                    <h6><i class="fas fa-calendar text-primary me-2"></i>Graduation Timeline</h6>
-                    
-                    <div class="mb-2">
-                        <strong>High School Graduation:</strong>
-                        {% if student.high_school_graduation_date %}
-                        <span class="badge bg-success">{{ student.high_school_graduation_date.strftime('%B %Y') }}</span>
-                        {% else %}
-                        <span class="text-muted">Not specified</span>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="mb-2">
-                        <strong>Program Graduation:</strong>
-                        {% if student.program_graduation_date %}
-                        <span class="badge bg-success">{{ student.program_graduation_date.strftime('%B %Y') }}</span>
-                        {% else %}
-                        <span class="text-muted">Not graduated</span>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Matriculation Logic Explanation -->
-                    <div class="small text-muted mt-3">
-                        <strong>Logic:</strong>
-                        <ul class="mb-0" style="padding-left: 1rem;">
-                            <li><strong>Matriculating:</strong> Graduated HS + Not graduated program</li>
-                            <li><strong>Non-Matriculating:</strong> Not graduated HS OR already graduated program</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Acceptance Email Status -->
-    <div class="card mb-4">
-        <div class="card-header bg-success text-white">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-envelope me-2"></i>Acceptance Email
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <p class="mb-2">
-                        <strong>Status:</strong> 
-                        <span id="email-status" class="badge {% if student.acceptance_email_sent %}bg-success{% else %}bg-warning{% endif %}">
-                            {% if student.acceptance_email_sent %}
-                                Sent
-                            {% else %}
-                                Not Sent
-                            {% endif %}
-                        </span>
-                    </p>
-                    {% if student.acceptance_email_sent_date %}
-                    <p class="mb-1 small text-muted">
-                        <strong>Sent on:</strong> {{ student.acceptance_email_sent_date.strftime('%B %d, %Y at %I:%M %p') }}
-                    </p>
-                    {% endif %}
-                    {% if student.acceptance_email_sent_by %}
-                    <p class="mb-0 small text-muted">
-                        <strong>Sent by:</strong> {{ student.acceptance_email_sent_by }}
-                    </p>
-                    {% endif %}
-                </div>
-                <div class="col-md-4 text-end">
-                    <button class="btn btn-sm btn-outline-primary me-2" onclick="previewAcceptanceEmail('{{ student.id }}')">
-                        <i class="fas fa-eye"></i> Preview
-                    </button>
-                    <button class="btn btn-sm btn-primary" onclick="sendAcceptanceEmail('{{ student.id }}', {% if student.acceptance_email_sent %}true{% else %}false{% endif %})">
-                        <i class="fas fa-paper-plane"></i> {% if student.acceptance_email_sent %}Resend{% else %}Send{% endif %} Email
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Spouse Information (if married) -->
-    {% if student.marital_status == 'Married' and student.spouse %}
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h5 class="card-title mb-0">Spouse Information</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <p><strong>Name:</strong> {{ student.spouse.first_name }} {{ student.spouse.last_name }}</p>
-                    {% if student.spouse.phone %}<p><strong>Phone:</strong> {{ student.spouse.phone }}</p>{% endif %}
-                    {% if student.spouse.email %}<p><strong>Email:</strong> {{ student.spouse.email }}</p>{% endif %}
-                    {% if student.spouse.occupation %}<p><strong>Occupation:</strong> {{ student.spouse.occupation }}</p>{% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Parents Information -->
-    <div class="card mb-4">
-        <div class="card-header bg-success text-white">
-            <h5 class="card-title mb-0">Parents Information</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h6>Father</h6>
-                    {% if student.parents.father.first_name or student.parents.father.last_name %}
-                    <p><strong>Name:</strong> {{ student.parents.father.title }} {{ student.parents.father.first_name }} {{ student.parents.father.last_name }}</p>
-                    {% if student.parents.father.phone %}<p><strong>Phone:</strong> {{ student.parents.father.phone }}</p>{% endif %}
-                    {% if student.parents.father.email %}<p><strong>Email:</strong> {{ student.parents.father.email }}</p>{% endif %}
-                    {% if student.parents.father.occupation %}<p><strong>Occupation:</strong> {{ student.parents.father.occupation }}</p>{% endif %}
-                    {% else %}
-                    <p class="text-muted">No father information provided</p>
-                    {% endif %}
-                </div>
-                <div class="col-md-6">
-                    <h6>Mother</h6>
-                    {% if student.parents.mother.first_name or student.parents.mother.last_name %}
-                    <p><strong>Name:</strong> {{ student.parents.mother.title }} {{ student.parents.mother.first_name }} {{ student.parents.mother.last_name }}</p>
-                    {% if student.parents.mother.phone %}<p><strong>Phone:</strong> {{ student.parents.mother.phone }}</p>{% endif %}
-                    {% if student.parents.mother.email %}<p><strong>Email:</strong> {{ student.parents.mother.email }}</p>{% endif %}
-                    {% if student.parents.mother.occupation %}<p><strong>Occupation:</strong> {{ student.parents.mother.occupation }}</p>{% endif %}
-                    {% else %}
-                    <p class="text-muted">No mother information provided</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- In-Laws Information (if married) -->
-    {% if student.marital_status == 'Married' and (student.in_laws.first_name or student.in_laws.last_name) %}
-    <div class="card mb-4">
-        <div class="card-header bg-warning text-dark">
-            <h5 class="card-title mb-0">In-Laws Information</h5>
-        </div>
-        <div class="card-body">
-            {% if student.in_laws.first_name or student.in_laws.last_name %}
-            <p><strong>Name:</strong> {{ student.in_laws.first_name }} {{ student.in_laws.last_name }}</p>
-            {% if student.in_laws.phone %}<p><strong>Phone:</strong> {{ student.in_laws.phone }}</p>{% endif %}
-            {% if student.in_laws.email %}<p><strong>Email:</strong> {{ student.in_laws.email }}</p>{% endif %}
-            {% if student.in_laws.address.line1 %}
-            <p><strong>Address:</strong> {{ student.in_laws.address.line1 }}, {{ student.in_laws.address.city }}, {{ student.in_laws.address.state }} {{ student.in_laws.address.zip }}</p>
-            {% endif %}
-            {% else %}
-            <p class="text-muted">No in-laws information provided</p>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Grandparents Information -->
-    <div class="card mb-4">
-        <div class="card-header bg-secondary text-white">
-            <h5 class="card-title mb-0">Grandparents Information</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h6>Paternal Grandparents</h6>
-                    {% if student.grandparents.paternal.name %}
-                    <p><strong>Name:</strong> {{ student.grandparents.paternal.name }}</p>
-                    {% if student.grandparents.paternal.phone %}<p><strong>Phone:</strong> {{ student.grandparents.paternal.phone }}</p>{% endif %}
-                    {% if student.grandparents.paternal.email %}<p><strong>Email:</strong> {{ student.grandparents.paternal.email }}</p>{% endif %}
-                    {% if student.grandparents.paternal.address.line1 %}
-                    <p><strong>Address:</strong> {{ student.grandparents.paternal.address.line1 }}, {{ student.grandparents.paternal.address.city }}, {{ student.grandparents.paternal.address.state }} {{ student.grandparents.paternal.address.zip }}</p>
-                    {% endif %}
-                    {% else %}
-                    <p class="text-muted">No paternal grandparents information provided</p>
-                    {% endif %}
-                </div>
-                <div class="col-md-6">
-                    <h6>Maternal Grandparents</h6>
-                    {% if student.grandparents.maternal.name %}
-                    <p><strong>Name:</strong> {{ student.grandparents.maternal.name }}</p>
-                    {% if student.grandparents.maternal.phone %}<p><strong>Phone:</strong> {{ student.grandparents.maternal.phone }}</p>{% endif %}
-                    {% if student.grandparents.maternal.email %}<p><strong>Email:</strong> {{ student.grandparents.maternal.email }}</p>{% endif %}
-                    {% if student.grandparents.maternal.address.line1 %}
-                    <p><strong>Address:</strong> {{ student.grandparents.maternal.address.line1 }}, {{ student.grandparents.maternal.address.city }}, {{ student.grandparents.maternal.address.state }} {{ student.grandparents.maternal.address.zip }}</p>
-                    {% endif %}
-                    {% else %}
-                    <p class="text-muted">No maternal grandparents information provided</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Education Information -->
-    <div class="card mb-4">
-        <div class="card-header bg-dark text-white">
-            <h5 class="card-title mb-0">Education Information</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h6>High School</h6>
-                    {% if student.education.high_school_info %}
-                    <p><strong>Information:</strong> {{ student.education.high_school_info }}</p>
-                    {% else %}
-                    <p class="text-muted">No high school information provided</p>
-                    {% endif %}
-                    
-                    <h6>Seminary</h6>
-                    {% if student.education.seminary_info %}
-                    <p><strong>Information:</strong> {{ student.education.seminary_info }}</p>
-                    {% else %}
-                    <p class="text-muted">No seminary information provided</p>
-                    {% endif %}
-                </div>
-                <div class="col-md-6">
-                    <h6>College</h6>
-                    {% if student.education.college_attending %}
-                    <p><strong>Attending College:</strong> {{ student.education.college_attending }}</p>
-                    {% if student.education.college_name %}<p><strong>College Name:</strong> {{ student.education.college_name }}</p>{% endif %}
-                    {% if student.education.college_major %}<p><strong>Major:</strong> {{ student.education.college_major }}</p>{% endif %}
-                    {% if student.education.college_expected_graduation %}<p><strong>Expected Graduation:</strong> {{ student.education.college_expected_graduation }}</p>{% endif %}
-                    {% else %}
-                    <p class="text-muted">No college information provided</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Learning Information -->
-    <div class="card mb-4">
-        <div class="card-header bg-info text-white">
-            <h5 class="card-title mb-0">Learning Information</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    {% if student.learning.last_rebbe_name %}
-                    <p><strong>Last Rebbe:</strong> {{ student.learning.last_rebbe_name }}</p>
-                    {% if student.learning.last_rebbe_phone %}<p><strong>Rebbe Phone:</strong> {{ student.learning.last_rebbe_phone }}</p>{% endif %}
-                    {% else %}
-                    <p class="text-muted">No rebbe information provided</p>
-                    {% endif %}
-                    
-                    {% if student.learning.gemora_sedorim_daily_count %}
-                    <p><strong>Daily Gemora Sedorim:</strong> {{ student.learning.gemora_sedorim_daily_count }}</p>
-                    {% endif %}
-                    {% if student.learning.gemora_sedorim_length %}
-                    <p><strong>Sedorim Length:</strong> {{ student.learning.gemora_sedorim_length }}</p>
-                    {% endif %}
-                </div>
-                <div class="col-md-6">
-                    {% if student.learning.learning_evaluation %}
-                    <h6>Learning Evaluation</h6>
-                    <p>{{ student.learning.learning_evaluation }}</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Medical Information -->
-    <div class="card mb-4">
-        <div class="card-header bg-danger text-white">
-            <h5 class="card-title mb-0">Medical Information</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    {% if student.medical.conditions %}
-                    <p><strong>Medical Conditions:</strong> {{ student.medical.conditions }}</p>
-                    {% else %}
-                    <p class="text-muted">No medical conditions reported</p>
-                    {% endif %}
-                    
-                    {% if student.medical.insurance_company %}
-                    <p><strong>Insurance Company:</strong> {{ student.medical.insurance_company }}</p>
-                    {% endif %}
-                </div>
-                <div class="col-md-6">
-                    {% if student.medical.blood_type %}
-                    <p><strong>Blood Type:</strong> {{ student.medical.blood_type }}</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Activities and Work Experience -->
-    {% if student.activities.past_jobs or student.activities.summer_activities %}
-    <div class="card mb-4">
-        <div class="card-header bg-success text-white">
-            <h5 class="card-title mb-0">Activities & Work Experience</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    {% if student.activities.past_jobs %}
-                    <h6>Past Jobs</h6>
-                    <p>{{ student.activities.past_jobs }}</p>
-                    {% endif %}
-                </div>
-                <div class="col-md-6">
-                    {% if student.activities.summer_activities %}
-                    <h6>Summer Activities</h6>
-                    <p>{{ student.activities.summer_activities }}</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Dormitory & Meals Information -->
-    {% if student.dormitory_meals_option %}
-    <div class="card mb-4">
-        <div class="card-header bg-warning text-dark">
-            <h5 class="card-title mb-0">Dormitory & Meals</h5>
-        </div>
-        <div class="card-body">
-            <p><strong>Option Selected:</strong> {{ student.dormitory_meals_option }}</p>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Additional Information -->
-    {% if student.additional_info %}
-    <div class="card mb-4">
-        <div class="card-header bg-secondary text-white">
-            <h5 class="card-title mb-0">Additional Information</h5>
-        </div>
-        <div class="card-body">
-            <p>{{ student.additional_info }}</p>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- File Attachments -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="card-title mb-0">
-                <i class="fas fa-paperclip me-2"></i>File Attachments
-                {% if attachments %}
-                <span class="badge bg-light text-dark ms-2">{{ attachments|length }} files</span>
-                {% endif %}
-            </h5>
-        </div>
-        <div class="card-body">
-            {% if attachments %}
-            <div class="row">
-                {% for attachment in attachments %}
-                <div class="col-md-6 mb-3">
-                    <div class="border rounded p-3">
-                        <h6 class="mb-2">
-                            <i class="{{ attachment.file_type_icon }} text-primary me-2"></i>{{ attachment.display_name }}
-                        </h6>
-                        <div class="small text-muted mb-2">
-                            <strong>Original File:</strong> {{ attachment.original_filename }}<br>
-                            <strong>Size:</strong> {{ attachment.file_size_formatted }}<br>
-                            {% if attachment.mime_type %}
-                            <strong>Type:</strong> {{ attachment.mime_type }}<br>
-                            {% endif %}
-                            <strong>Status:</strong> 
-                            {% if attachment.download_status == 'downloaded' %}
-                            <span class="badge bg-success">Available</span>
-                            {% elif attachment.download_status == 'failed' %}
-                            <span class="badge bg-danger">Download Failed</span>
-                            {% else %}
-                            <span class="badge bg-warning">Pending Download</span>
-                            {% endif %}
+                <!-- Tuition & Contract Section -->
+                <div class="col-lg-6">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0"><i class="fas fa-calculator me-2"></i>Tuition Management</h5>
                         </div>
-                        
-                        <div class="btn-group btn-group-sm" role="group">
-                            {% if attachment.download_status == 'downloaded' and attachment.local_filename %}
-                                {% if attachment.is_viewable %}
-                                <a href="{{ url_for('files.view_attachment', filename=attachment.local_filename) }}"
-                                   class="btn btn-outline-primary btn-sm"
-                                   target="_blank"
-                                   title="View {{ attachment.original_filename }} in browser">
-                                    <i class="fas fa-eye"></i> View
-                                </a>
+                        <div class="card-body">
+                            <!-- Amounts -->
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Amount Can Pay</label>
+                                    <div class="fw-bold">${{ student.financial_aid.amount_can_pay }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Scholarship Requested</label>
+                                    <div class="fw-bold">${{ student.financial_aid.scholarship_requested }}</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tuition Determination -->
+                            <div class="mb-3">
+                                <label class="small text-muted fw-bold">Tuition Determination</label>
+                                <div>
+                                    {% if student.financial_aid.tuition_determination > 0 %}
+                                        <span class="badge bg-success fs-5">${{ "%.0f"|format(student.financial_aid.tuition_determination) }}</span>
+                                    {% else %}
+                                        <span class="text-muted">Not determined</span>
+                                    {% endif %}
+                                </div>
+                                {% if student.financial_aid.tuition_determination_notes %}
+                                <div class="small text-muted mt-1">{{ student.financial_aid.tuition_determination_notes }}</div>
                                 {% endif %}
-                                <a href="{{ url_for('files.serve_attachment', filename=attachment.local_filename) }}"
-                                   class="btn btn-outline-secondary btn-sm"
-                                   download="{{ attachment.original_filename }}"
-                                   title="Download {{ attachment.original_filename }}">
-                                    <i class="fas fa-download"></i> Download
-                                </a>
-                            {% elif attachment.original_url %}
-                                <!-- Show original URL as fallback when local file not available -->
-                                <a href="{{ attachment.original_url }}" 
-                                   class="btn btn-outline-primary btn-sm" 
-                                   target="_blank"
-                                   title="View {{ attachment.original_filename }} at original location">
-                                    <i class="fas fa-external-link-alt"></i> View Original
-                                </a>
-                                <a href="{{ attachment.original_url }}" 
-                                   class="btn btn-outline-secondary btn-sm" 
-                                   download="{{ attachment.original_filename }}"
-                                   title="Download {{ attachment.original_filename }} from original location">
-                                    <i class="fas fa-download"></i> Download
-                                </a>
-                            {% else %}
-                                <!-- No local file and no original URL -->
-                                <span class="btn btn-outline-secondary btn-sm disabled">
-                                    <i class="fas fa-exclamation-triangle"></i> File not available
-                                </span>
+                            </div>
+                            
+                            <!-- Quick Tuition History -->
+                            {% set tuition_history = student.get_tuition_history() %}
+                            {% if tuition_history %}
+                            <div class="mb-3">
+                                <label class="small text-muted fw-bold">Tuition History</label>
+                                <div>
+                                    {% for record in tuition_history[:3] %}
+                                        <span class="badge bg-{{ record.academic_year.status_color }} me-1">{{ record.academic_year.year_label }}</span>
+                                    {% endfor %}
+                                    {% if tuition_history|length > 3 %}
+                                        <span class="text-muted small">+{{ tuition_history|length - 3 }} more</span>
+                                    {% endif %}
+                                </div>
+                            </div>
                             {% endif %}
                         </div>
-                        
-                        {% if attachment.downloaded_at %}
-                        <div class="small text-muted mt-2">
-                            Downloaded: {{ attachment.downloaded_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                    </div>
+                    
+                    <!-- Contract Management -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="card-title mb-0"><i class="fas fa-file-contract me-2"></i>Contract Management</h5>
                         </div>
-                        {% endif %}
+                        <div class="card-body">
+                            <!-- Contract Status -->
+                            <div class="row mb-3">
+                                <div class="col-4 text-center">
+                                    <label class="small text-muted fw-bold d-block">Generated</label>
+                                    <span class="badge {% if student.financial_aid.tuition_contract_generated %}bg-success{% else %}bg-secondary{% endif %}" 
+                                          data-contract-generated="true">
+                                        {% if student.financial_aid.tuition_contract_generated %}Yes{% else %}No{% endif %}
+                                    </span>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <label class="small text-muted fw-bold d-block">Sent</label>
+                                    <span class="badge {% if student.financial_aid.tuition_contract_sent %}bg-success{% else %}bg-secondary{% endif %}" 
+                                          data-contract-sent="true">
+                                        {% if student.financial_aid.tuition_contract_sent %}Yes{% else %}No{% endif %}
+                                    </span>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <label class="small text-muted fw-bold d-block">Signed</label>
+                                    <span class="badge {% if student.financial_aid.tuition_contract_signed %}bg-success{% else %}bg-secondary{% endif %}" 
+                                          data-contract-signed="true">
+                                        {% if student.financial_aid.tuition_contract_signed %}Yes{% else %}No{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- OpenSign Status -->
+                            {% if student.financial_aid.opensign_document_id %}
+                            <div class="mb-3 text-center contract-status-section">
+                                <label class="small text-muted fw-bold d-block">E-Signature Status</label>
+                                <span id="opensign-status" class="badge 
+                                    {% if student.financial_aid.opensign_document_status == 'completed' %}bg-success
+                                    {% elif student.financial_aid.opensign_document_status == 'pending' %}bg-warning
+                                    {% elif student.financial_aid.opensign_document_status == 'declined' %}bg-danger
+                                    {% elif student.financial_aid.opensign_document_status == 'expired' %}bg-secondary
+                                    {% else %}bg-info{% endif %}">
+                                    {{ student.financial_aid.opensign_document_status|title if student.financial_aid.opensign_document_status else 'Unknown' }}
+                                </span>
+                                <div class="small text-muted">ID: {{ student.financial_aid.opensign_document_id[:20] }}...</div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Contract Actions -->
+                            <div class="d-flex gap-2 flex-wrap justify-content-center">
+                                {% if student.financial_aid.tuition_determination > 0 %}
+                                    {% if not student.financial_aid.tuition_contract_generated %}
+                                    <button class="btn btn-primary btn-sm" onclick="generateTuitionContract('{{ student.id }}')">
+                                        <i class="fas fa-file-signature"></i> Send for E-Signature
+                                    </button>
+                                    {% else %}
+                                        {% if student.financial_aid.tuition_contract_pdf_path %}
+                                        <button class="btn btn-outline-primary btn-sm" onclick="downloadTuitionContract('{{ student.id }}')">
+                                            <i class="fas fa-download"></i> Download PDF
+                                        </button>
+                                        {% endif %}
+                                        
+                                        {% if student.financial_aid.opensign_document_id %}
+                                            {% if student.financial_aid.opensign_document_status == 'pending' %}
+                                            <button class="btn btn-outline-warning btn-sm" onclick="resendOpenSignContract('{{ student.id }}')">
+                                                <i class="fas fa-redo"></i> Resend Request
+                                            </button>
+                                            {% endif %}
+                                            <button class="btn btn-outline-info btn-sm" onclick="checkOpenSignStatus('{{ student.id }}')">
+                                                <i class="fas fa-sync"></i> Check Status
+                                            </button>
+                                        {% endif %}
+                                    {% endif %}
+                                {% else %}
+                                <div class="text-muted small text-center">Set tuition amount to generate contract</div>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
-                {% endfor %}
             </div>
-            {% else %}
-            <p class="text-muted mb-0">No file attachments found.</p>
-            {% endif %}
         </div>
-    </div>
 
-    <!-- Application Reference -->
-    {% if student.application_id %}
-    <div class="card mb-4">
-        <div class="card-header bg-light text-dark">
-            <h5 class="card-title mb-0">Application Reference</h5>
+        <!-- Academic Tab -->
+        <div class="tab-pane fade" id="academic" role="tabpanel">
+            <div class="row">
+                <!-- Enrollment & Matriculation -->
+                <div class="col-lg-6">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0"><i class="fas fa-calendar-check me-2"></i>Enrollment Status</h5>
+                            <button class="btn btn-sm btn-light" onclick="showEnrollmentHistory('{{ student.id }}')">
+                                <i class="fas fa-history"></i> History
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="small text-muted fw-bold">Current Year Enrollment</label>
+                                    <div>
+                                        <span class="badge bg-{{ student.enrollment_status_color }} fs-6">
+                                            {{ student.enrollment_status_current_year or 'Not Set' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">College Program</label>
+                                    <div>
+                                        <span class="badge bg-{{ student.college_program_color }} fs-6">
+                                            {{ student.college_program_status or 'Not Set' }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Student Type</label>
+                                    <div>
+                                        <span class="badge bg-{{ student.student_type_color }} fs-6">
+                                            {{ student.student_type or 'Not Set' }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0"><i class="fas fa-graduation-cap me-2"></i>Matriculation Status</h5>
+                            <button class="btn btn-sm btn-light" onclick="editMatriculationInfo('{{ student.id }}')">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="small text-muted fw-bold">Current Status</label>
+                                <div>
+                                    <span class="badge bg-{{ student.matriculation_status_badge_color }} fs-6">
+                                        {{ student.computed_matriculation_status }}
+                                        {% if student.matriculation_override %}
+                                        <i class="fas fa-edit ms-1" title="Manual Override"></i>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                {% if student.matriculation_override %}
+                                <div class="alert alert-warning py-2 small mt-2">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Status has been manually overridden
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">High School Graduation</label>
+                                    <div>
+                                        {% if student.high_school_graduation_date %}
+                                        <span class="badge bg-success">{{ student.high_school_graduation_date.strftime('%B %Y') }}</span>
+                                        {% else %}
+                                        <span class="text-muted">Not specified</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Program Graduation</label>
+                                    <div>
+                                        {% if student.program_graduation_date %}
+                                        <span class="badge bg-success">{{ student.program_graduation_date.strftime('%B %Y') }}</span>
+                                        {% else %}
+                                        <span class="text-muted">Not graduated</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if student.matriculation_notes %}
+                            <div class="mt-3">
+                                <label class="small text-muted fw-bold">Notes</label>
+                                <div class="small">{{ student.matriculation_notes }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="small text-muted mt-3">
+                                <strong>Logic:</strong>
+                                <ul class="mb-0" style="padding-left: 1rem;">
+                                    <li><strong>Matriculating:</strong> Graduated HS + Not graduated program</li>
+                                    <li><strong>Non-Matriculating:</strong> Not graduated HS OR already graduated program</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Acceptance Email -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="card-title mb-0"><i class="fas fa-envelope me-2"></i>Acceptance Email</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="mb-2">
+                                        <span id="email-status" class="badge {% if student.acceptance_email_sent %}bg-success{% else %}bg-warning{% endif %} fs-6">
+                                            {% if student.acceptance_email_sent %}Sent{% else %}Not Sent{% endif %}
+                                        </span>
+                                    </div>
+                                    {% if student.acceptance_email_sent_date %}
+                                    <div class="small text-muted">
+                                        <strong>Sent:</strong> {{ student.acceptance_email_sent_date.strftime('%B %d, %Y at %I:%M %p') }}
+                                    </div>
+                                    {% endif %}
+                                    {% if student.acceptance_email_sent_by %}
+                                    <div class="small text-muted">
+                                        <strong>By:</strong> {{ student.acceptance_email_sent_by }}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-outline-primary btn-sm" onclick="previewAcceptanceEmail('{{ student.id }}')">
+                                        <i class="fas fa-eye"></i> Preview
+                                    </button>
+                                    <button class="btn btn-primary btn-sm" onclick="sendAcceptanceEmail('{{ student.id }}', {% if student.acceptance_email_sent %}true{% else %}false{% endif %})">
+                                        <i class="fas fa-paper-plane"></i> {% if student.acceptance_email_sent %}Resend{% else %}Send{% endif %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Education & Learning -->
+                <div class="col-lg-6">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-dark text-white">
+                            <h5 class="card-title mb-0"><i class="fas fa-school me-2"></i>Education Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="small text-muted fw-bold">High School</label>
+                                    <div>
+                                        {% if student.education.high_school_info %}
+                                        {{ student.education.high_school_info }}
+                                        {% else %}
+                                        <span class="text-muted">No high school information provided</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label class="small text-muted fw-bold">Seminary</label>
+                                    <div>
+                                        {% if student.education.seminary_info %}
+                                        {{ student.education.seminary_info }}
+                                        {% else %}
+                                        <span class="text-muted">No seminary information provided</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label class="small text-muted fw-bold">College</label>
+                                    <div>
+                                        {% if student.education.college_attending %}
+                                        <div><strong>Attending:</strong> {{ student.education.college_attending }}</div>
+                                        {% if student.education.college_name %}<div><strong>Name:</strong> {{ student.education.college_name }}</div>{% endif %}
+                                        {% if student.education.college_major %}<div><strong>Major:</strong> {{ student.education.college_major }}</div>{% endif %}
+                                        {% if student.education.college_expected_graduation %}<div><strong>Expected Graduation:</strong> {{ student.education.college_expected_graduation }}</div>{% endif %}
+                                        {% else %}
+                                        <span class="text-muted">No college information provided</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="card-title mb-0"><i class="fas fa-book me-2"></i>Learning Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="small text-muted fw-bold">Last Rebbe</label>
+                                    <div>
+                                        {% if student.learning.last_rebbe_name %}
+                                        <div><strong>Name:</strong> {{ student.learning.last_rebbe_name }}</div>
+                                        {% if student.learning.last_rebbe_phone %}<div><strong>Phone:</strong> {{ student.learning.last_rebbe_phone }}</div>{% endif %}
+                                        {% else %}
+                                        <span class="text-muted">No rebbe information provided</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                {% if student.learning.gemora_sedorim_daily_count %}
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Daily Gemora Sedorim</label>
+                                    <div>{{ student.learning.gemora_sedorim_daily_count }}</div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if student.learning.gemora_sedorim_length %}
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Sedorim Length</label>
+                                    <div>{{ student.learning.gemora_sedorim_length }}</div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if student.learning.learning_evaluation %}
+                                <div class="col-12">
+                                    <label class="small text-muted fw-bold">Learning Evaluation</label>
+                                    <div class="small">{{ student.learning.learning_evaluation }}</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Activities & Work -->
+                    {% if student.activities.past_jobs or student.activities.summer_activities %}
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="card-title mb-0"><i class="fas fa-briefcase me-2"></i>Activities & Work Experience</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if student.activities.past_jobs %}
+                            <div class="mb-3">
+                                <label class="small text-muted fw-bold">Past Jobs</label>
+                                <div class="small">{{ student.activities.past_jobs }}</div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if student.activities.summer_activities %}
+                            <div>
+                                <label class="small text-muted fw-bold">Summer Activities</label>
+                                <div class="small">{{ student.activities.summer_activities }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <p><strong>Original Application ID:</strong> {{ student.application_id }}</p>
+
+        <!-- Personal Tab -->
+        <div class="tab-pane fade" id="personal" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0"><i class="fas fa-id-card me-2"></i>Personal Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Full Name</label>
+                                    <div>{{ student.full_name }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Hebrew Name</label>
+                                    <div>{{ student.hebrew_name or 'Not provided' }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Informal Name</label>
+                                    <div>{{ student.informal_name or 'Not provided' }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Date of Birth</label>
+                                    <div>{{ student.date_of_birth }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">SSN</label>
+                                    <div>{{ student.ssn or 'Not provided' }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Citizenship</label>
+                                    <div>{{ student.citizenship }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="card-title mb-0"><i class="fas fa-map-marker-alt me-2"></i>Addresses</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="small text-muted fw-bold">Primary Address</label>
+                                <address class="mb-0">
+                                    {{ student.address.line1 }}<br>
+                                    {% if student.address.line2 %}{{ student.address.line2 }}<br>{% endif %}
+                                    {{ student.address.city }}, {{ student.address.state }} {{ student.address.zip }}<br>
+                                    {{ student.address.country }}
+                                </address>
+                            </div>
+                            
+                            {% if student.alt_address.line1 %}
+                            <div>
+                                <label class="small text-muted fw-bold">Alternative Address</label>
+                                <address class="mb-0">
+                                    {{ student.alt_address.line1 }}<br>
+                                    {% if student.alt_address.line2 %}{{ student.alt_address.line2 }}<br>{% endif %}
+                                    {{ student.alt_address.city }}, {{ student.alt_address.state }} {{ student.alt_address.zip }}<br>
+                                    {{ student.alt_address.country }}
+                                </address>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="card-title mb-0"><i class="fas fa-heartbeat me-2"></i>Medical Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="small text-muted fw-bold">Medical Conditions</label>
+                                    <div>
+                                        {% if student.medical.conditions %}
+                                        {{ student.medical.conditions }}
+                                        {% else %}
+                                        <span class="text-muted">No medical conditions reported</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Blood Type</label>
+                                    <div>{{ student.medical.blood_type or 'Not specified' }}</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Insurance Company</label>
+                                    <div>{{ student.medical.insurance_company or 'Not specified' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if student.dormitory_meals_option %}
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="card-title mb-0"><i class="fas fa-home me-2"></i>Dormitory & Meals</h5>
+                        </div>
+                        <div class="card-body">
+                            <label class="small text-muted fw-bold">Option Selected</label>
+                            <div>{{ student.dormitory_meals_option }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if student.additional_info %}
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2"></i>Additional Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="small">{{ student.additional_info }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Family Tab -->
+        <div class="tab-pane fade" id="family" role="tabpanel">
+            <div class="row">
+                <!-- Parents -->
+                <div class="col-lg-6">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="card-title mb-0"><i class="fas fa-users me-2"></i>Parents Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="small text-muted fw-bold">Father</label>
+                                    {% if student.parents.father.first_name or student.parents.father.last_name %}
+                                    <div class="mb-2"><strong>Name:</strong> {{ student.parents.father.title }} {{ student.parents.father.first_name }} {{ student.parents.father.last_name }}</div>
+                                    {% if student.parents.father.phone %}<div class="mb-2"><strong>Phone:</strong> {{ student.parents.father.phone }}</div>{% endif %}
+                                    {% if student.parents.father.email %}<div class="mb-2"><strong>Email:</strong> {{ student.parents.father.email }}</div>{% endif %}
+                                    {% if student.parents.father.occupation %}<div class="mb-2"><strong>Occupation:</strong> {{ student.parents.father.occupation }}</div>{% endif %}
+                                    {% else %}
+                                    <div class="text-muted">No father information provided</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small text-muted fw-bold">Mother</label>
+                                    {% if student.parents.mother.first_name or student.parents.mother.last_name %}
+                                    <div class="mb-2"><strong>Name:</strong> {{ student.parents.mother.title }} {{ student.parents.mother.first_name }} {{ student.parents.mother.last_name }}</div>
+                                    {% if student.parents.mother.phone %}<div class="mb-2"><strong>Phone:</strong> {{ student.parents.mother.phone }}</div>{% endif %}
+                                    {% if student.parents.mother.email %}<div class="mb-2"><strong>Email:</strong> {{ student.parents.mother.email }}</div>{% endif %}
+                                    {% if student.parents.mother.occupation %}<div class="mb-2"><strong>Occupation:</strong> {{ student.parents.mother.occupation }}</div>{% endif %}
+                                    {% else %}
+                                    <div class="text-muted">No mother information provided</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Spouse & In-Laws -->
+                <div class="col-lg-6">
+                    {% if student.marital_status == 'Married' and student.spouse %}
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="card-title mb-0"><i class="fas fa-heart me-2"></i>Spouse Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="small text-muted fw-bold">Name</label>
+                                    <div>{{ student.spouse.first_name }} {{ student.spouse.last_name }}</div>
+                                </div>
+                                {% if student.spouse.phone %}
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Phone</label>
+                                    <div>{{ student.spouse.phone }}</div>
+                                </div>
+                                {% endif %}
+                                {% if student.spouse.email %}
+                                <div class="col-6">
+                                    <label class="small text-muted fw-bold">Email</label>
+                                    <div>{{ student.spouse.email }}</div>
+                                </div>
+                                {% endif %}
+                                {% if student.spouse.occupation %}
+                                <div class="col-12">
+                                    <label class="small text-muted fw-bold">Occupation</label>
+                                    <div>{{ student.spouse.occupation }}</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if student.marital_status == 'Married' and (student.in_laws.first_name or student.in_laws.last_name) %}
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="card-title mb-0"><i class="fas fa-user-friends me-2"></i>In-Laws Information</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if student.in_laws.first_name or student.in_laws.last_name %}
+                            <div class="mb-2"><strong>Name:</strong> {{ student.in_laws.first_name }} {{ student.in_laws.last_name }}</div>
+                            {% if student.in_laws.phone %}<div class="mb-2"><strong>Phone:</strong> {{ student.in_laws.phone }}</div>{% endif %}
+                            {% if student.in_laws.email %}<div class="mb-2"><strong>Email:</strong> {{ student.in_laws.email }}</div>{% endif %}
+                            {% if student.in_laws.address.line1 %}
+                            <div><strong>Address:</strong> {{ student.in_laws.address.line1 }}, {{ student.in_laws.address.city }}, {{ student.in_laws.address.state }} {{ student.in_laws.address.zip }}</div>
+                            {% endif %}
+                            {% else %}
+                            <div class="text-muted">No in-laws information provided</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Grandparents -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="card-title mb-0"><i class="fas fa-users me-2"></i>Grandparents Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="small text-muted fw-bold">Paternal Grandparents</label>
+                                    {% if student.grandparents.paternal.name %}
+                                    <div class="mb-2"><strong>Name:</strong> {{ student.grandparents.paternal.name }}</div>
+                                    {% if student.grandparents.paternal.phone %}<div class="mb-2"><strong>Phone:</strong> {{ student.grandparents.paternal.phone }}</div>{% endif %}
+                                    {% if student.grandparents.paternal.email %}<div class="mb-2"><strong>Email:</strong> {{ student.grandparents.paternal.email }}</div>{% endif %}
+                                    {% if student.grandparents.paternal.address.line1 %}
+                                    <div><strong>Address:</strong> {{ student.grandparents.paternal.address.line1 }}, {{ student.grandparents.paternal.address.city }}, {{ student.grandparents.paternal.address.state }} {{ student.grandparents.paternal.address.zip }}</div>
+                                    {% endif %}
+                                    {% else %}
+                                    <div class="text-muted">No paternal grandparents information provided</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small text-muted fw-bold">Maternal Grandparents</label>
+                                    {% if student.grandparents.maternal.name %}
+                                    <div class="mb-2"><strong>Name:</strong> {{ student.grandparents.maternal.name }}</div>
+                                    {% if student.grandparents.maternal.phone %}<div class="mb-2"><strong>Phone:</strong> {{ student.grandparents.maternal.phone }}</div>{% endif %}
+                                    {% if student.grandparents.maternal.email %}<div class="mb-2"><strong>Email:</strong> {{ student.grandparents.maternal.email }}</div>{% endif %}
+                                    {% if student.grandparents.maternal.address.line1 %}
+                                    <div><strong>Address:</strong> {{ student.grandparents.maternal.address.line1 }}, {{ student.grandparents.maternal.address.city }}, {{ student.grandparents.maternal.address.state }} {{ student.grandparents.maternal.address.zip }}</div>
+                                    {% endif %}
+                                    {% else %}
+                                    <div class="text-muted">No maternal grandparents information provided</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Documents Tab -->
+        <div class="tab-pane fade" id="documents" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-paperclip me-2"></i>File Attachments
+                                {% if attachments %}
+                                <span class="badge bg-light text-dark ms-2">{{ attachments|length }} files</span>
+                                {% endif %}
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if attachments %}
+                            <div class="row">
+                                {% for attachment in attachments %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card border">
+                                        <div class="card-body p-3">
+                                            <h6 class="card-title mb-2">
+                                                <i class="{{ attachment.file_type_icon }} text-primary me-2"></i>
+                                                {{ attachment.display_name }}
+                                            </h6>
+                                            <div class="small text-muted mb-2">
+                                                <div><strong>File:</strong> {{ attachment.original_filename }}</div>
+                                                <div><strong>Size:</strong> {{ attachment.file_size_formatted }}</div>
+                                                {% if attachment.mime_type %}
+                                                <div><strong>Type:</strong> {{ attachment.mime_type }}</div>
+                                                {% endif %}
+                                                <div><strong>Status:</strong> 
+                                                {% if attachment.download_status == 'downloaded' %}
+                                                <span class="badge bg-success">Available</span>
+                                                {% elif attachment.download_status == 'failed' %}
+                                                <span class="badge bg-danger">Download Failed</span>
+                                                {% else %}
+                                                <span class="badge bg-warning">Pending Download</span>
+                                                {% endif %}
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="d-grid gap-2">
+                                                {% if attachment.download_status == 'downloaded' and attachment.local_filename %}
+                                                    {% if attachment.is_viewable %}
+                                                    <a href="{{ url_for('files.view_attachment', filename=attachment.local_filename) }}"
+                                                       class="btn btn-outline-primary btn-sm"
+                                                       target="_blank">
+                                                        <i class="fas fa-eye"></i> View
+                                                    </a>
+                                                    {% endif %}
+                                                    <a href="{{ url_for('files.serve_attachment', filename=attachment.local_filename) }}"
+                                                       class="btn btn-outline-secondary btn-sm"
+                                                       download="{{ attachment.original_filename }}">
+                                                        <i class="fas fa-download"></i> Download
+                                                    </a>
+                                                {% elif attachment.original_url %}
+                                                    <a href="{{ attachment.original_url }}" 
+                                                       class="btn btn-outline-primary btn-sm" 
+                                                       target="_blank">
+                                                        <i class="fas fa-external-link-alt"></i> View Original
+                                                    </a>
+                                                {% else %}
+                                                    <span class="btn btn-outline-secondary btn-sm disabled">
+                                                        <i class="fas fa-exclamation-triangle"></i> File not available
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            {% if attachment.downloaded_at %}
+                                            <div class="small text-muted mt-2">
+                                                Downloaded: {{ attachment.downloaded_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No documents found</h5>
+                                <p class="text-muted">No file attachments have been uploaded for this student.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if student.application_id %}
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0"><i class="fas fa-link me-2"></i>Application Reference</h5>
+                        </div>
+                        <div class="card-body">
+                            <label class="small text-muted fw-bold">Original Application ID</label>
+                            <div>{{ student.application_id }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
-    {% endif %}
 </div>
+
+<!-- Custom CSS for Timeline and Improved Styling -->
+<style>
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: -1.75rem;
+    top: 1.5rem;
+    width: 2px;
+    height: calc(100% + 0.5rem);
+    background-color: #dee2e6;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -2rem;
+    top: 0.25rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content {
+    margin-left: 0.5rem;
+}
+
+.badge.fs-5 {
+    font-size: 1rem !important;
+}
+
+.badge.fs-6 {
+    font-size: 0.875rem !important;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.nav-tabs .nav-link {
+    border-radius: 0.5rem 0.5rem 0 0;
+    border: none;
+    background-color: #f8f9fa;
+    color: #6c757d;
+    font-weight: 500;
+    margin-right: 0.25rem;
+}
+
+.nav-tabs .nav-link:hover {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: #fff;
+    color: #0d6efd;
+    border-bottom: 2px solid #0d6efd;
+}
+
+.tab-content {
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+    background-color: #fff;
+    padding: 1.5rem;
+    min-height: 400px;
+}
+
+@media (max-width: 768px) {
+    .nav-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .nav-tabs .nav-link {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .timeline {
+        padding-left: 1rem;
+    }
+    
+    .timeline-marker {
+        left: -1.25rem;
+    }
+    
+    .timeline-item:not(:last-child)::before {
+        left: -1.125rem;
+    }
+}
+</style>
 
 <!-- Email Preview Modal -->
 <div class="modal fade" id="emailPreviewModal" tabindex="-1" aria-labelledby="emailPreviewModalLabel" aria-hidden="true">
@@ -822,704 +1386,412 @@
     </div>
 </div>
 
+<!-- JavaScript for Enhanced Functionality -->
 <script>
-function deleteStudent(studentId) {
-    if (confirm('Are you sure you want to delete this student?')) {
-        fetch(`/api/students/${studentId}`, {
-            method: 'DELETE'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                window.location.href = '/students';
-            } else {
-                alert('Error deleting student');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error deleting student');
-        });
-    }
-}
+// Global variables
+let student_id = '{{ student.id }}';
+let contractStatusRefreshInterval;
 
-function previewAcceptanceEmail(studentId) {
-    // Show the modal
-    const modal = new bootstrap.Modal(document.getElementById('emailPreviewModal'));
-    modal.show();
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tabs
+    const tabList = [].slice.call(document.querySelectorAll('#studentTabs button'))
+    tabList.forEach(function (tabEl) {
+        new bootstrap.Tab(tabEl)
+    });
     
-    // Fetch the preview
-    fetch(`/api/students/${studentId}/preview-acceptance-email`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById('emailPreviewContent').innerHTML = data.preview;
-            } else {
-                document.getElementById('emailPreviewContent').innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle"></i> Error loading preview: ${data.message}
-                    </div>
-                `;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('emailPreviewContent').innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle"></i> Error loading preview
-                </div>
-            `;
-        });
-}
-
-function sendAcceptanceEmail(studentId, isResend) {
-    // Use the new email confirmation dialog
-    showEmailConfirmation({
-        studentId: studentId,
-        emailType: 'acceptance',
-        division: '{{ student.division }}',
-        onConfirm: function(data) {
-            // Show loading state
-            const button = event.target.closest('button');
-            const originalContent = button.innerHTML;
-            button.disabled = true;
-            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Sending...';
-            
-            fetch(`/students/api/${studentId}/send-acceptance-email`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    recipients: data.recipients
-                })
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    // Show success message with recipients
-                    alert(`Acceptance email sent successfully!\nRecipients: ${data.recipients.join(', ')}`);
-                    
-                    // Update the UI to reflect email sent status
-                    const emailStatus = document.getElementById('email-status');
-                    emailStatus.textContent = 'Sent';
-                    emailStatus.classList.remove('bg-warning');
-                    emailStatus.classList.add('bg-success');
-                    
-                    // Update button text
-                    button.innerHTML = '<i class="fas fa-paper-plane"></i> Resend Email';
-                    
-                    // Reload page to show updated timestamp and sent by info
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    alert(`Error sending email: ${result.error}`);
-                    // Restore button
-                    button.disabled = false;
-                    button.innerHTML = originalContent;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error sending email. Please check the console for details.');
-                // Restore button
-                button.disabled = false;
-                button.innerHTML = originalContent;
-            });
-        }
-    });
-}
-
-// Financial Management Functions
-function editFinancialInfo(studentId) {
-    window.location.href = `/students/${studentId}/financial`;
-}
-
-function sendFinancialAidApp(studentId) {
-    // Use email confirmation dialog for financial aid form
-    window.emailConfirmationDialog.show({
-        studentId: studentId,
-        emailType: 'financial_aid',
-        division: '{{ student.division }}',
-        onConfirm: (data) => {
-            // Send financial aid form with selected recipients
-            fetch(`/api/students/${studentId}/send-financial-aid-form`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    recipients: data.recipients
-                })
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    alert(`Financial aid form sent successfully!\nRecipients: ${data.recipients.join(', ')}`);
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    alert(`Error sending financial aid form: ${result.error}`);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error sending financial aid form. Please check the console for details.');
-            });
-        }
-    });
-}
-
-function resendFinancialAidApp(studentId) {
-    // Use email confirmation dialog for resending financial aid form
-    window.emailConfirmationDialog.show({
-        studentId: studentId,
-        emailType: 'financial_aid',
-        division: '{{ student.division }}',
-        onConfirm: (data) => {
-            // Resend financial aid form with selected recipients
-            fetch(`/api/students/${studentId}/resend-financial-aid-form`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    recipients: data.recipients
-                })
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    alert(`Financial aid form resent successfully!\nRecipients: ${data.recipients.join(', ')}`);
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    alert(`Error resending financial aid form: ${result.error}`);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error resending financial aid form. Please check the console for details.');
-            });
-        }
-    });
-}
-
-function markFinancialAidReceived(studentId) {
-    if (confirm('Mark financial aid application as received?')) {
-        updateFinancialStatus(studentId, 'mark_financial_aid_received');
-    }
-}
-
-function generateTuitionContract(studentId) {
-    // Use email confirmation dialog for tuition contract
-    window.emailConfirmationDialog.show({
-        studentId: studentId,
-        emailType: 'tuition_contract',
-        division: '{{ student.division }}',
-        onConfirm: (data) => {
-            const button = event.target;
-            const originalText = button.innerHTML;
-            button.disabled = true;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending for Signature...';
-            
-            // Send tuition contract with selected recipients
-            fetch(`/api/students/${studentId}/send-tuition-contract`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    recipients: data.recipients
-                })
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    if (result.fallback) {
-                        alert('Contract generated as PDF (OpenSign unavailable). Check your OpenSign API configuration.');
-                    } else {
-                        alert(`Tuition contract sent successfully!\nRecipients: ${data.recipients.join(', ')}\nDocument ID: ${result.document_id}`);
-                    }
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    alert(`Error sending tuition contract: ${result.error}`);
-                    button.innerHTML = originalText;
-                    button.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error sending tuition contract. Please check the console for details.');
-                button.innerHTML = originalText;
-                button.disabled = false;
-            });
-        }
-    });
-}
-
-function downloadTuitionContract(studentId) {
-    window.open(`/api/students/${studentId}/tuition-contract/download`, '_blank');
-}
-
-function sendTuitionContract(studentId) {
-    if (confirm('Send tuition contract to student?')) {
-        updateFinancialStatus(studentId, 'send_tuition_contract');
-    }
-}
-
-function resendTuitionContract(studentId) {
-    if (confirm('Resend tuition contract to student?')) {
-        updateFinancialStatus(studentId, 'resend_tuition_contract');
-    }
-}
-
-// OpenSign Integration Functions
-function checkOpenSignStatus(studentId) {
-    console.log('Checking OpenSign status for student:', studentId);
+    // Start contract status monitoring
+    startContractStatusRefresh();
     
-    const button = event.target;
-    const originalText = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
-    
-    fetch(`/api/financial/check-opensign-status`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ student_id: studentId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(`OpenSign Status: ${data.status}\n${data.message || ''}`);
-            // Refresh contract status immediately
+    // Handle tab change events
+    document.getElementById('studentTabs').addEventListener('shown.bs.tab', function (event) {
+        const activeTab = event.target.getAttribute('data-bs-target');
+        
+        // Specific actions when switching to Financial tab
+        if (activeTab === '#financial') {
             refreshContractStatus();
-        } else {
-            alert('Error checking OpenSign status: ' + (data.error || 'Unknown error'));
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error checking OpenSign status');
-    })
-    .finally(() => {
-        button.innerHTML = originalText;
-        button.disabled = false;
     });
+});
+
+// Contract Status Functions
+function startContractStatusRefresh() {
+    // Initial check
+    refreshContractStatus();
+    
+    // Set up periodic refresh every 60 seconds
+    contractStatusRefreshInterval = setInterval(refreshContractStatus, 60000);
 }
 
-function resendOpenSignContract(studentId) {
-    if (confirm('Resend signature request via OpenSign?')) {
-        const button = event.target;
-        const originalText = button.innerHTML;
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resending...';
-        
-        fetch(`/api/students/${studentId}/resend-contract`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Signature request resent successfully!');
-            } else {
-                alert('Error resending request: ' + (data.error || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error resending contract');
-        })
-        .finally(() => {
-            button.innerHTML = originalText;
-            button.disabled = false;
-        });
-    }
-}
-
-function updateFinancialStatus(studentId, action) {
-    const button = event.target;
-    const originalText = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-    
-    fetch(`/api/students/${studentId}/financial-action`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: action })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(data.message || 'Action completed successfully!');
-            location.reload();
-        } else {
-            alert('Error: ' + (data.error || 'Unknown error'));
-            button.innerHTML = originalText;
-            button.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error processing request');
-        button.innerHTML = originalText;
-        button.disabled = false;
-    });
-}
-
-// Matriculation Management Functions
-function editMatriculationInfo(studentId) {
-    // Create a modal for editing matriculation information
-    const modalHtml = `
-        <div class="modal fade" id="matriculationModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Edit Matriculation Information</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="matriculationForm">
-                            <div class="mb-3">
-                                <label for="matriculation_status" class="form-label">Matriculation Status</label>
-                                <select class="form-select" id="matriculation_status" name="matriculation_status">
-                                    <option value="Auto">Auto (Based on graduation dates)</option>
-                                    <option value="Matriculating">Matriculating (Override)</option>
-                                    <option value="Non-Matriculating">Non-Matriculating (Override)</option>
-                                </select>
-                                <div class="form-text">Choose 'Auto' to compute based on graduation dates, or manually override.</div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="high_school_graduation_date" class="form-label">High School Graduation Date</label>
-                                <input type="date" class="form-control" id="high_school_graduation_date" name="high_school_graduation_date">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="program_graduation_date" class="form-label">Program Graduation Date</label>
-                                <input type="date" class="form-control" id="program_graduation_date" name="program_graduation_date">
-                                <div class="form-text">Leave empty if not yet graduated from the program.</div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="matriculation_notes" class="form-label">Notes</label>
-                                <textarea class="form-control" id="matriculation_notes" name="matriculation_notes" rows="3" placeholder="Additional notes about matriculation status..."></textarea>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-info me-2" onclick="recomputeMatriculation('${studentId}')">Recompute Auto</button>
-                        <button type="button" class="btn btn-primary" onclick="saveMatriculationInfo('${studentId}')">Save Changes</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Remove existing modal if any
-    const existingModal = document.getElementById('matriculationModal');
-    if (existingModal) {
-        existingModal.remove();
-    }
-    
-    // Add modal to DOM
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
-    // Load current matriculation data
-    fetch(`/api/students/${studentId}/matriculation`)
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const info = data.matriculation_info;
-            
-            // Populate form
-            document.getElementById('matriculation_status').value = info.is_override ? 
-                info.status : 'Auto';
-            
-            if (info.high_school_graduation) {
-                document.getElementById('high_school_graduation_date').value = info.high_school_graduation;
-            }
-            
-            if (info.program_graduation) {
-                document.getElementById('program_graduation_date').value = info.program_graduation;
-            }
-            
-            document.getElementById('matriculation_notes').value = info.notes || '';
-        }
-        
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('matriculationModal'));
-        modal.show();
-    })
-    .catch(error => {
-        console.error('Error loading matriculation info:', error);
-        alert('Error loading matriculation information');
-    });
-}
-
-function saveMatriculationInfo(studentId) {
-    const form = document.getElementById('matriculationForm');
-    const formData = new FormData(form);
-    
-    const data = {
-        matriculation_status: formData.get('matriculation_status'),
-        high_school_graduation_date: formData.get('high_school_graduation_date'),
-        program_graduation_date: formData.get('program_graduation_date'),
-        matriculation_notes: formData.get('matriculation_notes')
-    };
-    
-    fetch(`/api/students/${studentId}/matriculation`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Matriculation information updated successfully!');
-            
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('matriculationModal'));
-            modal.hide();
-            
-            // Reload page to show updated information
-            location.reload();
-        } else {
-            alert('Error: ' + (data.error || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error updating matriculation information');
-    });
-}
-
-function recomputeMatriculation(studentId) {
-    if (confirm('This will reset any manual overrides and recompute matriculation status based on graduation dates. Continue?')) {
-        fetch(`/api/students/${studentId}/recompute-matriculation`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(`Matriculation status recomputed: ${data.new_status}`);
-                
-                // Close modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('matriculationModal'));
-                modal.hide();
-                
-                // Reload page
-                location.reload();
-            } else {
-                alert('Error: ' + (data.error || 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error recomputing matriculation status');
-        });
-    }
-}
-
-// Contract Status Management Functions
-async function checkContractStatus(studentId) {
+async function refreshContractStatus() {
     try {
         const response = await fetch('/api/financial/check-contract-status', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ student_id: student_id })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            updateContractStatusUI(data);
+        } else {
+            console.error('Failed to check contract status:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error checking contract status:', error);
+    }
+}
+
+function updateContractStatusUI(statusData) {
+    // Update contract status badges in overview
+    const contractStatusBadge = document.getElementById('contract-status-badge');
+    if (contractStatusBadge) {
+        if (statusData.contract_status === 'generated') {
+            contractStatusBadge.className = 'badge bg-success';
+            contractStatusBadge.textContent = 'Generated';
+        } else {
+            contractStatusBadge.className = 'badge bg-secondary';
+            contractStatusBadge.textContent = 'Not Generated';
+        }
+    }
+    
+    // Update detailed contract status in Financial tab
+    updateFinancialTabStatus(statusData);
+}
+
+function updateFinancialTabStatus(statusData) {
+    // Update contract generated status
+    const generatedBadge = document.querySelector('[data-contract-generated]');
+    if (generatedBadge) {
+        if (statusData.contract_status === 'generated') {
+            generatedBadge.className = 'badge bg-success';
+            generatedBadge.textContent = 'Yes';
+        }
+    }
+    
+    // Check for regeneration needs
+    if (statusData.needs_regeneration) {
+        showRegenerationAlert();
+    }
+}
+
+function showRegenerationAlert() {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-warning alert-dismissible fade show mt-3';
+    alertDiv.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        Contract may need regeneration due to recent changes.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const contractSection = document.querySelector('.contract-status-section');
+    if (contractSection && !contractSection.querySelector('.alert')) {
+        contractSection.appendChild(alertDiv);
+    }
+}
+
+// Student Action Functions
+async function sendAcceptanceEmail(studentId, isResend = false) {
+    const action = isResend ? 'resend' : 'send';
+    const confirmation = confirm(`Are you sure you want to ${action} the acceptance email?`);
+    
+    if (!confirmation) return;
+    
+    try {
+        showLoadingState('email-status', 'Sending...');
+        
+        const response = await fetch('/api/enrollment-emails/send-single', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                student_ids: [studentId],
+                email_type: 'acceptance'
+            })
+        });
+        
+        if (response.ok) {
+            showSuccessMessage(`Acceptance email ${action === 'resend' ? 'resent' : 'sent'} successfully!`);
+            
+            // Update email status badge
+            const emailBadge = document.getElementById('email-status');
+            if (emailBadge) {
+                emailBadge.className = 'badge bg-success fs-6';
+                emailBadge.textContent = 'Sent';
+            }
+            
+            // Refresh page data
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            const error = await response.json();
+            showErrorMessage(`Failed to ${action} email: ${error.message || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error('Error sending acceptance email:', error);
+        showErrorMessage(`Error sending email: ${error.message}`);
+    }
+}
+
+async function previewAcceptanceEmail(studentId) {
+    try {
+        const response = await fetch(`/api/email-templates/preview-acceptance/${studentId}`);
+        
+        if (response.ok) {
+            const htmlContent = await response.text();
+            document.getElementById('emailPreviewContent').innerHTML = htmlContent;
+            
+            const modal = new bootstrap.Modal(document.getElementById('emailPreviewModal'));
+            modal.show();
+        } else {
+            showErrorMessage('Failed to load email preview');
+        }
+    } catch (error) {
+        console.error('Error previewing email:', error);
+        showErrorMessage('Error loading email preview');
+    }
+}
+
+async function sendFinancialAidApp(studentId) {
+    const confirmation = confirm('Are you sure you want to send the financial aid application?');
+    if (!confirmation) return;
+    
+    try {
+        const response = await fetch(`/api/students/${studentId}/financial-aid/send-form`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+            showSuccessMessage('Financial aid application sent successfully!');
+            setTimeout(() => window.location.reload(), 2000);
+        } else {
+            const error = await response.json();
+            showErrorMessage(`Failed to send financial aid application: ${error.message}`);
+        }
+    } catch (error) {
+        console.error('Error sending financial aid app:', error);
+        showErrorMessage('Error sending financial aid application');
+    }
+}
+
+async function generateTuitionContract(studentId) {
+    const confirmation = confirm('Are you sure you want to send the tuition contract for e-signature?');
+    if (!confirmation) return;
+    
+    try {
+        showLoadingMessage('Generating and sending contract...');
+        
+        const response = await fetch('/api/financial/generate-enhanced-contract', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ student_id: studentId })
         });
         
-        if (!response.ok) {
-            throw new Error('Failed to check contract status');
+        if (response.ok) {
+            const result = await response.json();
+            showSuccessMessage('Contract sent for e-signature successfully!');
+            
+            // Refresh contract status
+            setTimeout(() => {
+                refreshContractStatus();
+                window.location.reload();
+            }, 2000);
+        } else {
+            const error = await response.json();
+            showErrorMessage(`Failed to generate contract: ${error.message || 'Unknown error'}`);
         }
-        
-        return await response.json();
     } catch (error) {
-        console.error('Error checking contract status:', error);
-        throw error;
+        console.error('Error generating contract:', error);
+        showErrorMessage('Error generating tuition contract');
     }
 }
 
-function updateContractStatusUI(contractStatus, contractData = {}) {
-    console.log('Updating contract status UI:', contractStatus, contractData);
-    
-    // Update Generated badge
-    const generatedBadge = document.querySelector('[data-contract-generated]');
-    if (generatedBadge) {
-        const isGenerated = ['Generated', 'Sent', 'Signed'].includes(contractStatus);
-        generatedBadge.className = `badge ${isGenerated ? 'bg-success' : 'bg-secondary'}`;
-        generatedBadge.textContent = isGenerated ? 'Yes' : 'No';
-    }
-    
-    // Update Sent badge
-    const sentBadge = document.querySelector('[data-contract-sent]');
-    if (sentBadge) {
-        const isSent = ['Sent', 'Signed'].includes(contractStatus);
-        sentBadge.className = `badge ${isSent ? 'bg-success' : 'bg-secondary'}`;
-        sentBadge.textContent = isSent ? 'Yes' : 'No';
-    }
-    
-    // Update Signed badge
-    const signedBadge = document.querySelector('[data-contract-signed]');
-    if (signedBadge) {
-        const isSigned = contractStatus === 'Signed';
-        signedBadge.className = `badge ${isSigned ? 'bg-success' : 'bg-secondary'}`;
-        signedBadge.textContent = isSigned ? 'Yes' : 'No';
-    }
-    
-    // Update OpenSign status if present
-    const opensignStatus = document.getElementById('opensign-status');
-    if (opensignStatus && contractData.opensign_status) {
-        let badgeClass = 'bg-info';
-        switch(contractData.opensign_status) {
-            case 'completed': badgeClass = 'bg-success'; break;
-            case 'pending': badgeClass = 'bg-warning'; break;
-            case 'declined': badgeClass = 'bg-danger'; break;
-            case 'expired': badgeClass = 'bg-secondary'; break;
-        }
-        opensignStatus.className = `badge ${badgeClass}`;
-        opensignStatus.textContent = contractData.opensign_status ? contractData.opensign_status.charAt(0).toUpperCase() + contractData.opensign_status.slice(1) : 'Unknown';
-    }
-    
-    // Show/hide View Signed Contract button
-    updateViewSignedContractButton(contractStatus, contractData);
-}
-
-function updateViewSignedContractButton(contractStatus, contractData) {
-    const studentId = '{{ student.id }}';
-    
-    // Remove existing view signed contract buttons
-    const existingButtons = document.querySelectorAll('[data-view-signed-contract]');
-    existingButtons.forEach(btn => btn.remove());
-    
-    // Show View Signed Contract button if contract is signed
-    if (contractStatus === 'Signed') {
-        const contractSection = document.querySelector('.contract-status-section');
-        if (!contractSection) return;
-        
-        let buttonContainer = contractSection.querySelector('.view-signed-container');
-        if (!buttonContainer) {
-            buttonContainer = document.createElement('div');
-            buttonContainer.className = 'row mt-2 view-signed-container';
-            contractSection.appendChild(buttonContainer);
-        }
-        
-        let buttonHtml = '';
-        
-        // Digital signature - OpenSign URL
-        if (contractData.opensign_signed_url) {
-            buttonHtml += `
-                <div class="col-md-12">
-                    <a href="${contractData.opensign_signed_url}" target="_blank" class="btn btn-sm btn-success me-2" data-view-signed-contract>
-                        <i class="fas fa-file-signature"></i> View Signed Contract (Digital)
-                    </a>
-                    ${contractData.opensign_certificate_url ? `
-                        <a href="${contractData.opensign_certificate_url}" target="_blank" class="btn btn-sm btn-info me-2">
-                            <i class="fas fa-certificate"></i> View Certificate
-                        </a>
-                    ` : ''}
-                </div>
-            `;
-        }
-        
-        // Print upload - Uploaded contract
-        if (contractData.uploaded_contract_id) {
-            buttonHtml += `
-                <div class="col-md-12 mt-2">
-                    <div class="alert alert-success py-2">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong><i class="fas fa-check-circle"></i> Contract Received via Upload</strong>
-                                <div class="small text-muted">
-                                    ${contractData.uploaded_contract_date ? 'Uploaded: ' + contractData.uploaded_contract_date : ''}
-                                    ${contractData.uploaded_contract_filename ? '<br>File: ' + contractData.uploaded_contract_filename : ''}
-                                </div>
-                            </div>
-                            <div>
-                                <a href="/students/${studentId}/view-uploaded-contract" 
-                                   target="_blank" class="btn btn-sm btn-success" data-view-signed-contract>
-                                    <i class="fas fa-file-pdf"></i> View Signed Contract (Upload)
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-        
-        if (buttonHtml) {
-            buttonContainer.innerHTML = buttonHtml;
-        }
+async function downloadTuitionContract(studentId) {
+    try {
+        window.open(`/api/students/${studentId}/tuition-contract/download`, '_blank');
+    } catch (error) {
+        console.error('Error downloading contract:', error);
+        showErrorMessage('Error downloading contract');
     }
 }
 
-// Initialize contract status checking on page load
-document.addEventListener('DOMContentLoaded', function() {
-    const studentId = '{{ student.id }}';
-    
-    // Add data attributes to badges for easier updating
-    const contractRows = document.querySelectorAll('.col-4');
-    contractRows.forEach(col => {
-        const label = col.querySelector('strong');
-        const badge = col.querySelector('span.badge');
-        if (label && badge) {
-            if (label.textContent.includes('Generated')) {
-                badge.setAttribute('data-contract-generated', 'true');
-            } else if (label.textContent.includes('Sent')) {
-                badge.setAttribute('data-contract-sent', 'true');
-            } else if (label.textContent.includes('Signed')) {
-                badge.setAttribute('data-contract-signed', 'true');
+async function checkOpenSignStatus(studentId) {
+    try {
+        const response = await fetch(`/api/students/${studentId}/opensign-status`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Update OpenSign status badge
+            const statusBadge = document.getElementById('opensign-status');
+            if (statusBadge && data.status) {
+                statusBadge.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+                
+                // Update badge color based on status
+                statusBadge.className = 'badge ';
+                switch(data.status.toLowerCase()) {
+                    case 'completed':
+                        statusBadge.className += 'bg-success';
+                        break;
+                    case 'pending':
+                        statusBadge.className += 'bg-warning';
+                        break;
+                    case 'declined':
+                        statusBadge.className += 'bg-danger';
+                        break;
+                    case 'expired':
+                        statusBadge.className += 'bg-secondary';
+                        break;
+                    default:
+                        statusBadge.className += 'bg-info';
+                }
             }
+            
+            showInfoMessage(`OpenSign status: ${data.status || 'Unknown'}`);
+        } else {
+            showErrorMessage('Failed to check OpenSign status');
         }
+    } catch (error) {
+        console.error('Error checking OpenSign status:', error);
+        showErrorMessage('Error checking contract status');
+    }
+}
+
+// Navigation Functions
+function editFinancialInfo(studentId) {
+    window.location.href = `/financial/financial_core/student_financial/${studentId}`;
+}
+
+function editMatriculationInfo(studentId) {
+    window.location.href = `/students/${studentId}/edit#matriculation`;
+}
+
+function showEnrollmentHistory(studentId) {
+    window.location.href = `/api/academic-year-transition/student/${studentId}/history`;
+}
+
+function deleteStudent(studentId) {
+    const confirmation = confirm('Are you sure you want to delete this student? This action cannot be undone.');
+    if (!confirmation) return;
+    
+    const secondConfirmation = confirm('This will permanently delete the student and all associated data. Type "DELETE" to confirm.');
+    if (!secondConfirmation) return;
+    
+    // Additional confirmation by prompting for text input
+    const finalConfirmation = prompt('Type "DELETE" to confirm deletion:');
+    if (finalConfirmation !== 'DELETE') {
+        showInfoMessage('Deletion cancelled.');
+        return;
+    }
+    
+    window.location.href = `/students/${studentId}/delete`;
+}
+
+// UI Helper Functions
+function showLoadingState(elementId, message) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${message}`;
+    }
+}
+
+function showSuccessMessage(message) {
+    showToast(message, 'success');
+}
+
+function showErrorMessage(message) {
+    showToast(message, 'danger');
+}
+
+function showInfoMessage(message) {
+    showToast(message, 'info');
+}
+
+function showLoadingMessage(message) {
+    showToast(message, 'warning');
+}
+
+function showToast(message, type = 'info') {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast element
+    const toastId = 'toast-' + Date.now();
+    const toastHtml = `
+        <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-${type} text-white">
+                <i class="fas fa-${getIconForType(type)} me-2"></i>
+                <strong class="me-auto">${getTitleForType(type)}</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">${message}</div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    // Initialize and show toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: type !== 'danger', // Keep error messages visible
+        delay: type === 'success' ? 3000 : 5000
     });
     
-    // Add contract status section class for easier targeting
-    const contractHeaders = document.querySelectorAll('h6');
-    contractHeaders.forEach(header => {
-        if (header.textContent.includes('Tuition Contract')) {
-            header.closest('div').classList.add('contract-status-section');
-        }
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        toastElement.remove();
     });
-    
-    // Check contract status immediately
-    refreshContractStatus();
-    
-    // Set up periodic refresh every 30 seconds
-    setInterval(refreshContractStatus, 30000);
+}
+
+function getIconForType(type) {
+    const icons = {
+        'success': 'check-circle',
+        'danger': 'exclamation-triangle',
+        'warning': 'spinner',
+        'info': 'info-circle'
+    };
+    return icons[type] || 'info-circle';
+}
+
+function getTitleForType(type) {
+    const titles = {
+        'success': 'Success',
+        'danger': 'Error',
+        'warning': 'Processing',
+        'info': 'Information'
+    };
+    return titles[type] || 'Notification';
+}
+
+// Cleanup function for when leaving the page
+window.addEventListener('beforeunload', function() {
+    if (contractStatusRefreshInterval) {
+        clearInterval(contractStatusRefreshInterval);
+    }
 });
 
-async function refreshContractStatus() {
-    const studentId = '{{ student.id }}';
-    try {
-        const result = await checkContractStatus(studentId);
-        if (result && result.contract_status) {
-            console.log('Contract status updated:', result.contract_status);
-            updateContractStatusUI(result.contract_status, result);
-        }
-    } catch (error) {
-        console.error('Error refreshing contract status:', error);
+// Tab persistence
+if (window.location.hash) {
+    const hash = window.location.hash;
+    const targetTab = document.querySelector(`button[data-bs-target="${hash}"]`);
+    if (targetTab) {
+        const tab = new bootstrap.Tab(targetTab);
+        tab.show();
     }
 }
+
+// Update URL hash when tab changes
+document.getElementById('studentTabs').addEventListener('shown.bs.tab', function (event) {
+    const targetTab = event.target.getAttribute('data-bs-target');
+    history.replaceState(null, null, targetTab);
+});
 </script>
-{% endblock %} 
+
+{% endblock %}

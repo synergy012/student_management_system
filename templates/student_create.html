@@ -8,7 +8,7 @@
         <div class="col">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="/students">Students</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('students.view_students') }}">Students</a></li>
                     <li class="breadcrumb-item active">Create New Student</li>
                 </ol>
             </nav>
@@ -603,7 +603,7 @@
 
                 <!-- Form Actions -->
                 <div class="d-flex justify-content-between">
-                    <a href="/students" class="btn btn-secondary">Cancel</a>
+                    <a href="{{ url_for('students.view_students') }}" class="btn btn-secondary">Cancel</a>
                     <button type="submit" class="btn btn-primary">Create Student</button>
                 </div>
             </form>
