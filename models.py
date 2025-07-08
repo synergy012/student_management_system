@@ -616,6 +616,21 @@ class Student(db.Model):
     status = db.Column(db.String(20), default='Active')  # Active, Inactive, Graduated, Withdrawn
     division = db.Column(db.String(10), default='YZA')  # YZA or YOH
     
+    # Enhanced Enrollment Workflow - NEW FIELDS
+    enrollment_status_current_year = db.Column(db.String(20), default='Enrolled')  # 'Pending', 'Enrolled', 'Withdrawn'
+    college_program_status = db.Column(db.String(20), default='Ineligible')  # 'Ineligible', 'Enrolled', 'Graduated'
+    
+    # Semester-Based College Program Levels (0 = not enrolled that semester, 1-5 = levels)
+    college_program_fall_level = db.Column(db.Integer, default=0)  # Fall semester level
+    college_program_spring_level = db.Column(db.Integer, default=0)  # Spring semester level
+    current_semester = db.Column(db.String(10), default='Fall')  # 'Fall' or 'Spring'
+    
+    # Legacy field for backward compatibility
+    college_program_level = db.Column(db.Integer, default=1)  # Computed from semester levels
+    
+    student_type = db.Column(db.String(20), default='Current')  # 'Current', 'Alumnus', 'Prospective'
+    last_enrollment_year_id = db.Column(db.Integer, db.ForeignKey('academic_years.id'))  # Track last enrolled year
+    
     # Application-specific fields (copied from original application)
     student_id = db.Column(db.String(36))  # UUID from original application
     submitted_date = db.Column(db.DateTime)  # When the original application was submitted
@@ -829,6 +844,167 @@ class Student(db.Model):
             'Withdrawn': 'danger'
         }
         return status_colors.get(self.status, 'secondary')
+    
+    @property
+    def enrollment_status_color(self):
+        """Return Bootstrap color class for enrollment status"""
+        enrollment_colors = {
+            'Enrolled': 'success',
+            'Pending': 'warning',
+            'Withdrawn': 'danger'
+        }
+        return enrollment_colors.get(self.enrollment_status_current_year, 'secondary')
+    
+    @property
+    def college_program_status_color(self):
+        """Return Bootstrap color class for college program status"""
+        college_colors = {
+            'Enrolled': 'success',
+            'Graduated': 'info',
+            'Ineligible': 'secondary'
+        }
+        return college_colors.get(self.college_program_status, 'secondary')
+    
+    @property
+    def full_name(self):
+        """Return the student's full name"""
+        if self.student_name:
+            return self.student_name
+        
+        # Construct from individual name parts
+        name_parts = []
+        if self.student_first_name:
+            name_parts.append(self.student_first_name)
+        if self.student_middle_name:
+            name_parts.append(self.student_middle_name)
+        if self.student_last_name:
+            name_parts.append(self.student_last_name)
+        
+        return ' '.join(name_parts).strip() if name_parts else 'Unknown Student'
+    
+    @property
+    def college_program_level_display(self):
+        """Return formatted college program level with semester info"""
+        if self.college_program_status == 'Ineligible':
+            return 'N/A'
+        elif self.college_program_status == 'Graduated':
+            return 'Graduated'
+        else:
+            fall_level = self.college_program_fall_level or 0
+            spring_level = self.college_program_spring_level or 0
+            if fall_level == 0 and spring_level == 0:
+                return 'Not Enrolled'
+            elif fall_level == 0:
+                return f'Spring Level {spring_level}/5'
+            elif spring_level == 0:
+                return f'Fall Level {fall_level}/5'
+            else:
+                return f'Fall {fall_level}/5, Spring {spring_level}/5'
+    
+    @property
+    def current_semester_level(self):
+        """Get the level for the current semester"""
+        if self.current_semester == 'Fall':
+            return self.college_program_fall_level or 0
+        else:
+            return self.college_program_spring_level or 0
+    
+    @property
+    def can_advance_college_level(self):
+        """Check if student can advance to next college level"""
+        if self.college_program_status != 'Enrolled':
+            return False
+        
+        current_level = self.current_semester_level
+        return current_level < 5
+    
+    @property
+    def should_graduate_college(self):
+        """Check if student should graduate from college program (both semesters at level 5)"""
+        return (self.college_program_status == 'Enrolled' and 
+                self.college_program_fall_level >= 5 and 
+                self.college_program_spring_level >= 5)
+    
+    @property
+    def computed_college_program_level(self):
+        """Compute overall level based on semester levels (for backward compatibility)"""
+        fall_level = self.college_program_fall_level or 0
+        spring_level = self.college_program_spring_level or 0
+        
+        if fall_level == 0 and spring_level == 0:
+            return 0
+        elif fall_level == 0:
+            return spring_level
+        elif spring_level == 0:
+            return fall_level
+        else:
+            # Both semesters enrolled - return the lower level (incomplete level)
+            return min(fall_level, spring_level)
+    
+    def advance_college_program_level(self, semester: str = None):
+        """Advance student to next college program level for specified semester"""
+        if self.college_program_status != 'Enrolled':
+            return False
+        
+        # Use specified semester or current semester
+        target_semester = semester or self.current_semester
+        
+        if target_semester == 'Fall':
+            if self.college_program_fall_level < 5:
+                self.college_program_fall_level += 1
+                advanced = True
+            else:
+                advanced = False
+        else:  # Spring
+            if self.college_program_spring_level < 5:
+                self.college_program_spring_level += 1
+                advanced = True
+            else:
+                advanced = False
+        
+        # Update legacy field
+        self.college_program_level = self.computed_college_program_level
+        
+        # Check if should graduate (both semesters at level 5)
+        if self.should_graduate_college:
+            self.college_program_status = 'Graduated'
+        
+        return advanced
+    
+    def get_previous_semester_level(self, semester: str, previous_student_data: dict):
+        """Get student's level for specified semester from previous year"""
+        if semester == 'Fall':
+            return previous_student_data.get('college_program_fall_level', 0)
+        else:
+            return previous_student_data.get('college_program_spring_level', 0)
+    
+    def set_semester_level_from_previous_year(self, semester: str, previous_level: int):
+        """Set semester level based on advancement from previous year"""
+        # Advance from previous level (minimum level 1 if they're enrolling)
+        new_level = max(1, previous_level + 1) if previous_level > 0 else 1
+        
+        if semester == 'Fall':
+            self.college_program_fall_level = min(new_level, 5)  # Cap at level 5
+        else:  # Spring
+            self.college_program_spring_level = min(new_level, 5)  # Cap at level 5
+        
+        # Update legacy field
+        self.college_program_level = self.computed_college_program_level
+        
+        # Update current semester
+        self.current_semester = semester
+        
+        return new_level
+    
+    @property
+    def student_type_color(self):
+        """Return Bootstrap color class for student type"""
+        type_colors = {
+            'Current': 'success',
+            'Alumnus': 'info',
+            'Prospective': 'warning'
+        }
+        return type_colors.get(self.student_type, 'secondary')
     
     @property
     def division_color(self):
@@ -1340,6 +1516,115 @@ class Student(db.Model):
         
         db.session.commit()
 
+class StudentEnrollmentHistory(db.Model):
+    """Track complete history of enrollment decisions for students across academic years"""
+    __tablename__ = 'student_enrollment_history'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.String(36), db.ForeignKey('students.id'), nullable=False)
+    academic_year_id = db.Column(db.Integer, db.ForeignKey('academic_years.id'), nullable=False)
+    
+    # Enrollment decision
+    enrollment_status = db.Column(db.String(20), nullable=False)  # 'Pending', 'Enrolled', 'Withdrawn'
+    previous_status = db.Column(db.String(20))  # What the status was before this change
+    decision_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    effective_date = db.Column(db.Date)  # When the enrollment status becomes effective
+    
+    # Decision details
+    decision_reason = db.Column(db.String(500))  # Reason for the enrollment decision
+    decision_notes = db.Column(db.Text)  # Additional notes about the decision
+    decision_made_by = db.Column(db.String(100), nullable=False)  # Username who made the decision
+    
+    # Additional status tracking
+    college_program_status_at_time = db.Column(db.String(20))  # College program status when this decision was made
+    student_type_at_time = db.Column(db.String(20))  # Student type when this decision was made
+    
+    # Administrative tracking
+    is_automatic = db.Column(db.Boolean, default=False)  # Whether this was an automatic status change
+    system_generated = db.Column(db.Boolean, default=False)  # Whether generated by system (e.g., year-end transition)
+    batch_operation_id = db.Column(db.String(36))  # If part of a batch operation, reference ID
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    student = db.relationship('Student', backref='enrollment_history')
+    academic_year = db.relationship('AcademicYear', backref='enrollment_decisions')
+    
+    def __repr__(self):
+        return f'<StudentEnrollmentHistory {self.student.student_name if self.student else "Unknown"} - {self.academic_year.year_label if self.academic_year else "Unknown"}: {self.enrollment_status}>'
+    
+    @property
+    def status_color(self):
+        """Return Bootstrap color class for enrollment status"""
+        colors = {
+            'Enrolled': 'success',
+            'Pending': 'warning',
+            'Withdrawn': 'danger'
+        }
+        return colors.get(self.enrollment_status, 'secondary')
+    
+    @property
+    def decision_type(self):
+        """Return user-friendly decision type"""
+        if self.is_automatic:
+            return 'Automatic'
+        elif self.system_generated:
+            return 'System Generated'
+        else:
+            return 'Manual Decision'
+    
+    @classmethod
+    def create_enrollment_decision(cls, student_id, academic_year_id, enrollment_status, 
+                                 decision_made_by, decision_reason=None, decision_notes=None,
+                                 effective_date=None, is_automatic=False, batch_operation_id=None):
+        """Create a new enrollment decision record"""
+        # Get current status for tracking
+        student = Student.query.get(student_id)
+        previous_status = student.enrollment_status_current_year if student else None
+        
+        history_record = cls(
+            student_id=student_id,
+            academic_year_id=academic_year_id,
+            enrollment_status=enrollment_status,
+            previous_status=previous_status,
+            decision_made_by=decision_made_by,
+            decision_reason=decision_reason,
+            decision_notes=decision_notes,
+            effective_date=effective_date or datetime.now().date(),
+            is_automatic=is_automatic,
+            batch_operation_id=batch_operation_id,
+            college_program_status_at_time=student.college_program_status if student else None,
+            student_type_at_time=student.student_type if student else None
+        )
+        
+        db.session.add(history_record)
+        return history_record
+    
+    @classmethod
+    def get_student_enrollment_timeline(cls, student_id):
+        """Get complete enrollment timeline for a student"""
+        return cls.query.filter_by(student_id=student_id)\
+                      .join(AcademicYear)\
+                      .order_by(AcademicYear.start_date.desc())\
+                      .all()
+    
+    @classmethod
+    def get_year_end_transition_summary(cls, academic_year_id):
+        """Get summary of enrollment decisions for year-end transition"""
+        decisions = cls.query.filter_by(academic_year_id=academic_year_id).all()
+        
+        summary = {
+            'total_decisions': len(decisions),
+            'enrolled': len([d for d in decisions if d.enrollment_status == 'Enrolled']),
+            'withdrawn': len([d for d in decisions if d.enrollment_status == 'Withdrawn']),
+            'pending': len([d for d in decisions if d.enrollment_status == 'Pending']),
+            'automatic': len([d for d in decisions if d.is_automatic]),
+            'manual': len([d for d in decisions if not d.is_automatic])
+        }
+        
+        return summary
+
 class DivisionConfig(db.Model):
     """Configuration for each division's requirements"""
     __tablename__ = 'division_configs'
@@ -1588,6 +1873,12 @@ class TuitionRecord(db.Model):
     dropbox_sign_signed_url = db.Column(db.String(500))
     dropbox_sign_files_url = db.Column(db.String(500))
     dropbox_sign_template_id = db.Column(db.String(100))
+    
+    # OpenSign fields for contract management
+    opensign_document_id = db.Column(db.String(100))
+    opensign_document_status = db.Column(db.String(20))  # 'pending', 'completed', 'declined', 'expired'
+    opensign_signed_url = db.Column(db.String(500))
+    opensign_certificate_url = db.Column(db.String(500))
     
     # Matriculation Status
     matriculation_status = db.Column(db.String(20), default='Auto')  # 'Matriculating', 'Non-Matriculating', 'Auto'
@@ -4460,6 +4751,40 @@ class SecureFormLink(db.Model):
         return link
 
 
+class SecureFormToken(db.Model):
+    """Secure tokens for various form responses and secure links"""
+    __tablename__ = 'secure_form_tokens'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(64), unique=True, nullable=False)
+    form_type = db.Column(db.String(50), nullable=False)  # 'enrollment_decision', 'survey_response', etc.
+    expires_at = db.Column(db.DateTime, nullable=False)
+    
+    # Usage tracking
+    is_used = db.Column(db.Boolean, default=False)
+    used_at = db.Column(db.DateTime)
+    
+    # Metadata stored as JSON
+    token_metadata = db.Column(db.JSON)
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<SecureFormToken {self.token} - {self.form_type}>'
+    
+    @property
+    def is_expired(self):
+        """Check if token has expired"""
+        return datetime.utcnow() > self.expires_at
+    
+    @property
+    def is_valid(self):
+        """Check if token is valid and usable"""
+        return not self.is_used and not self.is_expired
+
+
 class FormUploadLog(db.Model):
     """Log of all form uploads for audit trail"""
     __tablename__ = 'form_upload_logs'
@@ -5063,7 +5388,7 @@ class StudentYearlyTracking(db.Model):
     tuition_components_summary = db.Column(db.JSON)  # Summary of components for this year
     
     # Status information
-    enrollment_status = db.Column(db.String(20), default='Enrolled')  # 'Enrolled', 'Withdrawn', 'Graduated'
+    enrollment_status = db.Column(db.String(20), default='Enrolled')  # 'Enrolled', 'Withdrawn'
     withdrawal_date = db.Column(db.Date)  # If student withdrew during the year
     withdrawal_reason = db.Column(db.String(200))  # Reason for withdrawal
     
