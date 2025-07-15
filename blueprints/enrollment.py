@@ -9,11 +9,17 @@ from datetime import datetime
 
 enrollment = Blueprint('enrollment', __name__)
 
+@enrollment.route('/enrollment-test')
+@login_required
+def enrollment_test():
+    """Test route"""
+    return "Enrollment test route works!"
+
 @enrollment.route('/enrollment')
 @login_required
-@permission_required('manage_users')
+@permission_required('view_students')
 def enrollment_dashboard():
-    """Main enrollment communications dashboard"""
+    """Main enrollment management dashboard"""
     try:
         # Get current academic year for default selections
         current_year = AcademicYear.query.filter_by(is_active=True).first()
@@ -25,13 +31,14 @@ def enrollment_dashboard():
                              current_year=current_year,
                              all_years=all_years)
     except Exception as e:
+        import traceback
         current_app.logger.error(f"Error loading enrollment dashboard: {str(e)}")
-        flash(f'Error loading enrollment dashboard: {str(e)}', 'error')
-        return redirect(url_for('core.index'))
+        current_app.logger.error(f"Traceback: {traceback.format_exc()}")
+        return f"Error loading enrollment dashboard: {str(e)}<br><pre>{traceback.format_exc()}</pre>"
 
 @enrollment.route('/api/enrollment-emails/statistics')
 @login_required  
-@permission_required('manage_users')
+@permission_required('view_students')
 def get_enrollment_email_statistics():
     """Get enrollment email statistics"""
     try:
@@ -68,7 +75,7 @@ def get_enrollment_email_statistics():
 
 @enrollment.route('/api/enrollment-emails/students-pending')
 @login_required
-@permission_required('manage_users') 
+@permission_required('view_students') 
 def get_students_pending_emails():
     """Get students who are pending enrollment emails"""
     try:
@@ -100,6 +107,191 @@ def get_students_pending_emails():
         
     except Exception as e:
         current_app.logger.error(f"Error getting students pending emails: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@enrollment.route('/api/enrollment/students-by-year')
+@login_required
+@permission_required('view_students')
+def get_students_by_academic_year():
+    """Get students for a specific academic year with enrollment status"""
+    try:
+        academic_year_id = request.args.get('academic_year_id', type=int)
+        division_filter = request.args.get('division')
+        status_filter = request.args.get('status')
+        
+        if not academic_year_id:
+            return jsonify({'success': False, 'error': 'Academic year ID is required'}), 400
+        
+        # Build query
+        query = Student.query.filter_by(last_enrollment_year_id=academic_year_id)
+        
+        if division_filter:
+            query = query.filter_by(division=division_filter)
+        
+        if status_filter:
+            query = query.filter_by(enrollment_status_current_year=status_filter)
+        
+        students = query.all()
+        
+        student_list = []
+        for student in students:
+            # Check if student has active enrollment token
+            active_token = SecureFormToken.query.filter_by(
+                form_type='enrollment_response',
+                is_used=False
+            ).filter(
+                SecureFormToken.token_metadata.op('->>')('student_id') == str(student.id),
+                SecureFormToken.expires_at > datetime.utcnow()
+            ).first()
+            
+            student_list.append({
+                'id': student.id,
+                'student_name': student.student_name,
+                'division': student.division,
+                'email': student.email,
+                'enrollment_status': student.enrollment_status_current_year,
+                'has_active_token': active_token is not None,
+                'token_expires': active_token.expires_at.isoformat() if active_token else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'students': student_list,
+            'total_count': len(student_list)
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting students by academic year: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@enrollment.route('/api/enrollment/manual-update', methods=['POST'])
+@login_required
+@permission_required('edit_students')
+def manual_enrollment_update():
+    """Manually update student enrollment status"""
+    try:
+        data = request.get_json()
+        student_id = data.get('student_id')
+        new_status = data.get('enrollment_status')
+        academic_year_id = data.get('academic_year_id')
+        
+        if not student_id or not new_status:
+            return jsonify({'success': False, 'error': 'Student ID and enrollment status are required'}), 400
+        
+        if new_status not in ['Pending', 'Enrolled', 'Withdrawn']:
+            return jsonify({'success': False, 'error': 'Invalid enrollment status'}), 400
+        
+        student = Student.query.get(student_id)
+        if not student:
+            return jsonify({'success': False, 'error': 'Student not found'}), 404
+        
+        # Update enrollment status
+        old_status = student.enrollment_status_current_year
+        student.enrollment_status_current_year = new_status
+        
+        # If academic year is provided, update that too
+        if academic_year_id:
+            student.last_enrollment_year_id = academic_year_id
+        
+        # Log the change in enrollment history
+        from models import StudentEnrollmentHistory
+        history = StudentEnrollmentHistory(
+            student_id=student_id,
+            academic_year_id=academic_year_id or student.last_enrollment_year_id,
+            enrollment_status=new_status,
+            change_reason=f'Manual update by {current_user.username}',
+            changed_by=current_user.id,
+            changed_at=datetime.utcnow()
+        )
+        db.session.add(history)
+        db.session.commit()
+        
+        current_app.logger.info(f"Manual enrollment update: Student {student.student_name} ({student_id}) changed from {old_status} to {new_status} by {current_user.username}")
+        
+        return jsonify({
+            'success': True,
+            'student_id': student_id,
+            'student_name': student.student_name,
+            'old_status': old_status,
+            'new_status': new_status,
+            'message': f'Student {student.student_name} status updated to {new_status}'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error updating enrollment status: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@enrollment.route('/api/enrollment/bulk-update', methods=['POST'])
+@login_required
+@permission_required('edit_students')
+def bulk_enrollment_update():
+    """Bulk update enrollment status for multiple students"""
+    try:
+        data = request.get_json()
+        student_ids = data.get('student_ids', [])
+        new_status = data.get('enrollment_status')
+        academic_year_id = data.get('academic_year_id')
+        
+        if not student_ids or not new_status:
+            return jsonify({'success': False, 'error': 'Student IDs and enrollment status are required'}), 400
+        
+        if new_status not in ['Pending', 'Enrolled', 'Withdrawn']:
+            return jsonify({'success': False, 'error': 'Invalid enrollment status'}), 400
+        
+        # Process each student
+        updated_students = []
+        failed_students = []
+        
+        for student_id in student_ids:
+            try:
+                student = Student.query.get(student_id)
+                if not student:
+                    failed_students.append({'id': student_id, 'error': 'Student not found'})
+                    continue
+                
+                old_status = student.enrollment_status_current_year
+                student.enrollment_status_current_year = new_status
+                
+                if academic_year_id:
+                    student.last_enrollment_year_id = academic_year_id
+                
+                # Log the change
+                from models import StudentEnrollmentHistory
+                history = StudentEnrollmentHistory(
+                    student_id=student_id,
+                    academic_year_id=academic_year_id or student.last_enrollment_year_id,
+                    enrollment_status=new_status,
+                    change_reason=f'Bulk update by {current_user.username}',
+                    changed_by=current_user.id,
+                    changed_at=datetime.utcnow()
+                )
+                db.session.add(history)
+                
+                updated_students.append({
+                    'id': student_id,
+                    'name': student.student_name,
+                    'old_status': old_status,
+                    'new_status': new_status
+                })
+                
+            except Exception as e:
+                failed_students.append({'id': student_id, 'error': str(e)})
+        
+        db.session.commit()
+        
+        current_app.logger.info(f"Bulk enrollment update: {len(updated_students)} students updated to {new_status} by {current_user.username}")
+        
+        return jsonify({
+            'success': True,
+            'updated_count': len(updated_students),
+            'failed_count': len(failed_students),
+            'updated_students': updated_students,
+            'failed_students': failed_students,
+            'message': f'Successfully updated {len(updated_students)} students to {new_status}'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error in bulk enrollment update: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @enrollment.route('/api/enrollment-emails/send-bulk', methods=['POST'])
