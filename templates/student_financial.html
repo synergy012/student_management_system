@@ -23,9 +23,12 @@
                     {% endfor %}
                 </select>
             </div>
-            <a href="{{ url_for('students.student_details', student_id=student.id) }}" class="btn btn-secondary">
+            <a href="{{ url_for('students.student_details', student_id=student.id) }}" class="btn btn-secondary me-2">
                 <i class="fas fa-arrow-left"></i> Back to Student
             </a>
+            <button class="btn btn-outline-primary" onclick="backToFinancialDashboard()">
+                <i class="fas fa-dollar-sign"></i> Back to Financial Dashboard
+            </button>
         </div>
     </div>
 
@@ -670,6 +673,12 @@ function changeAcademicYear(yearId) {
     const currentUrl = new URL(window.location);
     currentUrl.searchParams.set('academic_year', yearId);
     window.location.href = currentUrl.toString();
+}
+
+// Function to navigate back to financial dashboard with academic year persistence
+function backToFinancialDashboard() {
+    const url = "{{ url_for('financial.financial_core.financial_dashboard') }}";
+    window.location.href = window.addAcademicYearToUrl(url);
 }
 
 function updatePageContent(data) {
