@@ -1124,7 +1124,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 let currentStudentData = null;
 let tuitionComponents = [];
-let selectedAcademicYear = {{ selected_academic_year | tojson if selected_academic_year else 'null' }};
+let selectedAcademicYear = {{ selected_academic_year_dict | tojson if selected_academic_year_dict else 'null' }};
 
 // Main function to set tuition for a student
 function setTuition(studentId) {

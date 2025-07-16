@@ -101,11 +101,23 @@ def financial_dashboard():
         statuses = db.session.query(Student.enrollment_status_current_year).distinct().filter(Student.enrollment_status_current_year.isnot(None)).all()
         statuses = [s[0] for s in statuses if s[0]]
         
+        # Convert selected_academic_year to dictionary for JSON serialization
+        selected_academic_year_dict = None
+        if selected_academic_year:
+            selected_academic_year_dict = {
+                'id': selected_academic_year.id,
+                'year_label': selected_academic_year.year_label,
+                'is_active': selected_academic_year.is_active,
+                'start_date': selected_academic_year.start_date.isoformat() if selected_academic_year.start_date else None,
+                'end_date': selected_academic_year.end_date.isoformat() if selected_academic_year.end_date else None
+            }
+        
         return render_template('financial_dashboard.html',
                              students=students,
                              financial_records=financial_records,
                              available_academic_years=academic_years,
                              selected_academic_year=selected_academic_year,
+                             selected_academic_year_dict=selected_academic_year_dict,
                              selected_year_id=int(selected_year_id) if selected_year_id else None,
                              divisions=divisions,
                              statuses=statuses,
