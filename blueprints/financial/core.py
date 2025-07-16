@@ -241,11 +241,23 @@ def student_financial(student_id):
             'status_color': getattr(student, 'status_color', 'secondary')
         })()
         
+        # Convert selected_year to dictionary for JSON serialization
+        selected_year_dict = None
+        if selected_year:
+            selected_year_dict = {
+                'id': selected_year.id,
+                'year_label': selected_year.year_label,
+                'is_active': selected_year.is_active,
+                'start_date': selected_year.start_date.isoformat() if selected_year.start_date else None,
+                'end_date': selected_year.end_date.isoformat() if selected_year.end_date else None
+            }
+        
         current_app.logger.info("Rendering student_financial.html template")
         return render_template('student_financial.html',
                              student=safe_student,
                              academic_years=academic_years,
                              selected_year=selected_year,
+                             selected_year_dict=selected_year_dict,
                              tuition_record=tuition_record,
                              tuition_history=tuition_history,
                              total_tuition=total_tuition,

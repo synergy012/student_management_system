@@ -798,7 +798,7 @@ function viewAllDocuments() {
 
 let currentStudentData = null;
 let tuitionComponents = [];
-let selectedAcademicYear = {{ selected_year | tojson if selected_year else 'null' }};
+let selectedAcademicYear = {{ selected_year_dict | tojson if selected_year_dict else 'null' }};
 
 // Main function to set tuition for a student - EXACT COPY FROM FINANCIAL DASHBOARD
 function setTuition(studentId) {
