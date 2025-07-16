@@ -316,4 +316,140 @@ def mark_admire_setup(record_id):
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500 
+        return jsonify({'error': str(e)}), 500
+
+@financial_core.route('/api/students/<student_id>/setup-admire-billing', methods=['POST'])
+@login_required
+@permission_required('edit_students')
+def setup_admire_billing(student_id):
+    """Set up Admire billing for a student"""
+    try:
+        data = request.get_json()
+        academic_year_id = data.get('academic_year_id')
+        
+        if not academic_year_id:
+            return jsonify({'success': False, 'error': 'Academic year ID is required'}), 400
+        
+        # Get or create financial record
+        financial_record = FinancialRecord.query.filter_by(
+            student_id=student_id,
+            academic_year_id=academic_year_id
+        ).first()
+        
+        if not financial_record:
+            # Create new financial record
+            financial_record = FinancialRecord(
+                student_id=student_id,
+                academic_year_id=academic_year_id,
+                created_by=current_user.username
+            )
+            db.session.add(financial_record)
+            db.session.commit()
+        
+        # Import and use Admire service
+        from services.admire_service import AdmireService
+        admire_service = AdmireService()
+        
+        # Setup billing in Admire system
+        result = admire_service.setup_student_billing(student_id, financial_record.id)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error setting up Admire billing: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@financial_core.route('/api/students/<student_id>/mark-admire-complete', methods=['POST'])
+@login_required
+@permission_required('edit_students')
+def mark_admire_complete(student_id):
+    """Mark Admire setup as complete for a student"""
+    try:
+        # Get the current academic year or use from session
+        academic_year = AcademicYear.query.filter_by(is_active=True).first()
+        if not academic_year:
+            return jsonify({'success': False, 'error': 'No active academic year found'}), 400
+        
+        # Get or create financial record
+        financial_record = FinancialRecord.query.filter_by(
+            student_id=student_id,
+            academic_year_id=academic_year.id
+        ).first()
+        
+        if not financial_record:
+            financial_record = FinancialRecord(
+                student_id=student_id,
+                academic_year_id=academic_year.id,
+                created_by=current_user.username
+            )
+            db.session.add(financial_record)
+        
+        # Mark as complete
+        financial_record.admire_charges_setup = True
+        financial_record.admire_charges_setup_date = datetime.utcnow()
+        financial_record.updated_by = current_user.username
+        
+        db.session.commit()
+        
+        current_app.logger.info(f"Admire setup marked as complete for student {student_id} by {current_user.username}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Admire setup marked as complete'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error marking Admire as complete: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@financial_core.route('/api/students/<student_id>/admire-status')
+@login_required
+@permission_required('view_students')
+def get_admire_status(student_id):
+    """Get Admire billing status for a student"""
+    try:
+        academic_year_id = request.args.get('academic_year_id')
+        
+        if not academic_year_id:
+            academic_year = AcademicYear.query.filter_by(is_active=True).first()
+            academic_year_id = academic_year.id if academic_year else None
+        
+        if not academic_year_id:
+            return jsonify({'success': False, 'error': 'Academic year not specified'}), 400
+        
+        # Get financial record
+        financial_record = FinancialRecord.query.filter_by(
+            student_id=student_id,
+            academic_year_id=academic_year_id
+        ).first()
+        
+        if not financial_record:
+            return jsonify({
+                'success': True,
+                'setup_complete': False,
+                'account_number': None,
+                'setup_date': None
+            })
+        
+        # If we have an account number, try to get live status from Admire
+        live_status = None
+        if financial_record.admire_account_number:
+            try:
+                from services.admire_service import AdmireService
+                admire_service = AdmireService()
+                live_status = admire_service.get_student_billing_status(financial_record.admire_account_number)
+            except Exception as e:
+                current_app.logger.warning(f"Could not get live Admire status: {str(e)}")
+        
+        return jsonify({
+            'success': True,
+            'setup_complete': financial_record.admire_charges_setup,
+            'account_number': financial_record.admire_account_number,
+            'setup_date': financial_record.admire_charges_setup_date.isoformat() if financial_record.admire_charges_setup_date else None,
+            'live_status': live_status
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting Admire status: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500 

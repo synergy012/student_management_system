@@ -1546,11 +1546,79 @@ function updateViewSignedContractButtonWorkflow(contractStatus, contractData) {
 }
 
 function setupAdmire() {
-    alert('Setup Admire payment system - feature coming soon!');
+    const studentId = '{{ student.id }}';
+    const selectedYear = selectedAcademicYear;
+    
+    if (!selectedYear) {
+        alert('Please select an academic year first.');
+        return;
+    }
+    
+    // Show loading state
+    const setupBtn = document.querySelector('button[onclick="setupAdmire()"]');
+    const originalText = setupBtn.innerHTML;
+    setupBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Setting up...';
+    setupBtn.disabled = true;
+    
+    // Make API call to setup Admire billing
+    fetch(`/api/students/${studentId}/setup-admire-billing`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            academic_year_id: selectedYear.id
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update UI to show success
+            alert(`Admire billing setup completed successfully!\nAccount Number: ${data.account_number || 'Generated'}`);
+            
+            // Refresh the page to update the workflow status
+            window.location.reload();
+        } else {
+            alert(`Error setting up Admire billing: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while setting up Admire billing. Please try again.');
+    })
+    .finally(() => {
+        // Restore button state
+        setupBtn.innerHTML = originalText;
+        setupBtn.disabled = false;
+    });
 }
 
 function markAdmireComplete() {
-    alert('Admire setup marked as complete - feature coming soon!');
+    if (confirm('Are you sure you want to mark Admire setup as complete?')) {
+        const studentId = '{{ student.id }}';
+        
+        // Make API call to mark as complete
+        fetch(`/api/students/${studentId}/mark-admire-complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Admire setup marked as complete!');
+                // Refresh the page to update the workflow status
+                window.location.reload();
+            } else {
+                alert(`Error: ${data.error}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    }
 }
 
 function sendFafsaReminder() {

@@ -46,6 +46,13 @@ class Config:
     DROPBOX_SIGN_CLIENT_ID = os.environ.get('DROPBOX_SIGN_CLIENT_ID')
     DROPBOX_SIGN_TEST_MODE = os.environ.get('DROPBOX_SIGN_TEST_MODE', 'true').lower() in ['true', '1', 'yes']
     DROPBOX_SIGN_WEBHOOK_SECRET = os.environ.get('DROPBOX_SIGN_WEBHOOK_SECRET')
+    
+    # Admire Billing System Configuration
+    ADMIRE_API_URL = os.environ.get('ADMIRE_API_URL', 'https://api.admire.example.com')
+    ADMIRE_API_KEY = os.environ.get('ADMIRE_API_KEY')
+    ADMIRE_API_SECRET = os.environ.get('ADMIRE_API_SECRET')
+    ADMIRE_ENVIRONMENT = os.environ.get('ADMIRE_ENVIRONMENT', 'sandbox')
+    ADMIRE_WEBHOOK_SECRET = os.environ.get('ADMIRE_WEBHOOK_SECRET')
 
 class DevelopmentConfig(Config):
     DEBUG = True
