@@ -26,12 +26,12 @@
             </div>
         </div>
         <div class="col-auto">
-            <div class="weather-widget p-3 bg-light rounded-2xl">
+            <div class="date-widget p-3 bg-light rounded-2xl">
                 <div class="d-flex align-items-center">
-                    <i class="fas fa-sun text-warning fa-2x me-3"></i>
+                    <i class="fas fa-calendar-alt text-primary fa-2x me-3"></i>
                     <div>
-                        <div class="fw-bold">72°F</div>
-                        <small class="text-muted">Sunny</small>
+                        <div class="fw-bold">{{ current_date }}</div>
+                        <small class="text-muted">{{ current_day }}</small>
                     </div>
                 </div>
             </div>
@@ -47,7 +47,7 @@
                         <h3 class="stat-card-value text-white fw-bold mb-1">{{ total_students or 247 }}</h3>
                         <p class="stat-card-label text-white mb-1 fw-semibold" style="opacity: 0.9;">Total Students</p>
                         <small class="text-white fw-medium" style="opacity: 0.8;">
-                            <i class="fas fa-arrow-up"></i> +12 this month
+                            <i class="fas fa-users"></i> Active students
                         </small>
                     </div>
                     <div class="stat-card-icon">
@@ -98,7 +98,7 @@
                         <h3 class="stat-card-value text-white fw-bold mb-1">{{ bed_occupancy or 89 }}%</h3>
                         <p class="stat-card-label text-white mb-1 fw-semibold" style="opacity: 0.9;">Bed Occupancy</p>
                         <small class="text-white fw-medium" style="opacity: 0.8;">
-                            <i class="fas fa-building"></i> 178/200 beds
+                            <i class="fas fa-building"></i> {{ occupied_beds or 0 }}/{{ total_beds or 0 }} beds
                         </small>
                     </div>
                     <div class="stat-card-icon">
@@ -331,7 +331,7 @@
                         </div>
                         <div class="notification-content">
                             <div class="notification-title">Urgent: Applications Pending</div>
-                            <div class="notification-text">18 applications need review</div>
+                            <div class="notification-text">{{ pending_applications or 0 }} applications need review</div>
                         </div>
                     </div>
                     

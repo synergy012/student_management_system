@@ -15,7 +15,7 @@
                 <div>
                     <select class="form-select" id="academicYearSelector" onchange="changeAcademicYear()" style="width: auto;">
                         {% for year in academic_years %}
-                        <option value="{{ year.id }}" {% if year.id == active_year.id %}selected{% endif %}>
+                        <option value="{{ year.id }}" {% if year.id == selected_year.id %}selected{% endif %}>
                             {{ year.year_label }}
                         </option>
                         {% endfor %}
@@ -220,7 +220,7 @@
 </div>
 
 <script>
-let currentAcademicYear = '{{ active_year.id if active_year else "" }}';
+let currentAcademicYear = '{{ selected_year.id if selected_year else "" }}';
 
 document.addEventListener('DOMContentLoaded', function() {
     loadAllDivisionComponents();
@@ -228,8 +228,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function changeAcademicYear() {
     const yearId = document.getElementById('academicYearSelector').value;
-    currentAcademicYear = yearId;
-    loadAllDivisionComponents();
+    // Store the selected academic year for persistence
+    window.setAcademicYear(yearId);
+    
+    // Redirect to tuition settings with the academic year parameter
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('academic_year', yearId);
+    window.location.href = currentUrl.toString();
 }
 
 function loadAllDivisionComponents() {

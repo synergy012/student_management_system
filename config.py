@@ -52,6 +52,9 @@ class DevelopmentConfig(Config):
     SESSION_COOKIE_SECURE = False
     # Use instance folder for database (Flask best practice)
     SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.abspath("instance/student_management_dev.db")}'
+    # Server configuration for URL generation
+    SERVER_NAME = 'localhost:5000'
+    PREFERRED_URL_SCHEME = 'http'
 
 class ProductionConfig(Config):
     DEBUG = False

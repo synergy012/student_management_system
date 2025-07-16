@@ -15,6 +15,19 @@ def enrollment_test():
     """Test route"""
     return "Enrollment test route works!"
 
+@enrollment.route('/api/enrollment/test-students')
+@login_required
+@permission_required('view_students')
+def test_students():
+    """Simple test endpoint"""
+    return jsonify({
+        'success': True,
+        'message': 'Test endpoint works',
+        'students': [
+            {'id': 'test1', 'student_name': 'Test Student', 'division': 'YZA', 'enrollment_status': 'Pending'}
+        ]
+    })
+
 @enrollment.route('/enrollment')
 @login_required
 @permission_required('view_students')
@@ -54,7 +67,7 @@ def get_enrollment_email_statistics():
         
         # Count enrollment emails sent
         enrollment_tokens = SecureFormToken.query.filter_by(
-            form_type='enrollment_response'
+            form_type='enrollment_decision'
         ).all()
         
         emails_sent = len(enrollment_tokens)
@@ -135,14 +148,25 @@ def get_students_by_academic_year():
         
         student_list = []
         for student in students:
-            # Check if student has active enrollment token
-            active_token = SecureFormToken.query.filter_by(
-                form_type='enrollment_response',
-                is_used=False
-            ).filter(
-                SecureFormToken.token_metadata.op('->>')('student_id') == str(student.id),
-                SecureFormToken.expires_at > datetime.utcnow()
-            ).first()
+            # Check if student has active enrollment token with error handling
+            active_token = None
+            has_active_token = False
+            token_expires = None
+            
+            try:
+                active_token = SecureFormToken.query.filter_by(
+                    form_type='enrollment_decision',
+                    is_used=False
+                ).filter(
+                    SecureFormToken.token_metadata.op('->>')('student_id') == str(student.id),
+                    SecureFormToken.expires_at > datetime.utcnow()
+                ).first()
+                
+                has_active_token = active_token is not None
+                token_expires = active_token.expires_at.isoformat() if active_token else None
+            except Exception as e:
+                current_app.logger.error(f"Error checking token for student {student.id}: {str(e)}")
+                # Continue without token info
             
             student_list.append({
                 'id': student.id,
@@ -150,8 +174,8 @@ def get_students_by_academic_year():
                 'division': student.division,
                 'email': student.email,
                 'enrollment_status': student.enrollment_status_current_year,
-                'has_active_token': active_token is not None,
-                'token_expires': active_token.expires_at.isoformat() if active_token else None
+                'has_active_token': has_active_token,
+                'token_expires': token_expires
             })
         
         return jsonify({
@@ -199,9 +223,9 @@ def manual_enrollment_update():
             student_id=student_id,
             academic_year_id=academic_year_id or student.last_enrollment_year_id,
             enrollment_status=new_status,
-            change_reason=f'Manual update by {current_user.username}',
-            changed_by=current_user.id,
-            changed_at=datetime.utcnow()
+            previous_status=old_status,
+            decision_reason=f'Manual update by {current_user.username}',
+            decision_made_by=current_user.username
         )
         db.session.add(history)
         db.session.commit()
@@ -261,9 +285,9 @@ def bulk_enrollment_update():
                     student_id=student_id,
                     academic_year_id=academic_year_id or student.last_enrollment_year_id,
                     enrollment_status=new_status,
-                    change_reason=f'Bulk update by {current_user.username}',
-                    changed_by=current_user.id,
-                    changed_at=datetime.utcnow()
+                    previous_status=old_status,
+                    decision_reason=f'Bulk update by {current_user.username}',
+                    decision_made_by=current_user.username
                 )
                 db.session.add(history)
                 
@@ -292,6 +316,53 @@ def bulk_enrollment_update():
         
     except Exception as e:
         current_app.logger.error(f"Error in bulk enrollment update: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@enrollment.route('/api/enrollment-emails/send-selected', methods=['POST'])
+@login_required
+@permission_required('view_students')
+def send_enrollment_emails_to_selected():
+    """Send enrollment emails to specific selected students"""
+    try:
+        data = request.get_json()
+        student_ids = data.get('student_ids', [])
+        academic_year_id = data.get('academic_year_id')
+        
+        if not student_ids:
+            return jsonify({'success': False, 'error': 'No students selected'}), 400
+        if not academic_year_id:
+            return jsonify({'success': False, 'error': 'Academic year is required'}), 400
+        
+        # Import enrollment email service
+        from services.enrollment_email_service import EnrollmentDecisionEmailService
+        email_service = EnrollmentDecisionEmailService()
+        
+        emails_sent = 0
+        errors = []
+        
+        current_app.logger.info(f"Sending enrollment emails to {len(student_ids)} students for academic year {academic_year_id}")
+        
+        for student_id in student_ids:
+            try:
+                current_app.logger.info(f"Sending email to student {student_id} for academic year {academic_year_id}")
+                result = email_service.send_enrollment_decision_email(student_id, academic_year_id)
+                if result.get('success'):
+                    emails_sent += 1
+                else:
+                    errors.append(f"Student {student_id}: {result.get('error', 'Unknown error')}")
+            except Exception as e:
+                current_app.logger.error(f"Error sending email to student {student_id}: {str(e)}")
+                errors.append(f"Student {student_id}: {str(e)}")
+        
+        return jsonify({
+            'success': True,
+            'emails_sent': emails_sent,
+            'errors': errors,
+            'total_students': len(student_ids)
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error sending enrollment emails to selected students: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @enrollment.route('/api/enrollment-emails/send-bulk', methods=['POST'])

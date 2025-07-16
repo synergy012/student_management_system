@@ -266,7 +266,7 @@
                 if (data.success) {
                     // Show success message and redirect
                     alert(data.message);
-                    window.location.href = '{{ url_for('secure_forms.enrollment_response_success', token=token) }}';
+                    window.location.href = '{{ url_for('enrollment_email.response_success', token=token) }}';
                 } else {
                     // Show error and re-enable buttons
                     alert('Error: ' + data.error);
@@ -287,7 +287,7 @@
 
         // Countdown timer
         function updateCountdown() {
-            const expiryDate = new Date('{{ expires_at.isoformat() }}');
+            const expiryDate = new Date('{{ expires_at.isoformat() }}Z');
             const now = new Date();
             const timeDiff = expiryDate - now;
             

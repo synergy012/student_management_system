@@ -146,7 +146,7 @@ def get_students_pending_emails():
                 SecureFormToken.form_type == 'enrollment_decision',
                 SecureFormToken.is_used == False,
                 SecureFormToken.expires_at > datetime.utcnow(),
-                SecureFormToken.token_metadata.op('->>')('student_id') == student.id
+                SecureFormToken.token_metadata.op('->>')('student_id') == str(student.id)
             ).first()
             
             student_data.append({

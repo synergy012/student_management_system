@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Timezone Test</title>
+</head>
+<body>
+    <h1>Timezone Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        const results = document.getElementById('results');
+        
+        // Test the token expiry time
+        const tokenExpiry = '2025-08-15T17:22:16.920590';
+        const tokenExpiryUTC = '2025-08-15T17:22:16.920590Z';
+        
+        const now = new Date();
+        const expiryWithoutZ = new Date(tokenExpiry);
+        const expiryWithZ = new Date(tokenExpiryUTC);
+        
+        results.innerHTML = `
+            <p><strong>Current time:</strong> ${now}</p>
+            <p><strong>Token expiry without Z:</strong> ${expiryWithoutZ}</p>
+            <p><strong>Token expiry with Z:</strong> ${expiryWithZ}</p>
+            <p><strong>Time diff without Z:</strong> ${(expiryWithoutZ - now) / 1000 / 60 / 60} hours</p>
+            <p><strong>Time diff with Z:</strong> ${(expiryWithZ - now) / 1000 / 60 / 60} hours</p>
+            <p><strong>Expired without Z?</strong> ${(expiryWithoutZ - now) <= 0}</p>
+            <p><strong>Expired with Z?</strong> ${(expiryWithZ - now) <= 0}</p>
+        `;
+    </script>
+</body>
+</html>

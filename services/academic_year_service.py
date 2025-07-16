@@ -16,11 +16,20 @@ class AcademicYearTransitionService:
     def get_transition_summary(self, current_year_id: int, next_year_id: int) -> Dict:
         """Get summary of students and their transition status"""
         try:
-            # Get current year students
+            # First try to get students who have been through formal academic year transition
             current_students = Student.query.filter(
                 Student.last_enrollment_year_id == current_year_id,
                 Student.student_type == 'Current'
             ).all()
+            
+            # If no students found, fall back to active students (for systems not yet using formal transitions)
+            if not current_students:
+                current_students = Student.query.filter(
+                    Student.status == 'Active'
+                ).all()
+                self.logger.info(f"No students found with formal enrollment tracking, using {len(current_students)} active students as fallback")
+            else:
+                self.logger.info(f"Found {len(current_students)} students with formal enrollment tracking")
             
             # Count students by enrollment status
             status_counts = {
@@ -31,7 +40,19 @@ class AcademicYearTransitionService:
             }
             
             for student in current_students:
-                status = student.enrollment_status_current_year or 'pending'
+                # For students with formal enrollment tracking, use enrollment_status_current_year
+                # For fallback students, treat active students as enrolled
+                if student.last_enrollment_year_id and student.enrollment_status_current_year:
+                    status = student.enrollment_status_current_year or 'pending'
+                else:
+                    # Fallback logic for students without formal enrollment tracking
+                    if student.status == 'Active':
+                        status = 'enrolled'
+                    elif student.status in ['Withdrawn', 'Inactive']:
+                        status = 'withdrawn'
+                    else:
+                        status = 'pending'
+                
                 status_counts[status.lower()] += 1
             
             # Get next year info
@@ -61,11 +82,20 @@ class AcademicYearTransitionService:
     def initialize_next_year_enrollment(self, current_year_id: int, next_year_id: int) -> Dict:
         """Initialize all current students as 'Pending' for next academic year"""
         try:
-            # Get all current students from the current year
+            # First try to get students who have been through formal academic year transition
             current_students = Student.query.filter(
                 Student.last_enrollment_year_id == current_year_id,
                 Student.student_type == 'Current'
             ).all()
+            
+            # If no students found with formal tracking, fall back to active students
+            if not current_students:
+                current_students = Student.query.filter(
+                    Student.status == 'Active'
+                ).all()
+                self.logger.info(f"No students found with formal enrollment tracking, using {len(current_students)} active students for initialization")
+            else:
+                self.logger.info(f"Found {len(current_students)} students with formal enrollment tracking for initialization")
             
             initialized_count = 0
             skipped_count = 0
@@ -81,18 +111,29 @@ class AcademicYearTransitionService:
                     skipped_count += 1
                     continue
                 
+                # Store previous status before updating
+                previous_status = student.enrollment_status_current_year or 'Active'
+                
                 # Set student's enrollment status to pending for next year
                 student.enrollment_status_current_year = 'Pending'
                 student.last_enrollment_year_id = next_year_id
+                
+                # Ensure student_type is set properly
+                if not student.student_type:
+                    student.student_type = 'Current'
+                
+                # Ensure college_program_status is set
+                if not student.college_program_status:
+                    student.college_program_status = 'Ineligible'
                 
                 # Create enrollment history record
                 enrollment_history = StudentEnrollmentHistory(
                     student_id=student.id,
                     academic_year_id=next_year_id,
                     enrollment_status='Pending',
-                    previous_status=student.enrollment_status_current_year,
+                    previous_status=previous_status,
                     decision_date=datetime.utcnow(),
-                    decision_by=current_app.config.get('SYSTEM_USER', 'System'),
+                    decision_made_by=current_app.config.get('SYSTEM_USER', 'System'),
                     decision_reason='Automatic transition to next academic year',
                     college_program_status_at_time=student.college_program_status,
                     student_type_at_time=student.student_type
@@ -210,7 +251,7 @@ class AcademicYearTransitionService:
                 enrollment_status=enrollment_status,
                 previous_status=previous_status,
                 decision_date=datetime.utcnow(),
-                decision_by=decision_by,
+                decision_made_by=decision_by,
                 decision_reason=decision_reason or f'Enrollment decision: {enrollment_status}',
                 college_program_status_at_time=student.college_program_status,
                 student_type_at_time=student.student_type
@@ -285,6 +326,7 @@ class AcademicYearTransitionService:
                               division: str = None) -> List[Dict]:
         """Get students filtered by enrollment status and division"""
         try:
+            # First try to get students with formal enrollment tracking
             query = Student.query.filter(
                 Student.last_enrollment_year_id == academic_year_id
             )
@@ -297,6 +339,26 @@ class AcademicYearTransitionService:
             
             students = query.all()
             
+            # If no students found with formal tracking, fall back to active students
+            if not students:
+                fallback_query = Student.query.filter(Student.status == 'Active')
+                
+                if division:
+                    fallback_query = fallback_query.filter(Student.division == division)
+                
+                # Apply enrollment status filter for fallback (map to student status)
+                if enrollment_status:
+                    if enrollment_status == 'Enrolled':
+                        fallback_query = fallback_query.filter(Student.status == 'Active')
+                    elif enrollment_status == 'Withdrawn':
+                        fallback_query = fallback_query.filter(Student.status.in_(['Withdrawn', 'Inactive']))
+                    elif enrollment_status == 'Pending':
+                        # For pending, we might want to include new students or those without clear status
+                        fallback_query = fallback_query.filter(Student.status.notin_(['Active', 'Withdrawn', 'Inactive']))
+                
+                students = fallback_query.all()
+                self.logger.info(f"Using fallback query, found {len(students)} students")
+            
             result = []
             for student in students:
                 # Get latest enrollment history
@@ -305,15 +367,27 @@ class AcademicYearTransitionService:
                     academic_year_id=academic_year_id
                 ).order_by(StudentEnrollmentHistory.decision_date.desc()).first()
                 
+                # Handle enrollment status for both formal and fallback students
+                if student.enrollment_status_current_year:
+                    enrollment_status = student.enrollment_status_current_year
+                else:
+                    # Map regular student status to enrollment status
+                    if student.status == 'Active':
+                        enrollment_status = 'Enrolled'
+                    elif student.status in ['Withdrawn', 'Inactive']:
+                        enrollment_status = 'Withdrawn'
+                    else:
+                        enrollment_status = 'Pending'
+                
                 result.append({
                     'id': student.id,
                     'student_name': student.student_name,
                     'division': student.division,
-                    'enrollment_status': student.enrollment_status_current_year,
-                    'college_program_status': student.college_program_status,
-                    'student_type': student.student_type,
+                    'enrollment_status': enrollment_status,
+                    'college_program_status': student.college_program_status or 'Ineligible',
+                    'student_type': student.student_type or 'Current',
                     'last_decision_date': latest_history.decision_date if latest_history else None,
-                    'last_decision_by': latest_history.decision_by if latest_history else None
+                    'last_decision_by': latest_history.decision_made_by if latest_history else None
                 })
             
             return result
@@ -338,7 +412,7 @@ class AcademicYearTransitionService:
                     'enrollment_status': record.enrollment_status,
                     'previous_status': record.previous_status,
                     'decision_date': record.decision_date,
-                    'decision_by': record.decision_by,
+                    'decision_by': record.decision_made_by,
                     'decision_reason': record.decision_reason,
                     'college_program_status': record.college_program_status_at_time,
                     'student_type': record.student_type_at_time

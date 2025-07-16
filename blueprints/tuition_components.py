@@ -500,26 +500,34 @@ def update_division_tuition_component(division, component_id):
 def tuition_settings():
     """Show tuition settings management page"""
     try:
-        # Get active academic year
-        active_year = AcademicYear.query.filter_by(is_active=True).first()
+        # Get academic year from request parameter or default to active year
+        academic_year_id = request.args.get('academic_year', '')
+        selected_year = None
+        if academic_year_id:
+            selected_year = AcademicYear.query.get(int(academic_year_id))
+        
+        if not selected_year:
+            # Fallback to active academic year
+            selected_year = AcademicYear.query.filter_by(is_active=True).first()
+        
         academic_years = AcademicYear.query.order_by(AcademicYear.start_date.desc()).all()
         
         # Get all tuition components
         components = TuitionComponent.query.filter_by(is_active=True).order_by(TuitionComponent.display_order).all()
         
-        # Get division configurations for active year
+        # Get division configurations for selected year
         division_configs = {}
-        if active_year:
+        if selected_year:
             for division in ['YZA', 'YOH', 'KOLLEL']:
                 division_configs[division] = DivisionTuitionComponent.query.filter_by(
                     division=division,
-                    academic_year_id=active_year.id,
+                    academic_year_id=selected_year.id,
                     is_enabled=True
                 ).join(TuitionComponent).order_by(TuitionComponent.display_order).all()
         
         return render_template('tuition_settings.html',
                              academic_years=academic_years,
-                             active_year=active_year,
+                             selected_year=selected_year,
                              components=components,
                              division_configs=division_configs)
     

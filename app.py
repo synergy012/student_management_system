@@ -32,6 +32,7 @@ from blueprints.files import files as files_blueprint
 from blueprints.financial import financial as financial_blueprint
 from blueprints.academic_year_transition import academic_year_transition as academic_year_transition_blueprint
 from blueprints.enrollment import enrollment as enrollment_blueprint
+from blueprints.enrollment_email import enrollment_email as enrollment_email_blueprint
 
 # Load environment variables from .env file
 load_dotenv()
@@ -209,6 +210,7 @@ def create_app(config_name):
     app.register_blueprint(financial_blueprint)
     app.register_blueprint(academic_year_transition_blueprint)
     app.register_blueprint(enrollment_blueprint)
+    app.register_blueprint(enrollment_email_blueprint)
     
     # Import and register secure forms blueprint
     from blueprints.secure_forms import secure_forms

@@ -60,11 +60,8 @@ class EnrollmentDecisionEmailService:
         <h3>Please Choose Your Enrollment Status:</h3>
         
         <div style="text-align: center; margin: 30px 0;">
-            <a href="{{{{enrollment_response_url}}}}&decision=enrolled" style="display: inline-block; background: #28a745; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 10px 5px;">
-                ✅ ENROLL for {{{{academic_year}}}}
-            </a>
-            <a href="{{{{enrollment_response_url}}}}&decision=withdrawn" style="display: inline-block; background: #dc3545; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 10px 5px;">
-                ❌ WITHDRAW from Program
+            <a href="{{{{enrollment_response_url}}}}" style="display: inline-block; background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 10px 5px;">
+                📝 RESPOND TO ENROLLMENT DECISION
             </a>
         </div>
         
@@ -310,7 +307,7 @@ class EnrollmentDecisionEmailService:
         return {
             'token': token,
             'expires_at': expires_at,
-                            'response_url': url_for('secure_forms.student_enrollment_response_form', token=token, _external=True)
+            'response_url': url_for('enrollment_email.student_response_form', token=token, _external=True)
         }
     
     def _get_email_variables(self, student: Student, academic_year: AcademicYear, 
@@ -329,23 +326,15 @@ class EnrollmentDecisionEmailService:
         }
     
     def _get_email_recipients(self, student: Student) -> List[str]:
-        """Get email recipients for student (student + parents if available)"""
+        """Get email recipients for student (student only - not parents)"""
         recipients = []
         
-        # Add student email
+        # Add student email only
         if student.email:
             recipients.append(student.email)
         
-        # Add parent emails if available
-        if hasattr(student, 'parents') and student.parents:
-            if hasattr(student.parents, 'father') and student.parents.father.email:
-                recipients.append(student.parents.father.email)
-            if hasattr(student.parents, 'mother') and student.parents.mother.email:
-                recipients.append(student.parents.mother.email)
-        
-        # Fallback to just student email if no recipients found
-        if not recipients and student.email:
-            recipients = [student.email]
+        # Note: Parent emails are intentionally excluded for enrollment decisions
+        # Students should respond to their own enrollment decisions
         
         return recipients
     

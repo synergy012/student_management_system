@@ -5,8 +5,9 @@ from flask import Blueprint, jsonify, current_app, render_template, redirect, ur
 from flask_login import login_required
 from flask_mail import Message
 from extensions import mail
-from models import Application, AcademicYear
+from models import Application, AcademicYear, Student
 from utils.decorators import permission_required
+from datetime import datetime
 
 core = Blueprint('core', __name__)
 
@@ -40,10 +41,48 @@ def index():
             'is_selected': ay.is_active
         })
     
+    # Get dashboard statistics
+    total_students = Student.query.filter_by(status='Active').count()
+    pending_applications = Application.query.filter_by(status='Pending').count()
+    
+    # Get shiurim count (try to import, fallback to 0 if not available)
+    try:
+        from models import Shiur
+        if active_year:
+            active_shiurim = Shiur.query.filter_by(academic_year_id=active_year.id, is_active=True).count()
+        else:
+            active_shiurim = Shiur.query.filter_by(is_active=True).count()
+    except ImportError:
+        active_shiurim = 0
+    
+    # Get dormitory occupancy (try to import, fallback to 0 if not available)
+    try:
+        from models import DormitoryRoom, DormitoryBed
+        total_beds = DormitoryBed.query.count()
+        occupied_beds = DormitoryBed.query.filter_by(is_occupied=True).count()
+        bed_occupancy = round((occupied_beds / total_beds * 100)) if total_beds > 0 else 0
+    except ImportError:
+        bed_occupancy = 0
+        total_beds = 0
+        occupied_beds = 0
+    
+    # Get current date information
+    now = datetime.now()
+    current_date = now.strftime('%B %d, %Y')
+    current_day = now.strftime('%A')
+    
     return render_template('index.html', 
                          stats=stats,
                          recent_applications=recent_applications,
                          available_academic_years=available_academic_years,
+                         total_students=total_students,
+                         pending_applications=pending_applications,
+                         active_shiurim=active_shiurim,
+                         bed_occupancy=bed_occupancy,
+                         total_beds=total_beds,
+                         occupied_beds=occupied_beds,
+                         current_date=current_date,
+                         current_day=current_day,
                          last_webhook_data=last_webhook_data)
 
 

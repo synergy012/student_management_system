@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Academic Year Persistence Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { margin: 5px; padding: 8px 16px; }
+    </style>
+</head>
+<body>
+    <h1>Academic Year Persistence Test</h1>
+    
+    <div class="test-result info">
+        <strong>Test Scenario:</strong> Testing academic year persistence when navigating from financial dashboard (2025-2026) to student details and tuition settings.
+    </div>
+    
+    <div>
+        <h3>Test Controls:</h3>
+        <select id="academicYearSelector">
+            <option value="1">2024-2025</option>
+            <option value="2">2025-2026</option>
+            <option value="3">2026-2027</option>
+        </select>
+        <button onclick="setAcademicYear()">Set Academic Year</button>
+        <button onclick="testNavigation()">Test Navigation</button>
+        <button onclick="clearStorage()">Clear Storage</button>
+    </div>
+    
+    <div id="testResults"></div>
+    
+    <script>
+        // Mock the AcademicYearPersistence class for testing
+        class AcademicYearPersistence {
+            constructor() {
+                this.storageKey = 'selectedAcademicYear';
+            }
+            
+            setAcademicYear(yearId) {
+                if (yearId) {
+                    sessionStorage.setItem(this.storageKey, yearId);
+                    logResult('Academic year set to: ' + yearId, 'success');
+                }
+            }
+            
+            getAcademicYear() {
+                return sessionStorage.getItem(this.storageKey);
+            }
+            
+            clearAcademicYear() {
+                sessionStorage.removeItem(this.storageKey);
+                logResult('Academic year cleared', 'info');
+            }
+            
+            addAcademicYearToUrl(url) {
+                const academicYear = this.getAcademicYear();
+                if (academicYear) {
+                    const separator = url.includes('?') ? '&' : '?';
+                    const newUrl = url + separator + 'academic_year=' + academicYear;
+                    logResult('URL updated: ' + newUrl, 'success');
+                    return newUrl;
+                }
+                logResult('No academic year stored, URL unchanged: ' + url, 'info');
+                return url;
+            }
+        }
+        
+        // Initialize the persistence system
+        const academicYearPersistence = new AcademicYearPersistence();
+        
+        // Test functions
+        function setAcademicYear() {
+            const yearId = document.getElementById('academicYearSelector').value;
+            academicYearPersistence.setAcademicYear(yearId);
+        }
+        
+        function testNavigation() {
+            const testUrls = [
+                '/students/12345/financial',
+                '/tuition-components/settings',
+                '/divisions/YZA/financial-aid',
+                '/divisions/YZA/tuition-contracts'
+            ];
+            
+            logResult('Testing navigation with academic year persistence...', 'info');
+            
+            testUrls.forEach(url => {
+                const updatedUrl = academicYearPersistence.addAcademicYearToUrl(url);
+                logResult('Original: ' + url + ' → Updated: ' + updatedUrl, 'success');
+            });
+        }
+        
+        function clearStorage() {
+            academicYearPersistence.clearAcademicYear();
+        }
+        
+        function logResult(message, type) {
+            const resultsDiv = document.getElementById('testResults');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'test-result ' + type;
+            resultDiv.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            resultsDiv.appendChild(resultDiv);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        // Test on load
+        document.addEventListener('DOMContentLoaded', function() {
+            logResult('Academic Year Persistence Test initialized', 'info');
+            const currentYear = academicYearPersistence.getAcademicYear();
+            if (currentYear) {
+                logResult('Current stored academic year: ' + currentYear, 'success');
+            } else {
+                logResult('No academic year currently stored', 'info');
+            }
+        });
+    </script>
+</body>
+</html>

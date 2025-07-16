@@ -501,6 +501,104 @@
         });
     </script>
     
+    <!-- Academic Year Persistence Script -->
+    <script>
+        // Global Academic Year Persistence System
+        class AcademicYearPersistence {
+            constructor() {
+                this.storageKey = 'selectedAcademicYear';
+                this.init();
+            }
+            
+            init() {
+                // Initialize on page load
+                this.restoreAcademicYear();
+                this.setupEventListeners();
+            }
+            
+            // Store the selected academic year
+            setAcademicYear(yearId) {
+                if (yearId) {
+                    sessionStorage.setItem(this.storageKey, yearId);
+                }
+            }
+            
+            // Get the stored academic year
+            getAcademicYear() {
+                return sessionStorage.getItem(this.storageKey);
+            }
+            
+            // Clear stored academic year
+            clearAcademicYear() {
+                sessionStorage.removeItem(this.storageKey);
+            }
+            
+            // Restore academic year selection on page load
+            restoreAcademicYear() {
+                const storedYear = this.getAcademicYear();
+                if (storedYear) {
+                    // Try to find and select the academic year dropdown
+                    const academicYearDropdown = document.querySelector('#financialAcademicYearSelector, #academicYearSelector, [id*="academic"][id*="year"]');
+                    if (academicYearDropdown) {
+                        academicYearDropdown.value = storedYear;
+                    }
+                }
+            }
+            
+            // Add academic year parameter to URL
+            addAcademicYearToUrl(url) {
+                const academicYear = this.getAcademicYear();
+                if (academicYear) {
+                    const separator = url.includes('?') ? '&' : '?';
+                    return url + separator + 'academic_year=' + academicYear;
+                }
+                return url;
+            }
+            
+            // Setup event listeners for academic year changes
+            setupEventListeners() {
+                // Listen for academic year dropdown changes
+                document.addEventListener('change', (event) => {
+                    if (event.target.matches('#financialAcademicYearSelector, #academicYearSelector, [id*="academic"][id*="year"]')) {
+                        this.setAcademicYear(event.target.value);
+                    }
+                });
+                
+                // Intercept navigation links to add academic year parameter
+                document.addEventListener('click', (event) => {
+                    const link = event.target.closest('a[href], button[onclick*="location.href"]');
+                    if (link && this.shouldAddAcademicYear(link)) {
+                        event.preventDefault();
+                        const href = link.getAttribute('href');
+                        if (href) {
+                            const updatedUrl = this.addAcademicYearToUrl(href);
+                            window.location.href = updatedUrl;
+                        }
+                    }
+                });
+            }
+            
+            // Determine if we should add academic year to this link
+            shouldAddAcademicYear(element) {
+                const href = element.getAttribute('href') || '';
+                // Add to links that go to student pages, financial pages, or other system pages
+                return href.includes('/students/') || 
+                       href.includes('/financial') || 
+                       href.includes('/tuition') || 
+                       href.includes('/enrollment') ||
+                       href.includes('/academic');
+            }
+        }
+        
+        // Initialize the academic year persistence system
+        window.academicYearPersistence = new AcademicYearPersistence();
+        
+        // Global functions for easy access
+        window.setAcademicYear = (yearId) => window.academicYearPersistence.setAcademicYear(yearId);
+        window.getAcademicYear = () => window.academicYearPersistence.getAcademicYear();
+        window.addAcademicYearToUrl = (url) => window.academicYearPersistence.addAcademicYearToUrl(url);
+    </script>
+    
     {% block extra_scripts %}{% endblock %}
 </body>
 </html> 

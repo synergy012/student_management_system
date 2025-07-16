@@ -663,34 +663,13 @@ function updateConnectors() {
 function changeAcademicYear(yearId) {
     if (!yearId) return;
     
-    // Show loading state
-    const selector = document.getElementById('academic_year_selector');
-    const originalValue = selector.value;
-    selector.disabled = true;
+    // Store the selected academic year for persistence
+    window.setAcademicYear(yearId);
     
-    fetch(`/api/students/{{ student.id }}/change-academic-year`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ academic_year_id: yearId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            updatePageContent(data);
-        } else {
-            alert('Error changing academic year: ' + (data.error || 'Unknown error'));
-            selector.value = originalValue;
-        }
-        selector.disabled = false;
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error changing academic year');
-        selector.value = originalValue;
-        selector.disabled = false;
-    });
+    // Redirect to student financial page with the academic year parameter
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('academic_year', yearId);
+    window.location.href = currentUrl.toString();
 }
 
 function updatePageContent(data) {

@@ -64,6 +64,13 @@ def financial_dashboard():
         # Use selected year or default to current
         selected_year_id = academic_year_id if academic_year_id else (current_academic_year.id if current_academic_year else None)
         
+        # Get the selected academic year object
+        selected_academic_year = None
+        if selected_year_id:
+            selected_academic_year = AcademicYear.query.get(int(selected_year_id))
+        if not selected_academic_year:
+            selected_academic_year = current_academic_year
+        
         # Get base query for students
         students_query = Student.query
         
@@ -71,7 +78,7 @@ def financial_dashboard():
         if division:
             students_query = students_query.filter_by(division=division)
         if status_filter:
-            students_query = students_query.filter_by(status=status_filter)
+            students_query = students_query.filter_by(enrollment_status_current_year=status_filter)
         
         students = students_query.all()
         
@@ -90,14 +97,15 @@ def financial_dashboard():
         divisions = db.session.query(Student.division).distinct().filter(Student.division.isnot(None)).all()
         divisions = [d[0] for d in divisions if d[0]]
         
-        # Get unique statuses for filter
-        statuses = db.session.query(Student.status).distinct().filter(Student.status.isnot(None)).all()
+        # Get unique enrollment statuses for filter
+        statuses = db.session.query(Student.enrollment_status_current_year).distinct().filter(Student.enrollment_status_current_year.isnot(None)).all()
         statuses = [s[0] for s in statuses if s[0]]
         
         return render_template('financial_dashboard.html',
                              students=students,
                              financial_records=financial_records,
-                             academic_years=academic_years,
+                             available_academic_years=academic_years,
+                             selected_academic_year=selected_academic_year,
                              selected_year_id=int(selected_year_id) if selected_year_id else None,
                              divisions=divisions,
                              statuses=statuses,
@@ -157,16 +165,26 @@ def student_financial(student_id):
             current_app.logger.error(f"Error loading academic years: {str(e)}")
             academic_years = []
         
-        # Get current/active academic year as default selected year
+        # Get academic year from request parameter or default to active year
+        academic_year_id = request.args.get('academic_year', '')
         selected_year = None
         try:
-            selected_year = AcademicYear.query.filter_by(is_active=True).first()
+            if academic_year_id:
+                # Use the academic year from the request parameter
+                selected_year = AcademicYear.query.get(int(academic_year_id))
+                current_app.logger.info(f"Using academic year from parameter: {selected_year.year_label if selected_year else 'Invalid ID'}")
+            
             if not selected_year:
-                # Fallback to most recent year if no active year
-                selected_year = AcademicYear.query.order_by(AcademicYear.start_date.desc()).first()
-            current_app.logger.info(f"Selected year: {selected_year.year_label if selected_year else 'None'}")
+                # Fallback to active academic year
+                selected_year = AcademicYear.query.filter_by(is_active=True).first()
+                if not selected_year:
+                    # Fallback to most recent year if no active year
+                    selected_year = AcademicYear.query.order_by(AcademicYear.start_date.desc()).first()
+                current_app.logger.info(f"Using default year: {selected_year.year_label if selected_year else 'None'}")
         except Exception as e:
             current_app.logger.error(f"Error loading selected year: {str(e)}")
+            # Fallback to active year on error
+            selected_year = AcademicYear.query.filter_by(is_active=True).first()
         
         # Get tuition record for selected year
         tuition_record = None
@@ -211,23 +229,11 @@ def student_financial(student_id):
             'status_color': getattr(student, 'status_color', 'secondary')
         })()
         
-        # Convert selected_year to JSON-serializable format for template
-        selected_year_dict = None
-        if selected_year:
-            selected_year_dict = {
-                'id': selected_year.id,
-                'year_label': selected_year.year_label,
-                'is_active': selected_year.is_active,
-                'is_current': selected_year.is_current,
-                'status_color': getattr(selected_year, 'status_color', 'secondary'),
-                'status_badge': getattr(selected_year, 'status_badge', 'Unknown')
-            }
-        
         current_app.logger.info("Rendering student_financial.html template")
         return render_template('student_financial.html',
                              student=safe_student,
                              academic_years=academic_years,
-                             selected_year=selected_year_dict,
+                             selected_year=selected_year,
                              tuition_record=tuition_record,
                              tuition_history=tuition_history,
                              total_tuition=total_tuition,

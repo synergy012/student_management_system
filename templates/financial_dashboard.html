@@ -163,13 +163,12 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Status</label>
+                    <label class="form-label">Enrollment Status</label>
                     <select class="form-select" id="statusFilter" onchange="applyFilters()">
                         <option value="">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="pending">Pending Actions</option>
-                        <option value="complete">Complete</option>
-                        <option value="inactive">Inactive</option>
+                        {% for status in statuses %}
+                        <option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>{{ status }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -202,6 +201,7 @@
                     <thead>
                         <tr>
                             <th>Student</th>
+                            <th>Enrollment Status</th>
                             <th>Tuition</th>
                             <th>Type</th>
                             <th>FA Form</th>
@@ -259,7 +259,7 @@
                             {% endif %}
                         {% endif %}
                         
-                        <tr class="financial-row" data-student-id="{{ record.student.id }}" data-division="{{ record.student.division }}" data-tuition-type="{{ tuition_filter_type }}">
+                        <tr class="financial-row" data-student-id="{{ record.student.id }}" data-division="{{ record.student.division }}" data-tuition-type="{{ tuition_filter_type }}" data-enrollment-status="{{ record.student.enrollment_status_current_year }}">
                             <td>
                                 <div>
                                     <strong class="student-name">{{ record.student.student_name }}</strong>
@@ -273,6 +273,11 @@
                                         {% endif %}
                                     </small>
                                 </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ record.student.enrollment_status_color }}">
+                                    {{ record.student.enrollment_status_current_year }}
+                                </span>
                             </td>
                             <td>
                                 <div>
@@ -1119,7 +1124,7 @@ window.addEventListener('unhandledrejection', function(e) {
 
 let currentStudentData = null;
 let tuitionComponents = [];
-let selectedAcademicYear = {{ selected_academic_year_dict | tojson if selected_academic_year_dict else 'null' }};
+let selectedAcademicYear = {{ selected_academic_year | tojson if selected_academic_year else 'null' }};
 
 // Main function to set tuition for a student
 function setTuition(studentId) {
@@ -1637,8 +1642,11 @@ function renderTuitionHistory(history) {
 // Change academic year for financial module
 function changeFinancialAcademicYear() {
     const yearId = document.getElementById('financialAcademicYearSelector').value;
+    // Store the selected academic year for persistence
+    window.setAcademicYear(yearId);
+    
     const currentUrl = new URL(window.location);
-    currentUrl.searchParams.set('academic_year_id', yearId);
+    currentUrl.searchParams.set('academic_year', yearId);
     window.location.href = currentUrl.toString();
 }
 
@@ -1759,7 +1767,8 @@ function resetTuition(studentId) {
 
 // Show tuition settings page
 function showTuitionSettings() {
-    window.location.href = "{{ url_for('tuition_components.tuition_settings') }}";
+    const url = "{{ url_for('tuition_components.tuition_settings') }}";
+    window.location.href = window.addAcademicYearToUrl(url);
 }
 
 // Show financial reports (placeholder)
@@ -1796,40 +1805,9 @@ function applyFilters() {
             show = false;
         }
         
-        // Apply status filter (based on various status indicators)
-        if (status) {
-            const cells = row.querySelectorAll('td');
-            // FA Form is in the 4th column (index 3), Contract is in 5th column (index 4), Admire is in 6th column (index 5)
-            const faFormCell = cells[3];
-            const contractCell = cells[4];
-            const admireCell = cells[5];
-            
-            const faFormReceived = faFormCell ? faFormCell.querySelector('.fa-check-circle') : null;
-            const contractReceived = contractCell ? contractCell.querySelector('.fa-check-circle') : null;
-            const admireSetup = admireCell ? admireCell.querySelector('.fa-check-circle') : null;
-            
-            let statusMatch = false;
-            
-            switch (status) {
-                case 'active':
-                    // Consider active if student has tuition set and no major issues
-                    statusMatch = row.dataset.tuitionType !== 'not-set';
-                    break;
-                case 'pending':
-                    // Consider pending if FA form or contract is not received
-                    statusMatch = !faFormReceived || !contractReceived;
-                    break;
-                case 'complete':
-                    // Consider complete if FA form, contract, and Admire are all done
-                    statusMatch = faFormReceived && contractReceived && admireSetup;
-                    break;
-                case 'inactive':
-                    // Consider inactive if no tuition is set
-                    statusMatch = row.dataset.tuitionType === 'not-set';
-                    break;
-            }
-            
-            if (!statusMatch) show = false;
+        // Apply enrollment status filter
+        if (status && row.dataset.enrollmentStatus !== status) {
+            show = false;
         }
         
         // Apply search filter
@@ -2305,8 +2283,8 @@ function updateContractButtonUI(studentId, contractStatus) {
         return;
     }
     
-    // Get the Contract column (5th column, index 4)
-    const contractCell = studentRow.cells[4]; // Contract column
+    // Get the Contract column (6th column, index 5)
+    const contractCell = studentRow.cells[5]; // Contract column
     if (!contractCell) {
         console.error(`No contract cell found for student ${studentId}`);
         return;
@@ -2834,8 +2812,9 @@ function markEnhancedContractReceived(studentId) {
 
 // Function to view financial details for a student
 function viewFinancialDetails(studentId) {
-    // Navigate to the student's financial details page
-    window.location.href = `/students/${studentId}/financial`;
+    // Navigate to the student's financial details page with academic year persistence
+    const url = `/students/${studentId}/financial`;
+    window.location.href = window.addAcademicYearToUrl(url);
 }
 
 // Function to handle document upload

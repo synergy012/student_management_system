@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function onCurrentYearChange() {
     currentYearId = parseInt(document.getElementById('currentYearSelect').value);
-    if (currentYearId && nextYearId) {
+    if (currentYearId) {
         loadTransitionSummary();
     }
 }
@@ -338,7 +338,13 @@ function onNextYearChange() {
 }
 
 function loadTransitionSummary() {
-    if (!currentYearId || !nextYearId) return;
+    if (!currentYearId) return;
+    
+    // Show current year statistics even if no next year is selected
+    if (!nextYearId) {
+        loadCurrentYearSummary();
+        return;
+    }
     
     fetch(`/api/academic-year-transition/summary?current_year_id=${currentYearId}&next_year_id=${nextYearId}`)
         .then(response => response.json())
@@ -363,6 +369,60 @@ function loadTransitionSummary() {
         })
         .catch(error => {
             console.error('Error loading transition summary:', error);
+        });
+}
+
+function loadCurrentYearSummary() {
+    // Load basic statistics for the current year
+    fetch(`/api/students?division=all`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error loading current year students:', data.error);
+                return;
+            }
+            
+            // Count students by status
+            const activeStudents = data.students ? data.students.filter(s => s.status === 'Active') : [];
+            
+            // Update summary display with current year data
+            document.getElementById('totalStudents').textContent = activeStudents.length;
+            document.getElementById('pendingStudents').textContent = 0;
+            document.getElementById('enrolledStudents').textContent = activeStudents.length;
+            document.getElementById('withdrawnStudents').textContent = 0;
+            
+            // Show summary section but not actions (need next year for actions)
+            document.getElementById('transitionSummary').style.display = 'block';
+            document.getElementById('transitionActions').style.display = 'none';
+            
+            // Disable finalize button
+            document.getElementById('finalizeBtn').disabled = true;
+        })
+        .catch(error => {
+            console.error('Error loading current year summary:', error);
+            // Fallback to direct student count
+            loadStudentCountFallback();
+        });
+}
+
+function loadStudentCountFallback() {
+    // Simple fallback - just show a basic count
+    fetch(`/api/academic/statistics`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.students) {
+                document.getElementById('totalStudents').textContent = data.students.total || 0;
+                document.getElementById('pendingStudents').textContent = 0;
+                document.getElementById('enrolledStudents').textContent = data.students.total || 0;
+                document.getElementById('withdrawnStudents').textContent = 0;
+            }
+            
+            // Show summary section
+            document.getElementById('transitionSummary').style.display = 'block';
+            document.getElementById('transitionActions').style.display = 'none';
+        })
+        .catch(error => {
+            console.error('Error loading student count fallback:', error);
         });
 }
 

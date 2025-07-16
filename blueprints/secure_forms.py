@@ -440,105 +440,108 @@ def get_student_contracts():
     
     return jsonify({'contracts': contract_list})
 
-# Enrollment Response Routes (Moved from enrollment_email blueprint)
-@secure_forms.route('/enrollment-response/<token>')
-def student_enrollment_response_form(token):
-    """Show enrollment decision response form to students"""
-    try:
-        from models import SecureFormToken, Student, AcademicYear
-        
-        # Validate token
-        token_data = SecureFormToken.query.filter_by(
-            token=token, 
-            form_type='enrollment_response',
-            is_used=False
-        ).first()
-        
-        if not token_data:
-            return render_template('secure_forms/invalid_link.html',
-                                 error='Invalid or expired enrollment response link')
-        
-        if token_data.expires_at < datetime.utcnow():
-            return render_template('secure_forms/invalid_link.html',
-                                 error='This enrollment response link has expired')
-        
-        # Get student and academic year info
-        token_metadata = token_data.token_metadata or {}
-        student_id = token_metadata.get('student_id')
-        academic_year_id = token_metadata.get('academic_year_id')
-        
-        if not student_id or not academic_year_id:
-            return render_template('secure_forms/invalid_link.html',
-                                 error='Invalid link data')
-        
-        student = Student.query.get(student_id)
-        academic_year = AcademicYear.query.get(academic_year_id)
-        
-        if not student or not academic_year:
-            return render_template('secure_forms/invalid_link.html',
-                                 error='Student or academic year not found')
-        
-        return render_template('enrollment_email/response_form.html',
-                             student=student,
-                             academic_year=academic_year,
-                             token=token,
-                             expires_at=token_data.expires_at)
-        
-    except Exception as e:
-        current_app.logger.error(f"Error showing enrollment response form: {str(e)}")
-        return render_template('secure_forms/invalid_link.html',
-                             error='An error occurred while loading the response form')
+# Enrollment Response Routes (COMMENTED OUT - duplicates enrollment_email.py routes)
+# The enrollment email service creates tokens with form_type='enrollment_decision'
+# but these routes were looking for form_type='enrollment_response', causing conflicts
 
-@secure_forms.route('/api/enrollment-response/<token>', methods=['POST'])
-def process_student_enrollment_response(token):
-    """Process student's enrollment decision response"""
-    try:
-        data = request.get_json() if request.is_json else request.form
-        decision = data.get('decision')
-        
-        if not decision:
-            return jsonify({'error': 'Enrollment decision is required'}), 400
-        
-        # Process the response
-        from services.enrollment_email_service import EnrollmentDecisionEmailService
-        service = EnrollmentDecisionEmailService()
-        result = service.process_student_enrollment_response(token, decision)
-        
-        if result['success']:
-            return jsonify({
-                'success': True,
-                'message': f"Thank you! Your enrollment decision has been recorded: {result['enrollment_status']}",
-                'student_name': result['student_name'],
-                'enrollment_status': result['enrollment_status']
-            })
-        else:
-            return jsonify({'error': result['error']}), 400
-        
-    except Exception as e:
-        current_app.logger.error(f"Error processing student enrollment response: {str(e)}")
-        return jsonify({'error': 'An error occurred while processing your response'}), 500
+# @secure_forms.route('/enrollment-response/<token>')
+# def student_enrollment_response_form(token):
+#     """Show enrollment decision response form to students"""
+#     try:
+#         from models import SecureFormToken, Student, AcademicYear
+#         
+#         # Validate token
+#         token_data = SecureFormToken.query.filter_by(
+#             token=token, 
+#             form_type='enrollment_response',
+#             is_used=False
+#         ).first()
+#         
+#         if not token_data:
+#             return render_template('secure_forms/invalid_link.html',
+#                                  error='Invalid or expired enrollment response link')
+#         
+#         if token_data.expires_at < datetime.utcnow():
+#             return render_template('secure_forms/invalid_link.html',
+#                                  error='This enrollment response link has expired')
+#         
+#         # Get student and academic year info
+#         token_metadata = token_data.token_metadata or {}
+#         student_id = token_metadata.get('student_id')
+#         academic_year_id = token_metadata.get('academic_year_id')
+#         
+#         if not student_id or not academic_year_id:
+#             return render_template('secure_forms/invalid_link.html',
+#                                  error='Invalid link data')
+#         
+#         student = Student.query.get(student_id)
+#         academic_year = AcademicYear.query.get(academic_year_id)
+#         
+#         if not student or not academic_year:
+#             return render_template('secure_forms/invalid_link.html',
+#                                  error='Student or academic year not found')
+#         
+#         return render_template('enrollment_email/response_form.html',
+#                              student=student,
+#                              academic_year=academic_year,
+#                              token=token,
+#                              expires_at=token_data.expires_at)
+#         
+#     except Exception as e:
+#         current_app.logger.error(f"Error showing enrollment response form: {str(e)}")
+#         return render_template('secure_forms/invalid_link.html',
+#                              error='An error occurred while loading the response form')
 
-@secure_forms.route('/enrollment-response/<token>/success')
-def enrollment_response_success(token):
-    """Show success page after student responds to enrollment"""
-    try:
-        from models import SecureFormToken, Student
-        
-        # Get token info to show success message
-        token_data = SecureFormToken.query.filter_by(token=token).first()
-        
-        if not token_data or not token_data.is_used:
-            return redirect(url_for('secure_forms.student_enrollment_response_form', token=token))
-        
-        token_metadata = token_data.token_metadata or {}
-        student_id = token_metadata.get('student_id')
-        
-        student = Student.query.get(student_id) if student_id else None
-        
-        return render_template('enrollment_email/response_success.html',
-                             student=student,
-                             used_at=token_data.used_at)
-        
-    except Exception as e:
-        current_app.logger.error(f"Error showing enrollment response success page: {str(e)}")
-        return render_template('enrollment_email/response_success.html') 
+# @secure_forms.route('/api/enrollment-response/<token>', methods=['POST'])
+# def process_student_enrollment_response(token):
+#     """Process student's enrollment decision response"""
+#     try:
+#         data = request.get_json() if request.is_json else request.form
+#         decision = data.get('decision')
+#         
+#         if not decision:
+#             return jsonify({'error': 'Enrollment decision is required'}), 400
+#         
+#         # Process the response
+#         from services.enrollment_email_service import EnrollmentDecisionEmailService
+#         service = EnrollmentDecisionEmailService()
+#         result = service.process_student_enrollment_response(token, decision)
+#         
+#         if result['success']:
+#             return jsonify({
+#                 'success': True,
+#                 'message': f"Thank you! Your enrollment decision has been recorded: {result['enrollment_status']}",
+#                 'student_name': result['student_name'],
+#                 'enrollment_status': result['enrollment_status']
+#             })
+#         else:
+#             return jsonify({'error': result['error']}), 400
+#         
+#     except Exception as e:
+#         current_app.logger.error(f"Error processing student enrollment response: {str(e)}")
+#         return jsonify({'error': 'An error occurred while processing your response'}), 500
+
+# @secure_forms.route('/enrollment-response/<token>/success')
+# def enrollment_response_success(token):
+#     """Show success page after student responds to enrollment"""
+#     try:
+#         from models import SecureFormToken, Student
+#         
+#         # Get token info to show success message
+#         token_data = SecureFormToken.query.filter_by(token=token).first()
+#         
+#         if not token_data or not token_data.is_used:
+#             return redirect(url_for('secure_forms.student_enrollment_response_form', token=token))
+#         
+#         token_metadata = token_data.token_metadata or {}
+#         student_id = token_metadata.get('student_id')
+#         
+#         student = Student.query.get(student_id) if student_id else None
+#         
+#         return render_template('enrollment_email/response_success.html',
+#                              student=student,
+#                              used_at=token_data.used_at)
+#         
+#     except Exception as e:
+#         current_app.logger.error(f"Error showing enrollment response success page: {str(e)}")
+#         return render_template('enrollment_email/response_success.html') 
