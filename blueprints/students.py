@@ -632,26 +632,58 @@ def get_email_preview(student_id, email_type):
             })
             
         elif email_type == 'enhanced_contract':
-            # Generate enhanced tuition contract email preview
-            school_name = "Yeshiva Zichron Aryeh" if student.division == 'YZA' else "Yeshiva Ohr Hatzafon"
-            student_name = student.student_name or f"{student.student_first_name} {student.student_last_name}".strip()
-            
-            subject = f"Enhanced Tuition Contract for Academic Year - {school_name}"
-            body = f"""
-            <h2>{school_name}</h2>
-            <p>Dear {student_name},</p>
-            <p>Your enhanced tuition contract for the upcoming academic year is ready for your review and signature.</p>
-            <p>This contract includes detailed tuition breakdowns, payment schedules, and all applicable fees.</p>
-            <p>Please review the contract carefully and sign it using the secure digital signature system.</p>
-            <p>If you have any questions about the contract terms, payment schedules, or tuition amounts, please contact our financial office.</p>
-            <p>Best regards,<br><strong>Financial Office</strong><br>{school_name}</p>
-            """
-            
-            return jsonify({
-                'success': True,
-                'subject': subject,
-                'body': body
-            })
+            # Generate simple enhanced tuition contract email as requested by user
+            try:
+                school_name = "Yeshiva Zichron Aryeh" if student.division == 'YZA' else "Yeshiva Ohr Hatzafon"
+                student_name = student.student_name or f"{student.student_first_name} {student.student_last_name}".strip()
+                
+                subject = f"Enhanced Tuition Contract for Academic Year - {school_name}"
+                
+                # Create simple professional email body as requested by user
+                body = f"""
+                <h2 style="color: #2c3e50; text-align: center;">{school_name}</h2>
+                <p>Dear {student_name},</p>
+                
+                <p>Your tuition contract for the upcoming academic year is ready for your review and signature.</p>
+                
+                <p>If you have any questions, please contact our financial office.</p>
+                
+                <p>Best regards,<br><strong>Financial Office</strong><br>{school_name}<br>
+                Email: aderdik@priority-1.org<br>
+                Phone: 516 295-5700 x104</p>
+                """
+                
+                return jsonify({
+                    'success': True,
+                    'subject': subject,
+                    'body': body
+                })
+                
+            except Exception as e:
+                current_app.logger.error(f"Error generating enhanced contract preview: {str(e)}")
+                # Fallback to basic template if there's an error
+                school_name = "Yeshiva Zichron Aryeh" if student.division == 'YZA' else "Yeshiva Ohr Hatzafon"
+                student_name = student.student_name or f"{student.student_first_name} {student.student_last_name}".strip()
+                
+                subject = f"Enhanced Tuition Contract for Academic Year - {school_name}"
+                body = f"""
+                <h2 style="color: #2c3e50; text-align: center;">{school_name}</h2>
+                <p>Dear {student_name},</p>
+                
+                <p>Your tuition contract for the upcoming academic year is ready for your review and signature.</p>
+                
+                <p>If you have any questions, please contact our financial office.</p>
+                
+                <p>Best regards,<br><strong>Financial Office</strong><br>{school_name}<br>
+                Email: aderdik@priority-1.org<br>
+                Phone: 516 295-5700 x104</p>
+                """
+                
+                return jsonify({
+                    'success': True,
+                    'subject': subject,
+                    'body': body
+                })
             
         elif email_type == 'enrollment_contract':
             # Try to get email template from the email template system
